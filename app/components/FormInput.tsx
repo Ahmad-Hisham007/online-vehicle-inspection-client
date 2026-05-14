@@ -25,7 +25,7 @@ export function FormInput<T extends FieldValues>({
       name={name}
       control={control}
       render={({ field, fieldState }) => (
-        <Field className="flex flex-col gap-2 mb-4 text-left relative">
+        <Field className="flex flex-col gap-1 text-sm text-left relative">
           <FieldLabel
             htmlFor={name}
             className={`font-semibold ${fieldState.invalid ? "text-red-500" : "text-gray-700"}`}

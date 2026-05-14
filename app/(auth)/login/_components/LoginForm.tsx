@@ -25,34 +25,6 @@ const loginSchema = z.object({
 });
 type LoginFormInputs = z.infer<typeof loginSchema>;
 const LoginForm = () => {
-  // const onSubmit = async (data: LoginFormInputs) => {
-  //   try {
-  //     toast.promise(
-  //       signIn("credentials", {
-  //         email: data.email,
-  //         password: data.password,
-  //         redirect: false,
-  //       }),
-  //       {
-  //         loading: "Logging in ",
-  //         success: (res) => {
-  //           if (res?.error) {
-  //             throw new Error(res.error);
-  //           }
-  //           reset();
-  //           router.push("/dashboard");
-  //           router.refresh();
-  //           return "Login Successful!";
-  //         },
-  //         error: (err) => {
-  //           return err.message || "Invalid Credentials!";
-  //         },
-  //       },
-  //     );
-  //   } catch (err) {
-  //     console.error(err);
-  //   }
-  // };
   const form = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
     defaultValues: {

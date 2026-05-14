@@ -10,32 +10,18 @@ import { Button } from "@/app/components/Button";
 const Container = () => {
   const [isLoginCol, setIsLoginCol] = useState<boolean>(true);
   const formRef = useRef<HTMLDivElement>(null);
-  const [bannerH, setBannerH] = useState(0);
   const bannerRef = useRef<HTMLDivElement>(null);
-  const [heightDiff, setHeightDiff] = useState(0);
-
   useEffect(() => {
-    const calculateHeights = () => {
-      if (formRef.current && bannerRef.current) {
-        const fH = formRef.current.offsetHeight;
-        const bH = bannerRef.current.offsetHeight;
-        setBannerH(bH);
-        // Form theke Banner minus korle je extra space thake
-        setHeightDiff(fH - bH);
+    if (window.innerWidth < 1024 && formRef.current) {
+      const visibleDiv = formRef.current.querySelector(
+        isLoginCol ? ".login" : ".signup",
+      );
+
+      if (visibleDiv) {
+        formRef.current.style.minHeight = `${visibleDiv.scrollHeight}px`;
       }
-    };
-
-    // Initial calculation
-    calculateHeights();
-
-    // Content load hote deri hole ba resize hole recalculated hobe
-    window.addEventListener("resize", calculateHeights);
-    return () => window.removeEventListener("resize", calculateHeights);
-  }, [isLoginCol]);
-
-  useEffect(() => {
-    if (window.innerWidth < 1024) {
-      formRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else if (formRef.current) {
+      formRef.current.style.minHeight = "auto";
     }
   }, [isLoginCol]);
   const handleSocialLogin = (provider: string) => {
@@ -43,31 +29,20 @@ const Container = () => {
   };
   return (
     <Card
-      className={`max-w-6xl p-0 gap-0 mx-auto grow flex flex-col lg:flex-row items-stretch rounded-lg card h-auto md:overflow-hidden overflow-visible lg:min-h-150 relative ${isLoginCol ? "" : "!lg:mt-0"}`}
-      style={
-        !isLoginCol && typeof window !== "undefined" && window.innerWidth < 1024
-          ? {
-              marginTop: `-${heightDiff}px`,
-              marginBottom: `${heightDiff}px`,
-            }
-          : {}
-      }
+      className={`max-w-6xl p-0 gap-0 perspective-[1000px] mx-auto grow flex flex-col-reverse lg:flex-row items-stretch rounded-lg card h-auto md:overflow-hidden overflow-visible lg:min-h-150 relative ${isLoginCol ? "" : "!lg:mt-0"}`}
     >
       {/* 1. Form Container */}
       <div
         ref={formRef}
-        className={`w-full lg:basis-1/2 flex flex-col justify-center items-center min-h-150 lg:h-auto transition-transform duration-700 
-          ${
-            isLoginCol
-              ? "translate-x-0 translate-y-0"
-              : "lg:translate-x-full translate-y-full lg:translate-y-0"
-          } 
-          z-30 relative`}
+        className={`w-full lg:basis-1/2 grid transition-transform duration-700 
+      ${isLoginCol ? "" : "lg:translate-x-full lg:translate-y-0"} 
+      z-30 relative`}
       >
         <div
-          className={`login w-full lg:px-20 absolute inset-0 flex flex-col justify-center transition-all duration-700 
-            ${isLoginCol ? "opacity-100 z-20 blur-0" : "opacity-0 z-10 blur-md"} px-4`}
+          className={`login py-16 absolute md:static w-full lg:px-20 flex flex-col justify-center transition-all duration-700 self-center md:self-auto 
+        ${isLoginCol ? "opacity-100 z-20 blur-0 transform-[rotateY(0deg)_scale(1)]" : "opacity-0 z-10 blur-md pointer-events-none transform-[rotateY(180deg)_scale(0.8)]"} px-4 backface-hidden`}
           style={{
+            gridArea: "1/1",
             backgroundImage: "url('/light-bg.jpg')",
             backgroundSize: "cover",
           }}
@@ -96,9 +71,10 @@ const Container = () => {
         </div>
 
         <div
-          className={`signup w-full lg:px-20 absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 
-            ${!isLoginCol ? "opacity-100 z-20 blur-0" : "opacity-0 z-10 blur-md"} px-4`}
+          className={`signup w-full py-16 absolute md:static lg:px-20 flex flex-col items-center justify-center transition-all duration-700 self-center md:self-auto
+        ${!isLoginCol ? "opacity-100 z-20 blur-0 transform-[rotateY(0deg)_scale(1)]" : "opacity-0 z-10 blur-md pointer-events-none transform-[rotateY(-180deg)_scale(0.8)]"} backface-hidden px-4`}
           style={{
+            gridArea: "1/1",
             backgroundImage: "url('/light-bg.jpg')",
             backgroundSize: "cover",
           }}
@@ -111,16 +87,12 @@ const Container = () => {
         </div>
       </div>
 
-      {/* 2. Banner Container (Desktop e strictly 50% width) */}
+      {/* 2. Banner Container */}
       <div
         ref={bannerRef}
         className={`w-full relative lg:basis-1/2 flex flex-col items-center justify-center gap-5 text-center min-h-100 lg:h-auto py-10 px-4 transition-transform duration-700 
-          ${
-            isLoginCol
-              ? "translate-x-0 translate-y-0"
-              : "lg:-translate-x-full -translate-y-full lg:translate-y-0"
-          } 
-          z-50`}
+      ${isLoginCol ? "" : "lg:-translate-x-full lg:translate-y-0"} 
+      z-50`}
         style={{
           backgroundImage:
             'url("/car-headlight-buildings-reflecting-headlight-car.jpg")',
