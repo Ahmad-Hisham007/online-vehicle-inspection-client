@@ -1,0 +1,2132 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+.gitignore
+AGENTS.md
+app/(auth)/login/_components/Container.tsx
+app/(auth)/login/_components/LoginForm.tsx
+app/(auth)/login/_components/SignupForm.tsx
+app/(auth)/login/page.tsx
+app/(auth)/register/page.tsx
+app/api/auth/[...nextauth]/route.ts
+app/api/register/route.ts
+app/components/Button.tsx
+app/components/FormInput.tsx
+app/dashboard/admin/page.tsx
+app/dashboard/customer/page.tsx
+app/dashboard/page.tsx
+app/favicon.ico
+app/globals.css
+app/layout.tsx
+app/page.tsx
+auth.config.ts
+auth.ts
+CLAUDE.md
+components.json
+components/ui/button.tsx
+components/ui/card.tsx
+components/ui/checkbox.tsx
+components/ui/field.tsx
+components/ui/input-group.tsx
+components/ui/input.tsx
+components/ui/label.tsx
+components/ui/separator.tsx
+components/ui/textarea.tsx
+eslint.config.mjs
+lib/utils.ts
+next.config.ts
+package.json
+postcss.config.mjs
+proxy.ts
+public/car-headlight-buildings-reflecting-headlight-car.jpg
+public/file.svg
+public/globe.svg
+public/light-bg.jpg
+public/login-car-bg.jpg
+public/next.svg
+public/vercel.svg
+public/window.svg
+README.md
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app/api/auth/[...nextauth]/route.ts">
+import { handlers } from "@/auth";
+export const { GET, POST } = handlers;
+</file>
+
+<file path="app/api/register/route.ts">
+import { dbConnect } from "@/lib/dbConnect";
+import User from "@/models/User";
+import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
+
+const salt = bcrypt.genSaltSync(10);
+
+export const POST = async (req: Request) => {
+  try {
+    const { name, email, password, phoneNumber } = await req.json();
+    await dbConnect();
+    const existingUser = await User.findOne({ email: email });
+    if (existingUser) {
+      return NextResponse.json({
+        status: 400,
+        message: "The user is already existing",
+      });
+    }
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`;
+    const newUser = {
+      name,
+      email,
+      password: hashedPassword,
+      phoneNumber,
+      image: avatarUrl,
+    };
+    const createdUser = await User.create(newUser);
+    return NextResponse.json({
+      status: 201,
+      data: createdUser,
+      message: "user created successfully",
+    });
+  } catch (error) {
+    return NextResponse.json({
+      status: 500,
+      message: `A critical error ocurred. Error: ${error}`,
+    });
+  }
+};
+</file>
+
+<file path="app/dashboard/admin/page.tsx">
+import React from "react";
+
+const adminPanel = () => {
+  return <div></div>;
+};
+
+export default adminPanel;
+</file>
+
+<file path="app/dashboard/customer/page.tsx">
+import React from "react";
+
+const customerPanel = () => {
+  return <div></div>;
+};
+
+export default customerPanel;
+</file>
+
+<file path="app/dashboard/page.tsx">
+import React from "react";
+
+const dashboardPage = () => {
+  return <div></div>;
+};
+
+export default dashboardPage;
+</file>
+
+<file path="auth.config.ts">
+import { NextAuthConfig } from "next-auth";
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
+import LinkedIn from "next-auth/providers/linkedin";
+export default {
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      checks: ["none"],
+    }),
+    LinkedIn({
+      clientId: process.env.LINKEDIN_CLIENT_ID,
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+      issuer: "https://www.linkedin.com/oauth",
+      client: {
+        id_token_signed_response_alg: "RS256",
+      },
+      authorization: {
+        params: { scope: "openid profile email" }, // Scope গুলো ঠিকঠাক দিন
+      },
+      wellKnown:
+        "https://www.linkedin.com/oauth/.well-known/openid-configuration",
+      jwks_endpoint: "https://www.linkedin.com/oauth/openid/jwks",
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        };
+      },
+    }),
+  ],
+} satisfies NextAuthConfig;
+</file>
+
+<file path="auth.ts">
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import authConfig from "./auth.config";
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
+  providers: [
+    ...authConfig.providers,
+    CredentialsProvider({
+      credentials: {
+        email: { label: "email", type: "email" },
+        password: { label: "password", type: "password" },
+      },
+      async authorize(credentials) {
+        const { dbConnect } = await import("./lib/dbConnect");
+        const User = (await import("./models/User")).default;
+        if (!credentials?.email || !credentials?.password) return null;
+        await dbConnect();
+        const user = await User.findOne({ email: credentials?.email }).select(
+          "+password",
+        );
+        if (!user) {
+          throw new Error("No user found with this email");
+        }
+        const isPasswordCorrect = bcrypt.compareSync(
+          credentials?.password as string,
+          user.password,
+        );
+        if (!isPasswordCorrect) {
+          throw new Error("Password is Incorrect");
+        }
+        return {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          phoneNumber: user.phoneNumber,
+          image: user.image,
+        };
+      },
+    }),
+  ],
+  secret: process.env.AUTH_SECRET,
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+  },
+});
+</file>
+
+<file path="proxy.ts">
+import NextAuth from "next-auth";
+import { NextResponse } from "next/server";
+import authConfig from "./auth.config";
+
+const { auth } = NextAuth(authConfig);
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const isDashboard = req.nextUrl.pathname.startsWith("/dashboard");
+  if (isDashboard && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ["/dashboard/:path*"],
+};
+</file>
+
+<file path=".gitignore">
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+</file>
+
+<file path="AGENTS.md">
+<!-- BEGIN:nextjs-agent-rules -->
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+<!-- END:nextjs-agent-rules -->
+</file>
+
+<file path="app/(auth)/login/_components/Container.tsx">
+"use client";
+import { FaGoogle } from "react-icons/fa";
+import LoginForm from "./LoginForm";
+import { useState, useEffect, useRef } from "react";
+import SignupForm from "./SignupForm";
+import { signIn } from "next-auth/react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/app/components/Button";
+
+const Container = () => {
+  const [isLoginCol, setIsLoginCol] = useState<boolean>(true);
+  const formRef = useRef<HTMLDivElement>(null);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (window.innerWidth < 1024 && formRef.current) {
+      const visibleDiv = formRef.current.querySelector(
+        isLoginCol ? ".login" : ".signup",
+      );
+
+      if (visibleDiv) {
+        formRef.current.style.minHeight = `${visibleDiv.scrollHeight}px`;
+      }
+    } else if (formRef.current) {
+      formRef.current.style.minHeight = "auto";
+    }
+  }, [isLoginCol]);
+  const handleSocialLogin = (provider: string) => {
+    signIn(provider, { callbackUrl: "/dashboard" });
+  };
+  return (
+    <Card
+      className={`max-w-6xl p-0 gap-0 perspective-[1000px] mx-auto grow flex flex-col-reverse lg:flex-row items-stretch rounded-lg card h-auto md:overflow-hidden overflow-visible lg:min-h-150 relative ${isLoginCol ? "" : "!lg:mt-0"}`}
+    >
+      {/* 1. Form Container */}
+      <div
+        ref={formRef}
+        className={`w-full lg:basis-1/2 grid transition-transform duration-700 
+      ${isLoginCol ? "" : "lg:translate-x-full lg:translate-y-0"} 
+      z-30 relative`}
+      >
+        <div
+          className={`login py-16 absolute md:static w-full lg:px-20 flex flex-col justify-center transition-all duration-700 self-center md:self-auto 
+        ${isLoginCol ? "opacity-100 z-20 blur-0 transform-[rotateY(0deg)_scale(1)]" : "opacity-0 z-10 blur-md pointer-events-none transform-[rotateY(180deg)_scale(0.8)]"} px-4 backface-hidden`}
+          style={{
+            gridArea: "1/1",
+            backgroundImage: "url('/light-bg.jpg')",
+            backgroundSize: "cover",
+          }}
+        >
+          <h2 className="text-3xl font-bold text-center pb-5">
+            Sign in to your account
+          </h2>
+          <div className="h-0.5 bg-linear-to-br from-primary to-secondary mb-5 w-18 mx-auto" />
+          <LoginForm />
+          <div className="flex items-center justify-center gap-2">
+            <span className="h-px bg-gray-300 w-full grow shrink"></span>
+            <div className="divider my-7 text-sm font-bold text-gray-400 uppercase">
+              OR
+            </div>
+            <span className="h-px bg-gray-300 w-full grow shrink"></span>
+          </div>
+          <div className="flex gap-2 [&_button]:cursor-pointer">
+            <Button
+              onClick={() => handleSocialLogin("google")}
+              variant={"secondary"}
+              size={"icon"}
+            >
+              <div>Sign-in with Google</div> <FaGoogle />
+            </Button>
+          </div>
+        </div>
+
+        <div
+          className={`signup w-full py-16 absolute md:static lg:px-20 flex flex-col items-center justify-center transition-all duration-700 self-center md:self-auto
+        ${!isLoginCol ? "opacity-100 z-20 blur-0 transform-[rotateY(0deg)_scale(1)]" : "opacity-0 z-10 blur-md pointer-events-none transform-[rotateY(-180deg)_scale(0.8)]"} backface-hidden px-4`}
+          style={{
+            gridArea: "1/1",
+            backgroundImage: "url('/light-bg.jpg')",
+            backgroundSize: "cover",
+          }}
+        >
+          <h2 className="text-3xl font-bold text-center pb-5">
+            Create a new account
+          </h2>
+          <div className="h-0.5 bg-linear-to-br from-primary to-secondary mb-5 w-18" />
+          <SignupForm />
+        </div>
+      </div>
+
+      {/* 2. Banner Container */}
+      <div
+        ref={bannerRef}
+        className={`w-full relative lg:basis-1/2 flex flex-col items-center justify-center gap-5 text-center min-h-100 lg:h-auto py-10 px-4 transition-transform duration-700 
+      ${isLoginCol ? "" : "lg:-translate-x-full lg:translate-y-0"} 
+      z-50`}
+        style={{
+          backgroundImage:
+            'url("/car-headlight-buildings-reflecting-headlight-car.jpg")',
+          backgroundSize: "cover",
+        }}
+      >
+        <div className="absolute w-full h-full bg-black/50 border-full top-half left-0 z-1 "></div>
+
+        <div className="z-10 flex flex-col items-center justify-center gap-5 text-center">
+          <h2 className="text-3xl text-white font-bold">
+            {isLoginCol ? "Sign up" : "Sign In"}
+          </h2>
+          {isLoginCol ? (
+            <p className="text-white text-lg px-5 lg:max-w-[80%] mx-auto">
+              Don&apos;t have an account? Please, create a new one
+            </p>
+          ) : (
+            <p className="text-white text-lg px-5 lg:max-w-[80%] mx-auto">
+              Do you have an existing account? Please, Sign In
+            </p>
+          )}
+
+          <Button
+            className="w-auto!"
+            onClick={() => setIsLoginCol(!isLoginCol)}
+          >
+            {isLoginCol ? "Sign up" : "Sign In"}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+export default Container;
+</file>
+
+<file path="app/(auth)/login/_components/LoginForm.tsx">
+"use client";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
+import { Button } from "@/app/components/Button";
+import { FormInput } from "@/app/components/FormInput";
+
+const loginSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+  rememberMeCheckBox: z.boolean().default(false).optional(),
+});
+type LoginFormInputs = z.infer<typeof loginSchema>;
+const LoginForm = () => {
+  const form = useForm<LoginFormInputs>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMeCheckBox: false,
+    },
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const onSubmit = async (data: LoginFormInputs) => {
+    try {
+      toast.promise(
+        signIn("credentials", {
+          email: data.email,
+          password: data.password,
+          redirect: false,
+        }),
+        {
+          loading: "Logging in...",
+          success: (res) => {
+            if (res?.error) {
+              throw new Error(res.error);
+            }
+            form.reset(); // reset update kora holo
+            router.push("/dashboard");
+            router.refresh();
+            return "Login Successful!";
+          },
+          error: (err) => {
+            return err.message || "Invalid Credentials!";
+          },
+        },
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <form
+      id="login-form"
+      className="w-full text-center space-y-2 mt-9"
+      onSubmit={form.handleSubmit(onSubmit)}
+    >
+      <FieldGroup className="gap-3">
+        {/* Email Field */}
+        <FormInput
+          name="email"
+          type="email"
+          control={form.control}
+          label="Email address"
+          placeholder="example@mail.com"
+        ></FormInput>
+
+        {/* Password Field */}
+        <FormInput
+          name="password"
+          placeholder="password"
+          type={showPassword ? "text" : "password"}
+          label="Password"
+          control={form.control}
+        >
+          <div className="relative h-7.50">
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute -top-8 right-3 text-lg -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+            >
+              {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+            </button>
+          </div>
+        </FormInput>
+        {/* Remember Me Checkbox */}
+        <Controller
+          name="rememberMeCheckBox"
+          control={form.control}
+          render={({ field }) => (
+            <div className="flex items-center space-x-2 ">
+              <Checkbox
+                id="rememberMe"
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                className="data-[state=checked]:bg-[#009b9f] data-[state=checked]:border-[#009b9f] border-gray-300 rounded"
+              />
+              <label
+                htmlFor="rememberMe"
+                className="text-sm text-gray-600 cursor-pointer font-normal"
+              >
+                Remember me
+              </label>
+            </div>
+          )}
+        />
+      </FieldGroup>
+
+      {/* Submit Button */}
+      <Button type="submit" className="mt-4">
+        Login
+      </Button>
+    </form>
+  );
+};
+
+export default LoginForm;
+</file>
+
+<file path="app/(auth)/login/_components/SignupForm.tsx">
+import React, { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import toast from "react-hot-toast";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/app/components/Button";
+import { FieldGroup } from "@/components/ui/field";
+import { FormInput } from "@/app/components/FormInput";
+
+const SignupFormSchema = z
+  .object({
+    firstName: z.string().min(1, "Firstname is required"),
+    lastName: z.string().min(1, "Lastname is required"),
+    phoneNumber: z.string().min(1, "Phone number is required"), // 👈 number না, string
+    email: z.string().min(1, "Email is required").email("Invalid email"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "This field is required"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type SignupInputType = z.infer<typeof SignupFormSchema>;
+
+interface newUserData {
+  status: number;
+  message: string;
+}
+
+// const postFormData = async (formData: FormInputs): Promise<newUserData> => {
+//   const response = await fetch(
+//     "https://next-login-page-ten.vercel.app/api/register",
+//     {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         ...formData,
+//       }),
+//     },
+//   );
+//   const data = await response.json();
+//   return data;
+// };
+
+const SignupForm = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword_2, setShowPassword_2] = useState(false);
+  const router = useRouter();
+  const form = useForm<SignupInputType>({
+    resolver: zodResolver(SignupFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+  const password = form.watch("password");
+  const onSubmit = async (data: SignupInputType) => {
+    // try {
+    //   toast.promise(postFormData(data), {
+    //     loading: "Creating account...",
+    //     success: (res: newUserData) => {
+    //       if (res.status === 200 || res.status === 201) {
+    //         handleLoginAfterSignup(data);
+    //         return `Success: ${res.message}`;
+    //       } else {
+    //         throw new Error(res.message);
+    //       }
+    //     },
+    //     error: (err) => {
+    //       console.log(err);
+    //       return err.message || "Could not register!";
+    //     },
+    //   });
+    // } catch (err) {
+    //   console.error(err);
+    // }
+    console.log(data);
+    return data;
+  };
+
+  // const handleLoginAfterSignup = async (data: SignupInputType) => {
+  //   try {
+  //     toast.promise(
+  //       signIn("credentials", {
+  //         email: data.email,
+  //         password: data.password,
+  //         redirect: false,
+  //       }),
+  //       {
+  //         loading: "Logging in",
+  //         success: (res) => {
+  //           reset();
+  //           router.push("/dashboard");
+  //           router.refresh();
+  //           return "Logged in. Redirecting...";
+  //         },
+  //         error: (err) => {
+  //           console.log(err);
+  //           router.push("/login");
+  //           return "Login failed";
+  //         },
+  //       },
+  //     );
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // };
+
+  return (
+    <form
+      className="h-auto w-full text-center space-y-4 inline-block [&_label]:w-full"
+      onSubmit={form.handleSubmit(onSubmit)}
+    >
+      <FieldGroup className="gap-3">
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+          {/* Name Field */}
+          <FormInput
+            name="firstName"
+            type="text"
+            control={form.control}
+            label="First Name"
+            placeholder="E.g. John"
+          ></FormInput>
+          <FormInput
+            name="lastName"
+            type="text"
+            control={form.control}
+            label="Last Name"
+            placeholder="E.g. Smith"
+          ></FormInput>
+        </div>
+
+        {/* Phone Number Field */}
+        <FormInput
+          name="phoneNumber"
+          type="text"
+          control={form.control}
+          label="Phone Number"
+          placeholder="+xx xxx xxxx"
+        ></FormInput>
+
+        {/* Email Field */}
+        <FormInput
+          name="email"
+          type="email"
+          control={form.control}
+          label="Email address"
+          placeholder="Email address"
+        ></FormInput>
+
+        {/* Password Field */}
+        <FormInput
+          name="password"
+          type={showPassword ? "text" : "password"}
+          control={form.control}
+          label="Password"
+          placeholder="Password"
+        >
+          <div className="relative h-7.50">
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute -top-8 right-3 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+        </FormInput>
+
+        {/* Confirm Password Field */}
+        <FormInput
+          name="confirmPassword"
+          type={showPassword_2 ? "text" : "password"}
+          control={form.control}
+          label="Confirm Password"
+          placeholder="Confirm Password"
+        >
+          <div className="relative h-7.50">
+            <button
+              type="button"
+              onClick={() => setShowPassword_2(!showPassword_2)}
+              className="absolute -top-8 right-3 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors z-10"
+            >
+              {showPassword_2 ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+        </FormInput>
+      </FieldGroup>
+
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        className="w-full btn border-0 btn-lg rounded-3xl from-primary to-secondary text-white uppercase text-sm mt-4"
+      >
+        Signup
+      </Button>
+    </form>
+  );
+};
+
+export default SignupForm;
+</file>
+
+<file path="app/(auth)/login/page.tsx">
+import React from "react";
+import Container from "./_components/Container";
+
+const RegisterPage = () => {
+  return (
+    <section className="md:min-h-screen md:py-25 flex items-stretch z-30">
+      <Container />
+    </section>
+  );
+};
+
+export default RegisterPage;
+</file>
+
+<file path="app/(auth)/register/page.tsx">
+import React from "react";
+
+const RegisterPage = () => {
+  return <div></div>;
+};
+
+export default RegisterPage;
+</file>
+
+<file path="app/components/Button.tsx">
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        // Primary btn
+        primary:
+          "w-full uppercase rounded-full bg-primary hover:bg-primary/70 text-white shadow-sm text-sm font-light transition-all",
+
+        // Secondary btn
+        secondary:
+          "w-full uppercase rounded-full hover:bg-primary/70 text-white shadow-sm text-sm font-light border-2 border-primary bg-transparent text-primary hover:bg-primary hover:text-white",
+
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+      },
+      size: {
+        default: "py-3 px-6 h-auto",
+        sm: "py-2 px-6 h-auto",
+        lg: "py-5 px-6 h-auto",
+        icon: "py-3 px-6 h-auto flex items-center gap-2",
+      },
+    },
+    defaultVariants: {
+      variant: "primary",
+      size: "default",
+    },
+  },
+);
+
+export interface ButtonProps
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    );
+  },
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+</file>
+
+<file path="app/components/FormInput.tsx">
+// components/FormInput.tsx
+import { Control, Controller, FieldPath, FieldValues } from "react-hook-form";
+import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/field";
+
+interface FormInputProps<T extends FieldValues> {
+  name: FieldPath<T>;
+  control: Control<T>;
+  label: string;
+  placeholder?: string;
+  type?: string;
+  children?: string | React.ReactNode;
+}
+
+export function FormInput<T extends FieldValues>({
+  name,
+  control,
+  label,
+  placeholder,
+  type = "text",
+  children,
+}: FormInputProps<T>) {
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field, fieldState }) => (
+        <Field className="flex flex-col gap-1 text-sm text-left relative">
+          <FieldLabel
+            htmlFor={name}
+            className={`font-semibold ${fieldState.invalid ? "text-red-500" : "text-gray-700"}`}
+          >
+            {label}
+          </FieldLabel>
+          <Input
+            {...field}
+            id={name}
+            type={type}
+            placeholder={placeholder}
+            className={`h-12 px-4 rounded-md border-0 bg-gray-50 shadow-sm ring-1 ring-inset ring-gray-100 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:text-sm transition-all w-full ${
+              fieldState.invalid ? "ring-red-500" : ""
+            }`}
+          />
+          {children}
+          {fieldState.error && (
+            <p className="text-xs text-red-500 mt-1">
+              {fieldState.error.message}
+            </p>
+          )}
+        </Field>
+      )}
+    />
+  );
+}
+</file>
+
+<file path="CLAUDE.md">
+@AGENTS.md
+</file>
+
+<file path="components.json">
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "radix-maia",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "app/globals.css",
+    "baseColor": "mist",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "iconLibrary": "hugeicons",
+  "rtl": false,
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
+}
+</file>
+
+<file path="components/ui/button.tsx">
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { Slot } from "radix-ui"
+
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "group/button inline-flex shrink-0 items-center justify-center rounded-4xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        outline:
+          "border-border bg-input/30 hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+        ghost:
+          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+        destructive:
+          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default:
+          "h-9 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
+        xs: "h-6 gap-1 px-2.5 text-xs has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 gap-1 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        lg: "h-10 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        icon: "size-9",
+        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-8",
+        "icon-lg": "size-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+function Button({
+  className,
+  variant = "default",
+  size = "default",
+  asChild = false,
+  ...props
+}: React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean
+  }) {
+  const Comp = asChild ? Slot.Root : "button"
+
+  return (
+    <Comp
+      data-slot="button"
+      data-variant={variant}
+      data-size={size}
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...props}
+    />
+  )
+}
+
+export { Button, buttonVariants }
+</file>
+
+<file path="components/ui/card.tsx">
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Card({
+  className,
+  size = "default",
+  ...props
+}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+  return (
+    <div
+      data-slot="card"
+      data-size={size}
+      className={cn(
+        "group/card flex flex-col gap-6 overflow-hidden rounded-2xl bg-card py-6 text-sm text-card-foreground ring-1 ring-foreground/10 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "group/card-header @container/card-header grid auto-rows-min items-start gap-2 rounded-t-xl px-6 group-data-[size=sm]/card:px-4 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-6 group-data-[size=sm]/card:[.border-b]:pb-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn("font-heading text-base font-medium", className)}
+      {...props}
+    />
+  )
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-6 group-data-[size=sm]/card:px-4", className)}
+      {...props}
+    />
+  )
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn(
+        "flex items-center rounded-b-xl px-6 group-data-[size=sm]/card:px-4 [.border-t]:pt-6 group-data-[size=sm]/card:[.border-t]:pt-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+}
+</file>
+
+<file path="components/ui/checkbox.tsx">
+"use client"
+
+import * as React from "react"
+import { Checkbox as CheckboxPrimitive } from "radix-ui"
+
+import { cn } from "@/lib/utils"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Tick02Icon } from "@hugeicons/core-free-icons"
+
+function Checkbox({
+  className,
+  ...props
+}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+  return (
+    <CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={cn(
+        "peer relative flex size-4 shrink-0 items-center justify-center rounded-[6px] border border-input transition-shadow outline-none group-has-disabled/field:opacity-50 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
+        className
+      )}
+      {...props}
+    >
+      <CheckboxPrimitive.Indicator
+        data-slot="checkbox-indicator"
+        className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
+      >
+        <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  )
+}
+
+export { Checkbox }
+</file>
+
+<file path="components/ui/field.tsx">
+"use client"
+
+import { useMemo } from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+import { Label } from "@/components/ui/label"
+import { Separator } from "@/components/ui/separator"
+
+function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
+  return (
+    <fieldset
+      data-slot="field-set"
+      className={cn(
+        "flex flex-col gap-6 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldLegend({
+  className,
+  variant = "legend",
+  ...props
+}: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) {
+  return (
+    <legend
+      data-slot="field-legend"
+      data-variant={variant}
+      className={cn(
+        "mb-3 font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="field-group"
+      className={cn(
+        "group/field-group @container/field-group flex w-full flex-col gap-7 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+const fieldVariants = cva(
+  "group/field flex w-full gap-3 data-[invalid=true]:text-destructive",
+  {
+    variants: {
+      orientation: {
+        vertical: "flex-col *:w-full [&>.sr-only]:w-auto",
+        horizontal:
+          "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+        responsive:
+          "flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+      },
+    },
+    defaultVariants: {
+      orientation: "vertical",
+    },
+  }
+)
+
+function Field({
+  className,
+  orientation = "vertical",
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
+  return (
+    <div
+      role="group"
+      data-slot="field"
+      data-orientation={orientation}
+      className={cn(fieldVariants({ orientation }), className)}
+      {...props}
+    />
+  )
+}
+
+function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="field-content"
+      className={cn(
+        "group/field-content flex flex-1 flex-col gap-1 leading-snug",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldLabel({
+  className,
+  ...props
+}: React.ComponentProps<typeof Label>) {
+  return (
+    <Label
+      data-slot="field-label"
+      className={cn(
+        "group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-xl has-[>[data-slot=field]]:border *:data-[slot=field]:p-4 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10",
+        "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="field-label"
+      className={cn(
+        "flex w-fit items-center gap-2 text-sm font-medium group-data-[disabled=true]/field:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
+  return (
+    <p
+      data-slot="field-description"
+      className={cn(
+        "text-left text-sm leading-normal font-normal text-muted-foreground group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5",
+        "last:mt-0 nth-last-2:-mt-1",
+        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function FieldSeparator({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<"div"> & {
+  children?: React.ReactNode
+}) {
+  return (
+    <div
+      data-slot="field-separator"
+      data-content={!!children}
+      className={cn(
+        "relative -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2",
+        className
+      )}
+      {...props}
+    >
+      <Separator className="absolute inset-0 top-1/2" />
+      {children && (
+        <span
+          className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
+          data-slot="field-separator-content"
+        >
+          {children}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function FieldError({
+  className,
+  children,
+  errors,
+  ...props
+}: React.ComponentProps<"div"> & {
+  errors?: Array<{ message?: string } | undefined>
+}) {
+  const content = useMemo(() => {
+    if (children) {
+      return children
+    }
+
+    if (!errors?.length) {
+      return null
+    }
+
+    const uniqueErrors = [
+      ...new Map(errors.map((error) => [error?.message, error])).values(),
+    ]
+
+    if (uniqueErrors?.length == 1) {
+      return uniqueErrors[0]?.message
+    }
+
+    return (
+      <ul className="ml-4 flex list-disc flex-col gap-1">
+        {uniqueErrors.map(
+          (error, index) =>
+            error?.message && <li key={index}>{error.message}</li>
+        )}
+      </ul>
+    )
+  }, [children, errors])
+
+  if (!content) {
+    return null
+  }
+
+  return (
+    <div
+      role="alert"
+      data-slot="field-error"
+      className={cn("text-sm font-normal text-destructive", className)}
+      {...props}
+    >
+      {content}
+    </div>
+  )
+}
+
+export {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+  FieldContent,
+  FieldTitle,
+}
+</file>
+
+<file path="components/ui/input-group.tsx">
+"use client"
+
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+
+function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="input-group"
+      role="group"
+      className={cn(
+        "group/input-group relative flex h-9 w-full min-w-0 items-center rounded-4xl border border-input bg-input/30 transition-colors outline-none in-data-[slot=combobox-content]:focus-within:border-inherit in-data-[slot=combobox-content]:focus-within:ring-0 has-data-[align=block-end]:rounded-2xl has-data-[align=block-start]:rounded-2xl has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-[3px] has-[[data-slot][aria-invalid=true]]:ring-destructive/20 has-[textarea]:rounded-xl has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40 has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+const inputGroupAddonVariants = cva(
+  "flex h-auto cursor-text items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 **:data-[slot=kbd]:rounded-4xl **:data-[slot=kbd]:bg-muted-foreground/10 **:data-[slot=kbd]:px-1.5 [&>svg:not([class*='size-'])]:size-4",
+  {
+    variants: {
+      align: {
+        "inline-start":
+          "order-first pl-3 has-[>button]:-ml-1 has-[>kbd]:ml-[-0.15rem]",
+        "inline-end":
+          "order-last pr-3 has-[>button]:-mr-1 has-[>kbd]:mr-[-0.15rem]",
+        "block-start":
+          "order-first w-full justify-start px-3 pt-3 group-has-[>input]/input-group:pt-3 [.border-b]:pb-3",
+        "block-end":
+          "order-last w-full justify-start px-3 pb-3 group-has-[>input]/input-group:pb-3 [.border-t]:pt-3",
+      },
+    },
+    defaultVariants: {
+      align: "inline-start",
+    },
+  }
+)
+
+function InputGroupAddon({
+  className,
+  align = "inline-start",
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
+  return (
+    <div
+      role="group"
+      data-slot="input-group-addon"
+      data-align={align}
+      className={cn(inputGroupAddonVariants({ align }), className)}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("button")) {
+          return
+        }
+        e.currentTarget.parentElement?.querySelector("input")?.focus()
+      }}
+      {...props}
+    />
+  )
+}
+
+const inputGroupButtonVariants = cva(
+  "flex items-center gap-2 rounded-4xl text-sm shadow-none",
+  {
+    variants: {
+      size: {
+        xs: "h-6 gap-1 px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
+        sm: "",
+        "icon-xs": "size-6 p-0 has-[>svg]:p-0",
+        "icon-sm": "size-8 p-0 has-[>svg]:p-0",
+      },
+    },
+    defaultVariants: {
+      size: "xs",
+    },
+  }
+)
+
+function InputGroupButton({
+  className,
+  type = "button",
+  variant = "ghost",
+  size = "xs",
+  ...props
+}: Omit<React.ComponentProps<typeof Button>, "size"> &
+  VariantProps<typeof inputGroupButtonVariants>) {
+  return (
+    <Button
+      type={type}
+      data-size={size}
+      variant={variant}
+      className={cn(inputGroupButtonVariants({ size }), className)}
+      {...props}
+    />
+  )
+}
+
+function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
+  return (
+    <span
+      className={cn(
+        "flex items-center gap-2 text-sm text-muted-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function InputGroupInput({
+  className,
+  ...props
+}: React.ComponentProps<"input">) {
+  return (
+    <Input
+      data-slot="input-group-control"
+      className={cn(
+        "flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 aria-invalid:ring-0 dark:bg-transparent",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function InputGroupTextarea({
+  className,
+  ...props
+}: React.ComponentProps<"textarea">) {
+  return (
+    <Textarea
+      data-slot="input-group-control"
+      className={cn(
+        "flex-1 resize-none rounded-none border-0 bg-transparent py-2 shadow-none ring-0 focus-visible:ring-0 aria-invalid:ring-0 dark:bg-transparent",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupText,
+  InputGroupInput,
+  InputGroupTextarea,
+}
+</file>
+
+<file path="components/ui/input.tsx">
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-9 w-full min-w-0 rounded-4xl border border-input bg-input/30 px-3 py-1 text-base transition-colors outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Input }
+</file>
+
+<file path="components/ui/label.tsx">
+"use client"
+
+import * as React from "react"
+import { Label as LabelPrimitive } from "radix-ui"
+
+import { cn } from "@/lib/utils"
+
+function Label({
+  className,
+  ...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+  return (
+    <LabelPrimitive.Root
+      data-slot="label"
+      className={cn(
+        "flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Label }
+</file>
+
+<file path="components/ui/separator.tsx">
+"use client"
+
+import * as React from "react"
+import { Separator as SeparatorPrimitive } from "radix-ui"
+
+import { cn } from "@/lib/utils"
+
+function Separator({
+  className,
+  orientation = "horizontal",
+  decorative = true,
+  ...props
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+  return (
+    <SeparatorPrimitive.Root
+      data-slot="separator"
+      decorative={decorative}
+      orientation={orientation}
+      className={cn(
+        "shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Separator }
+</file>
+
+<file path="components/ui/textarea.tsx">
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return (
+    <textarea
+      data-slot="textarea"
+      className={cn(
+        "flex field-sizing-content min-h-16 w-full resize-none rounded-xl border border-input bg-input/30 px-3 py-3 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-[3px] aria-invalid:ring-destructive/20 md:text-sm dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { Textarea }
+</file>
+
+<file path="eslint.config.mjs">
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  // Override default ignores of eslint-config-next.
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+  ]),
+]);
+
+export default eslintConfig;
+</file>
+
+<file path="lib/utils.ts">
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+</file>
+
+<file path="next.config.ts">
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+</file>
+
+<file path="postcss.config.mjs">
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+
+export default config;
+</file>
+
+<file path="public/file.svg">
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.5V5.41a1 1 0 0 0-.3-.7L9.8.29A1 1 0 0 0 9.08 0H1.5v13.5A2.5 2.5 0 0 0 4 16h8a2.5 2.5 0 0 0 2.5-2.5m-1.5 0v-7H8v-5H3v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1M9.5 5V2.12L12.38 5zM5.13 5h-.62v1.25h2.12V5zm-.62 3h7.12v1.25H4.5zm.62 3h-.62v1.25h7.12V11z" clip-rule="evenodd" fill="#666" fill-rule="evenodd"/></svg>
+</file>
+
+<file path="public/globe.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g clip-path="url(#a)"><path fill-rule="evenodd" clip-rule="evenodd" d="M10.27 14.1a6.5 6.5 0 0 0 3.67-3.45q-1.24.21-2.7.34-.31 1.83-.97 3.1M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m.48-1.52a7 7 0 0 1-.96 0H7.5a4 4 0 0 1-.84-1.32q-.38-.89-.63-2.08a40 40 0 0 0 3.92 0q-.25 1.2-.63 2.08a4 4 0 0 1-.84 1.31zm2.94-4.76q1.66-.15 2.95-.43a7 7 0 0 0 0-2.58q-1.3-.27-2.95-.43a18 18 0 0 1 0 3.44m-1.27-3.54a17 17 0 0 1 0 3.64 39 39 0 0 1-4.3 0 17 17 0 0 1 0-3.64 39 39 0 0 1 4.3 0m1.1-1.17q1.45.13 2.69.34a6.5 6.5 0 0 0-3.67-3.44q.65 1.26.98 3.1M8.48 1.5l.01.02q.41.37.84 1.31.38.89.63 2.08a40 40 0 0 0-3.92 0q.25-1.2.63-2.08a4 4 0 0 1 .85-1.32 7 7 0 0 1 .96 0m-2.75.4a6.5 6.5 0 0 0-3.67 3.44 29 29 0 0 1 2.7-.34q.31-1.83.97-3.1M4.58 6.28q-1.66.16-2.95.43a7 7 0 0 0 0 2.58q1.3.27 2.95.43a18 18 0 0 1 0-3.44m.17 4.71q-1.45-.12-2.69-.34a6.5 6.5 0 0 0 3.67 3.44q-.65-1.27-.98-3.1" fill="#666"/></g><defs><clipPath id="a"><path fill="#fff" d="M0 0h16v16H0z"/></clipPath></defs></svg>
+</file>
+
+<file path="public/next.svg">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 394 80"><path fill="#000" d="M262 0h68.5v12.7h-27.2v66.6h-13.6V12.7H262V0ZM149 0v12.7H94v20.4h44.3v12.6H94v21h55v12.6H80.5V0h68.7zm34.3 0h-17.8l63.8 79.4h17.9l-32-39.7 32-39.6h-17.9l-23 28.6-23-28.6zm18.3 56.7-9-11-27.1 33.7h17.8l18.3-22.7z"/><path fill="#000" d="M81 79.3 17 0H0v79.3h13.6V17l50.2 62.3H81Zm252.6-.4c-1 0-1.8-.4-2.5-1s-1.1-1.6-1.1-2.6.3-1.8 1-2.5 1.6-1 2.6-1 1.8.3 2.5 1a3.4 3.4 0 0 1 .6 4.3 3.7 3.7 0 0 1-3 1.8zm23.2-33.5h6v23.3c0 2.1-.4 4-1.3 5.5a9.1 9.1 0 0 1-3.8 3.5c-1.6.8-3.5 1.3-5.7 1.3-2 0-3.7-.4-5.3-1s-2.8-1.8-3.7-3.2c-.9-1.3-1.4-3-1.4-5h6c.1.8.3 1.6.7 2.2s1 1.2 1.6 1.5c.7.4 1.5.5 2.4.5 1 0 1.8-.2 2.4-.6a4 4 0 0 0 1.6-1.8c.3-.8.5-1.8.5-3V45.5zm30.9 9.1a4.4 4.4 0 0 0-2-3.3 7.5 7.5 0 0 0-4.3-1.1c-1.3 0-2.4.2-3.3.5-.9.4-1.6 1-2 1.6a3.5 3.5 0 0 0-.3 4c.3.5.7.9 1.3 1.2l1.8 1 2 .5 3.2.8c1.3.3 2.5.7 3.7 1.2a13 13 0 0 1 3.2 1.8 8.1 8.1 0 0 1 3 6.5c0 2-.5 3.7-1.5 5.1a10 10 0 0 1-4.4 3.5c-1.8.8-4.1 1.2-6.8 1.2-2.6 0-4.9-.4-6.8-1.2-2-.8-3.4-2-4.5-3.5a10 10 0 0 1-1.7-5.6h6a5 5 0 0 0 3.5 4.6c1 .4 2.2.6 3.4.6 1.3 0 2.5-.2 3.5-.6 1-.4 1.8-1 2.4-1.7a4 4 0 0 0 .8-2.4c0-.9-.2-1.6-.7-2.2a11 11 0 0 0-2.1-1.4l-3.2-1-3.8-1c-2.8-.7-5-1.7-6.6-3.2a7.2 7.2 0 0 1-2.4-5.7 8 8 0 0 1 1.7-5 10 10 0 0 1 4.3-3.5c2-.8 4-1.2 6.4-1.2 2.3 0 4.4.4 6.2 1.2 1.8.8 3.2 2 4.3 3.4 1 1.4 1.5 3 1.5 5h-5.8z"/></svg>
+</file>
+
+<file path="public/vercel.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1155 1000"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+</file>
+
+<file path="public/window.svg">
+<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+</file>
+
+<file path="README.md">
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Getting Started
+
+First, run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+</file>
+
+<file path="app/page.tsx">
+import Image from "next/image";
+
+export default function Home() {
+  return (
+    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
+      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <Image
+          className="dark:invert"
+          src="/next.svg"
+          alt="Next.js logo"
+          width={100}
+          height={20}
+          priority
+        />
+        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
+          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+            To get started, edit the page.tsx file.
+          </h1>
+          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            Looking for a starting point or more instructions? Head over to{" "}
+            <a
+              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Templates
+            </a>{" "}
+            or the{" "}
+            <a
+              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+              className="font-medium text-zinc-950 dark:text-zinc-50"
+            >
+              Learning
+            </a>{" "}
+            center.
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+          <a
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors bg-primary"
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              className="dark:invert"
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={16}
+              height={16}
+            />
+            Deploy Now
+          </a>
+          <a
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Documentation
+          </a>
+        </div>
+      </main>
+    </div>
+  );
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "online-vehicle-inspection-client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@hugeicons/core-free-icons": "^4.1.3",
+    "@hugeicons/react": "^1.1.6",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "next": "16.2.6",
+    "next-auth": "^5.0.0-beta.31",
+    "radix-ui": "^1.4.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.75.0",
+    "react-hot-toast": "^2.6.0",
+    "react-icons": "^5.6.0",
+    "shadcn": "^4.7.0",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+</file>
+
+<file path="app/globals.css">
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --font-body: var(--font-inter);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.148 0.004 228.8);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.148 0.004 228.8);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.148 0.004 228.8);
+  --primary: oklch(0.704 0.14 182.503);
+  --primary-foreground: oklch(0.984 0.014 180.72);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.963 0.002 197.1);
+  --muted-foreground: oklch(0.56 0.021 213.5);
+  --accent: oklch(0.963 0.002 197.1);
+  --accent-foreground: oklch(0.218 0.008 223.9);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.925 0.005 214.3);
+  --input: oklch(0.925 0.005 214.3);
+  --ring: oklch(0.723 0.014 214.4);
+  --chart-1: oklch(0.855 0.138 181.071);
+  --chart-2: oklch(0.704 0.14 182.503);
+  --chart-3: oklch(0.6 0.118 184.704);
+  --chart-4: oklch(0.511 0.096 186.391);
+  --chart-5: oklch(0.437 0.078 188.216);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.987 0.002 197.1);
+  --sidebar-foreground: oklch(0.148 0.004 228.8);
+  --sidebar-primary: oklch(0.704 0.14 182.503);
+  --sidebar-primary-foreground: oklch(0.984 0.014 180.72);
+  --sidebar-accent: oklch(0.963 0.002 197.1);
+  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
+  --sidebar-border: oklch(0.925 0.005 214.3);
+  --sidebar-ring: oklch(0.723 0.014 214.4);
+}
+
+.dark {
+  --background: oklch(0.148 0.004 228.8);
+  --foreground: oklch(0.987 0.002 197.1);
+  --card: oklch(0.218 0.008 223.9);
+  --card-foreground: oklch(0.987 0.002 197.1);
+  --popover: oklch(0.218 0.008 223.9);
+  --popover-foreground: oklch(0.987 0.002 197.1);
+  --primary: oklch(0.437 0.078 188.216);
+  --primary-foreground: oklch(0.984 0.014 180.72);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.275 0.011 216.9);
+  --muted-foreground: oklch(0.723 0.014 214.4);
+  --accent: oklch(0.275 0.011 216.9);
+  --accent-foreground: oklch(0.987 0.002 197.1);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.56 0.021 213.5);
+  --chart-1: oklch(0.855 0.138 181.071);
+  --chart-2: oklch(0.704 0.14 182.503);
+  --chart-3: oklch(0.6 0.118 184.704);
+  --chart-4: oklch(0.511 0.096 186.391);
+  --chart-5: oklch(0.437 0.078 188.216);
+  --sidebar: oklch(0.218 0.008 223.9);
+  --sidebar-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-primary: oklch(0.704 0.14 182.503);
+  --sidebar-primary-foreground: oklch(0.277 0.046 192.524);
+  --sidebar-accent: oklch(0.275 0.011 216.9);
+  --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.56 0.021 213.5);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+</file>
+
+<file path="app/layout.tsx">
+import type { Metadata } from "next";
+import { Figtree, Inter } from "next/font/google";
+import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter", // CSS variable name
+});
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html
+      lang="en"
+      className={cn("h-full", "antialiased", figtree.variable, inter.variable)}
+    >
+      <body className="min-h-full flex flex-col">{children}</body>
+    </html>
+  );
+}
+</file>
+
+</files>

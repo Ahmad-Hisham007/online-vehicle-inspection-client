@@ -1,193 +1,211 @@
 import React, { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { FaRegUser } from "react-icons/fa";
-import {
-  MdLockOutline,
-  MdOutlineEmail,
-  MdOutlinePhoneEnabled,
-} from "react-icons/md";
+
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Button } from "@/app/components/Button";
+import { FieldGroup } from "@/components/ui/field";
+import { FormInput } from "@/app/components/FormInput";
 
-type FormInputs = {
-  name: string;
-  phoneNumber: number;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
+const SignupFormSchema = z
+  .object({
+    firstName: z.string().min(1, "Firstname is required"),
+    lastName: z.string().min(1, "Lastname is required"),
+    phoneNumber: z.string().min(1, "Phone number is required"), // 👈 number না, string
+    email: z.string().min(1, "Email is required").email("Invalid email"),
+    password: z
+      .string()
+      .min(1, "Password is required")
+      .min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(1, "This field is required"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type SignupInputType = z.infer<typeof SignupFormSchema>;
 
 interface newUserData {
   status: number;
   message: string;
 }
 
-const postFormData = async (formData: FormInputs): Promise<newUserData> => {
-  const response = await fetch(
-    "https://next-login-page-ten.vercel.app/api/register",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...formData,
-      }),
-    },
-  );
-  const data = await response.json();
-  return data;
-};
+// const postFormData = async (formData: FormInputs): Promise<newUserData> => {
+//   const response = await fetch(
+//     "https://next-login-page-ten.vercel.app/api/register",
+//     {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         ...formData,
+//       }),
+//     },
+//   );
+//   const data = await response.json();
+//   return data;
+// };
 
 const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword_2, setShowPassword_2] = useState(false);
   const router = useRouter();
-  const {
-    register,
-    handleSubmit,
-    reset,
-    control,
-    formState: { errors },
-  } = useForm<FormInputs>();
-  const password = useWatch({ control, name: "password" });
-  const onSubmit = async (data: FormInputs) => {
-    try {
-      toast.promise(postFormData(data), {
-        loading: "Creating account...",
-        success: (res: newUserData) => {
-          if (res.status === 200 || res.status === 201) {
-            handleLoginAfterSignup(data);
-            return `Success: ${res.message}`;
-          } else {
-            throw new Error(res.message);
-          }
-        },
-        error: (err) => {
-          console.log(err);
-          return err.message || "Could not register!";
-        },
-      });
-    } catch (err) {
-      console.error(err);
-    }
-
+  const form = useForm<SignupInputType>({
+    resolver: zodResolver(SignupFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      phoneNumber: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+  const password = form.watch("password");
+  const onSubmit = async (data: SignupInputType) => {
+    // try {
+    //   toast.promise(postFormData(data), {
+    //     loading: "Creating account...",
+    //     success: (res: newUserData) => {
+    //       if (res.status === 200 || res.status === 201) {
+    //         handleLoginAfterSignup(data);
+    //         return `Success: ${res.message}`;
+    //       } else {
+    //         throw new Error(res.message);
+    //       }
+    //     },
+    //     error: (err) => {
+    //       console.log(err);
+    //       return err.message || "Could not register!";
+    //     },
+    //   });
+    // } catch (err) {
+    //   console.error(err);
+    // }
+    console.log(data);
     return data;
   };
 
-  const handleLoginAfterSignup = async (data: FormInputs) => {
-    try {
-      toast.promise(
-        signIn("credentials", {
-          email: data.email,
-          password: data.password,
-          redirect: false,
-        }),
-        {
-          loading: "Logging in",
-          success: (res) => {
-            reset();
-            router.push("/dashboard");
-            router.refresh();
-            return "Logged in. Redirecting...";
-          },
-          error: (err) => {
-            console.log(err);
-            router.push("/login");
-            return "Login failed";
-          },
-        },
-      );
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  // const handleLoginAfterSignup = async (data: SignupInputType) => {
+  //   try {
+  //     toast.promise(
+  //       signIn("credentials", {
+  //         email: data.email,
+  //         password: data.password,
+  //         redirect: false,
+  //       }),
+  //       {
+  //         loading: "Logging in",
+  //         success: (res) => {
+  //           reset();
+  //           router.push("/dashboard");
+  //           router.refresh();
+  //           return "Logged in. Redirecting...";
+  //         },
+  //         error: (err) => {
+  //           console.log(err);
+  //           router.push("/login");
+  //           return "Login failed";
+  //         },
+  //       },
+  //     );
+  //   } catch (err) {
+  //     console.log(err);
+  //   }
+  // };
 
   return (
     <form
       className="h-auto w-full text-center space-y-4 inline-block [&_label]:w-full"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={form.handleSubmit(onSubmit)}
     >
-      <label className="input input-md outline-0 focus:border-2 border-[0_0_2_0] focus:border-primary rounded-none">
-        <FaRegUser className="opacity-50" />
+      <FieldGroup className="gap-3">
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-4">
+          {/* Name Field */}
+          <FormInput
+            name="firstName"
+            type="text"
+            control={form.control}
+            label="First Name"
+            placeholder="E.g. John"
+          ></FormInput>
+          <FormInput
+            name="lastName"
+            type="text"
+            control={form.control}
+            label="Last Name"
+            placeholder="E.g. Smith"
+          ></FormInput>
+        </div>
 
-        <input
+        {/* Phone Number Field */}
+        <FormInput
+          name="phoneNumber"
           type="text"
-          {...register("name")}
-          className=" grow"
-          placeholder="E.g. John Smith"
-        />
-      </label>
-      <label className="input input-md outline-0 focus:border-2 border-[0_0_2_0] focus:border-primary rounded-none">
-        <MdOutlinePhoneEnabled className="opacity-50" />
-
-        <input
-          type="text"
-          {...register("phoneNumber")}
-          className=" grow"
+          control={form.control}
+          label="Phone Number"
           placeholder="+xx xxx xxxx"
-        />
-      </label>
-      <label className="input input-md outline-0 focus:border-2 border-[0_0_2_0] focus:border-primary rounded-none">
-        <MdOutlineEmail className="opacity-50" />
+        ></FormInput>
 
-        <input
+        {/* Email Field */}
+        <FormInput
+          name="email"
           type="email"
-          {...register("email", {
-            required: "Email is required",
-            pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
-          })}
-          className=" grow"
+          control={form.control}
+          label="Email address"
           placeholder="Email address"
-        />
-      </label>
-      <label className="input input-md outline-0 focus:border-2 border-[0_0_2_0] focus:border-primary rounded-none relative">
-        <MdLockOutline className="opacity-50" />
-        <input
-          type={showPassword ? "text" : "password"}
-          {...register("password", {
-            required: "Password is required",
-          })}
-          className="grow"
-          placeholder="Password"
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-        >
-          {showPassword ? <FaEyeSlash /> : <FaEye />}
-        </button>
-      </label>
+        ></FormInput>
 
-      <label className="input input-md outline-0 focus:border-2 border-[0_0_2_0] focus:border-primary rounded-none relative">
-        <MdLockOutline className="opacity-50" />
-        <input
-          type={showPassword_2 ? "text" : "password"}
-          {...register("confirmPassword", {
-            required: "This field is required",
-            validate: (value) => value === password || "Passwords do not match",
-          })}
-          className="grow"
-          placeholder="Confirm Password"
-        />
-        <button
-          type="button"
-          onClick={() => setShowPassword_2(!showPassword_2)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 z-100"
+        {/* Password Field */}
+        <FormInput
+          name="password"
+          type={showPassword ? "text" : "password"}
+          control={form.control}
+          label="Password"
+          placeholder="Password"
         >
-          {showPassword_2 ? <FaEyeSlash /> : <FaEye />}
-        </button>
-      </label>
-      {errors.confirmPassword && (
-        <p className="text-red-500 text-xs">{errors.confirmPassword.message}</p>
-      )}
-      <button
+          <div className="relative h-7.50">
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute -top-8 right-3 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+        </FormInput>
+
+        {/* Confirm Password Field */}
+        <FormInput
+          name="confirmPassword"
+          type={showPassword_2 ? "text" : "password"}
+          control={form.control}
+          label="Confirm Password"
+          placeholder="Confirm Password"
+        >
+          <div className="relative h-7.50">
+            <button
+              type="button"
+              onClick={() => setShowPassword_2(!showPassword_2)}
+              className="absolute -top-8 right-3 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors z-10"
+            >
+              {showPassword_2 ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+        </FormInput>
+      </FieldGroup>
+
+      {/* Submit Button */}
+      <Button
         type="submit"
-        className="w-full btn border-0 btn-lg rounded-3xl bg-linear-to-br from-primary to-secondary text-white uppercase text-sm mt-4"
+        className="w-full btn border-0 btn-lg rounded-3xl from-primary to-secondary text-white uppercase text-sm mt-4"
       >
         Signup
-      </button>
+      </Button>
     </form>
   );
 };
