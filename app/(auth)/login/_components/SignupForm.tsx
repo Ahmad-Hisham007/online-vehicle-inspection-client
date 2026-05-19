@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { signIn } from "next-auth/react";
@@ -10,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/app/components/Button";
 import { FieldGroup } from "@/components/ui/field";
 import { FormInput } from "@/app/components/FormInput";
+import { env } from "process";
 
 const SignupFormSchema = z
   .object({
@@ -35,25 +35,11 @@ interface newUserData {
   message: string;
 }
 
-// const postFormData = async (formData: FormInputs): Promise<newUserData> => {
-//   const response = await fetch(
-//     "https://next-login-page-ten.vercel.app/api/register",
-//     {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         ...formData,
-//       }),
-//     },
-//   );
-//   const data = await response.json();
-//   return data;
-// };
-
 const SignupForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword_2, setShowPassword_2] = useState(false);
   const router = useRouter();
+
   const form = useForm<SignupInputType>({
     resolver: zodResolver(SignupFormSchema),
     defaultValues: {
@@ -65,58 +51,80 @@ const SignupForm = () => {
       confirmPassword: "",
     },
   });
+
   const password = form.watch("password");
+
+  // Processing form data
+  const postFormData = async (
+    formData: SignupInputType,
+  ): Promise<newUserData> => {
+    const response = await fetch(`/api/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...formData,
+      }),
+    });
+    const data = await response.json();
+    return data;
+  };
+
+  // Submit function
   const onSubmit = async (data: SignupInputType) => {
-    // try {
-    //   toast.promise(postFormData(data), {
-    //     loading: "Creating account...",
-    //     success: (res: newUserData) => {
-    //       if (res.status === 200 || res.status === 201) {
-    //         handleLoginAfterSignup(data);
-    //         return `Success: ${res.message}`;
-    //       } else {
-    //         throw new Error(res.message);
-    //       }
-    //     },
-    //     error: (err) => {
-    //       console.log(err);
-    //       return err.message || "Could not register!";
-    //     },
-    //   });
-    // } catch (err) {
-    //   console.error(err);
-    // }
+    try {
+      toast.promise(postFormData(data), {
+        loading: "Creating account...",
+        success: (res: newUserData) => {
+          if (res.status === 200 || res.status === 201) {
+            handleLoginAfterSignup(data);
+            return `Success: ${res.message}`;
+          } else {
+            throw new Error(res.message);
+          }
+        },
+        error: (err) => {
+          console.log(err);
+          return err.message || "Could not register!";
+        },
+      });
+    } catch (err) {
+      console.error(err);
+    }
     console.log(data);
     return data;
   };
 
-  // const handleLoginAfterSignup = async (data: SignupInputType) => {
-  //   try {
-  //     toast.promise(
-  //       signIn("credentials", {
-  //         email: data.email,
-  //         password: data.password,
-  //         redirect: false,
-  //       }),
-  //       {
-  //         loading: "Logging in",
-  //         success: (res) => {
-  //           reset();
-  //           router.push("/dashboard");
-  //           router.refresh();
-  //           return "Logged in. Redirecting...";
-  //         },
-  //         error: (err) => {
-  //           console.log(err);
-  //           router.push("/login");
-  //           return "Login failed";
-  //         },
-  //       },
-  //     );
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // };
+  // Login function
+  const handleLoginAfterSignup = async (data: SignupInputType) => {
+    try {
+      toast.promise(
+        signIn("credentials", {
+          email: data.email,
+          password: data.password,
+          redirect: false,
+        }),
+        {
+          loading: "Logging in",
+          success: (res) => {
+            if (res?.error) {
+              throw new Error(res.error);
+            }
+            form.reset();
+            router.push("/dashboard");
+            router.refresh();
+            return "Logged in. Redirecting...";
+          },
+          error: (err) => {
+            console.log(err);
+            router.push("/login");
+            return "Login failed";
+          },
+        },
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   return (
     <form

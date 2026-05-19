@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Figtree, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { ToasterProvider } from "./components/ToasterProvider";
+import SessionWrapper from "./components/SessionWrapper";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 const inter = Inter({
@@ -23,7 +25,10 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", figtree.variable, inter.variable)}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ToasterProvider />
+        <SessionWrapper>{children}</SessionWrapper>
+      </body>
     </html>
   );
 }
