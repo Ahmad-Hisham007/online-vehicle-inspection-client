@@ -51,13 +51,21 @@ const LoginForm = () => {
             if (res?.error) {
               throw new Error(res.error);
             }
-            form.reset(); // reset update kora holo
+            form.reset();
             router.push("/dashboard");
             router.refresh();
             return "Login Successful!";
           },
           error: (err) => {
-            return err.message || "Invalid Credentials!";
+            console.error("Login Error:", err.message);
+
+            if (
+              err.message === "CredentialsSignin" ||
+              err.message.includes("CredentialsSignin")
+            ) {
+              return "Invalid email or password. Please try again!";
+            }
+            return "Login failed! Please check your network connection.";
           },
         },
       );
@@ -65,7 +73,6 @@ const LoginForm = () => {
       console.error(err);
     }
   };
-
   return (
     <form
       id="login-form"
