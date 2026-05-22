@@ -22,7 +22,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           body: JSON.stringify({
             query: `
               mutation LoginUser($username: String!, $password: String!) {
-                login(input: { username: $username, password: $password }) {
+                login(input: {
+                provider: PASSWORD, 
+                 credentials: {
+                 username: $username, password: $password
+                 }                 
+                 }) {
                   authToken
                   user {
                     id
@@ -72,8 +77,57 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        // WordPress-e user ache kina check korar mutation call hobe ekhane
-        // Na thakle createUser mutation pathabo
+        try {
+          const siteTokenLoginMutation = `
+            mutation SiteTokenLogin($email: String!) {
+              login(input: {
+                provider: SITETOKEN, 
+                identity: $email
+              }) {
+                authToken
+                user {
+                  databaseId
+                  email
+                  name
+                }
+              }
+            }
+          `;
+          console.log("🔍 Google User Email:", user.email);
+          console.log(
+            "🔑 Site Token Secret Length:",
+            process.env.WP_SITE_TOKEN_SECRET?.length || "MISSING!",
+          );
+          const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-OVI-0982-Token": process.env.WP_SITE_TOKEN_SECRET!,
+              Origin: "http://localhost:3000",
+            },
+            body: JSON.stringify({
+              query: siteTokenLoginMutation,
+              variables: { email: user.email },
+            }),
+          });
+
+          const json = await res.json();
+          console.log("=== WP SITE TOKEN RESPONSE ===");
+          console.log(JSON.stringify(json, null, 2));
+          const wpData = json.data?.login;
+          console.log(wpData);
+
+          if (wpData?.authToken) {
+            user.accessToken = wpData.authToken;
+            user.wpId = wpData.user.databaseId;
+            return true; // লগিন ১০০% সাকসেসফুল!
+          }
+
+          return false;
+        } catch (error) {
+          console.error("Google Login Error:", error);
+          return false;
+        }
       }
       return true;
     },

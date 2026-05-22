@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ToasterProvider } from "./components/ToasterProvider";
 import SessionWrapper from "./components/SessionWrapper";
+import Header from "./components/Header/Header";
 
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 const inter = Inter({
@@ -27,7 +28,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ToasterProvider />
-        <SessionWrapper>{children}</SessionWrapper>
+        <SessionWrapper>
+          <Header />
+          <main>{children}</main>
+        </SessionWrapper>
       </body>
     </html>
   );
