@@ -24,14 +24,23 @@
 .DS_Store
 *.pem
 
+# opencode generated files
+.opencode/
+skills-lock.json
+repomix-output.xml
+
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — NEVER commit these (contains secrets)
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
 
 # vercel
 .vercel

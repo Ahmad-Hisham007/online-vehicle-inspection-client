@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export const POST = async (req: Request) => {
   try {
-    const { firstName, lastName, email, password, phoneNumber } =
+    const { firstName, lastName, email, password } =
       await req.json();
 
     const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
@@ -49,7 +49,7 @@ export const POST = async (req: Request) => {
       status: 201,
       message: "User registered in WordPress successfully",
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       status: 500,
       message: "Server error during registration",

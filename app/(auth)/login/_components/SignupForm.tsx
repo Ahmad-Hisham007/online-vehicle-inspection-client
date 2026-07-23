@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import toast from "react-hot-toast";
 import { signIn } from "next-auth/react";
@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/app/components/Button";
 import { FieldGroup } from "@/components/ui/field";
 import { FormInput } from "@/app/components/FormInput";
-import { env } from "process";
 
 const SignupFormSchema = z
   .object({
@@ -51,8 +50,6 @@ const SignupForm = () => {
       confirmPassword: "",
     },
   });
-
-  const password = form.watch("password");
 
   // Processing form data
   const postFormData = async (

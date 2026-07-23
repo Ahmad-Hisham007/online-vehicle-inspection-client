@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FiMenu, FiX } from "react-icons/fi";
 import Image from "next/image"; // Next.js Image component import kora holo
 import {
@@ -13,7 +13,6 @@ import { Card } from "@/components/ui/card";
 const Header = () => {
   const [selectedLang, setSelectedLang] = useState("En");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [logoutMenuItems, setLogOutMenuItems] = useState([]);
   const languages = [
     { code: "En", flag: "/us.png" },
     { code: "Es", flag: "/es.png" },
@@ -22,30 +21,6 @@ const Header = () => {
 
   const currentLang =
     languages.find((l) => l.code === selectedLang) || languages[0];
-
-  const logOutMenuQuery = `query GetAllMenus {
-  menu(id: "4", idType: DATABASE_ID) {
-    menuItems {
-      nodes {
-        cssClasses
-        label
-        path
-      }
-    }
-  }
-}`;
-
-  //   useEffect(() => {
-  //     const fetchLogoutMenu = async () => {
-  //       try {
-  //         const res = fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-  //             query:,
-  //             variable:
-  //         });
-  //       } catch (error) {}
-  //     };
-  //     fetchLogoutMenu();
-  //   }, []);
 
   return (
     <header className="w-full bg-white shadow-sm relative z-50">
@@ -99,11 +74,12 @@ const Header = () => {
             <h1 className="text-3xl font-black tracking-tight text-gray-900 cursor-pointer">
               <Image
                 src="/Online_Vehicle_Inspection_Logo_No_BG.png"
-                width="140"
-                height="70"
+                width={140}
+                height={70}
                 alt="Website Logo"
-                className="object-cover"
-              ></Image>
+                className="object-contain"
+                style={{ width: "auto", height: "auto", maxHeight: "50px" }}
+              />
             </h1>
           </div>
 
