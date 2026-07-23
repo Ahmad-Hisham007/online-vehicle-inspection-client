@@ -15,51 +15,64 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // WordPress WPGraphQL JWT Login Mutation
-        const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: `
-              mutation LoginUser($username: String!, $password: String!) {
-                login(input: {
-                provider: PASSWORD, 
-                 credentials: {
-                 username: $username, password: $password
-                 }                 
-                 }) {
-                  authToken
-                  user {
-                    id
-                    name
-                    email
-                    databaseId
+        try {
+          const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-OVI-0982-Token": process.env.WP_SITE_TOKEN_SECRET || "",
+              Origin: "http://localhost:3000",
+            },
+            body: JSON.stringify({
+              query: `
+                mutation LoginUser($username: String!, $password: String!) {
+                  login(input: {
+                    provider: PASSWORD,
+                    credentials: {
+                      username: $username, password: $password
+                    }
+                  }) {
+                    authToken
+                    user {
+                      id
+                      name
+                      email
+                      databaseId
+                    }
                   }
                 }
-              }
-            `,
-            variables: {
-              username: credentials.email,
-              password: credentials.password,
-            },
-          }),
-        });
+              `,
+              variables: {
+                username: credentials.email,
+                password: credentials.password,
+              },
+            }),
+          });
 
-        const json = await res.json();
-        console.log(json);
-        const data = json.data?.login;
-        console.log(data);
-        if (data?.authToken) {
-          return {
-            id: data.user.id,
-            wpId: data.user.databaseId,
-            name: data.user.name,
-            email: data.user.email,
-            accessToken: data.authToken,
-            emailVerified: null,
-          };
+          const json = await res.json();
+
+          if (json.errors) {
+            console.error("WPGraphQL login errors:", json.errors);
+            return null;
+          }
+
+          const data = json.data?.login;
+          if (data?.authToken) {
+            return {
+              id: data.user.id,
+              wpId: data.user.databaseId,
+              name: data.user.name,
+              email: data.user.email,
+              accessToken: data.authToken,
+              emailVerified: null,
+            };
+          }
+
+          return null;
+        } catch (error) {
+          console.error("WPGraphQL login fetch failed:", error);
+          return null;
         }
-        return null;
       },
     }),
   ],

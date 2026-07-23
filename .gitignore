@@ -11,7 +11,10 @@
 !.yarn/versions
 
 # testing
-/coverage
+coverage/
+.vitest/
+playwright-report/
+test-results/
 
 # next.js
 /.next/
