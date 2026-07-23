@@ -51,6 +51,8 @@ const stepSchema = z
   });
 
 type StepInputs = z.infer<typeof stepSchema>;
+export type { StepInputs };
+export { stepSchema };
 
 interface Props {
   onNext: () => void;
