@@ -24,7 +24,12 @@ export function FormInput<T extends FieldValues>({
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState }) => (
+      render={({ field, fieldState }) => {
+        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const value = type === "number" ? Number(e.target.value) : e.target.value;
+          field.onChange(value);
+        };
+        return (
         <Field className="flex flex-col gap-1 text-sm text-left relative">
           <FieldLabel
             htmlFor={name}
@@ -37,6 +42,7 @@ export function FormInput<T extends FieldValues>({
             id={name}
             type={type}
             placeholder={placeholder}
+            onChange={handleChange}
             className={`h-12 px-4 rounded-md border-0 bg-gray-50 shadow-sm ring-1 ring-inset ring-gray-100 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:text-sm transition-all w-full ${
               fieldState.invalid ? "ring-red-500" : ""
             }`}
@@ -48,7 +54,8 @@ export function FormInput<T extends FieldValues>({
             </p>
           )}
         </Field>
-      )}
+      );
+      }}
     />
   );
 }

@@ -1,10 +1,5 @@
 "use client";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { FieldGroup } from "@/components/ui/field";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -12,7 +7,6 @@ import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import { Button } from "@/app/components/Button";
