@@ -217,14 +217,10 @@ describe("StepVehicleSelection", () => {
 
   it("shows tire error when tires radio set to No and submitted", async () => {
     const { user } = setup()
-    await user.selectOptions(screen.getByLabelText(/country/i), "usa")
-    await waitFor(() => expect(screen.getByLabelText(/state/i)).toBeInTheDocument())
-    await user.selectOptions(screen.getByLabelText(/state/i), "CA")
-    const turoBtn = screen.getByRole("button", { name: /turo/i })
-    await user.click(turoBtn)
-    await waitFor(() => expect(screen.getByText(/manufacture date for the tires/i)).toBeInTheDocument())
-    const radios = screen.getAllByRole("radio")
-    const tireNo = radios[1]
+    await fillRequiredFields(user)
+    const tireYes = screen.getAllByRole("radio")[0]
+    await user.click(tireYes)
+    const tireNo = screen.getAllByRole("radio")[1]
     await user.click(tireNo)
     await user.click(screen.getByTestId("submit-btn"))
     await waitFor(() => {

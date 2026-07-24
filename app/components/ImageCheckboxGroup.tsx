@@ -54,8 +54,10 @@ export function ImageCheckboxGroup<T extends FieldValues>({
             )}
             <div
               className={cn(
-                "grid gap-4 max-h-80 overflow-y-auto custom-scrollbar",
-                `grid-cols-1 sm:grid-cols-2 lg:grid-cols-${columns}`,
+                "grid gap-3 max-h-72 overflow-y-auto thin-scrollbar grid-cols-2",
+                columns === 3 && "lg:grid-cols-3",
+                columns === 4 && "lg:grid-cols-4",
+                columns === 2 && "lg:grid-cols-2",
               )}
             >
               {options.map((opt) => {
@@ -66,27 +68,29 @@ export function ImageCheckboxGroup<T extends FieldValues>({
                     type="button"
                     onClick={() => toggleValue(opt.value)}
                     className={cn(
-                      "relative aspect-square bg-white rounded-2xl shadow-sm border-2 transition-all",
-                      "flex flex-col items-center justify-center gap-2 p-4 cursor-pointer",
+                      "relative bg-white rounded-xl shadow-sm border-2 transition-all",
+                      "flex flex-col items-center justify-center gap-1.5 p-2 min-h-[80px] cursor-pointer",
                       isSelected
                         ? "border-primary ring-2 ring-primary/10"
                         : "border-gray-100 hover:border-gray-300",
                     )}
                   >
                     {isSelected && (
-                      <div className="absolute top-2 right-2 size-6 bg-primary text-white rounded-full flex items-center justify-center">
-                        <HugeiconsIcon icon={Tick02Icon} className="size-3.5" />
+                      <div className="absolute top-1.5 right-1.5 size-5 bg-primary text-white rounded-full flex items-center justify-center">
+                        <HugeiconsIcon icon={Tick02Icon} className="size-3" />
                       </div>
                     )}
-                    <Image
-                      src={opt.imgSrc}
-                      alt={opt.label}
-                      width={80}
-                      height={80}
-                      className="object-contain"
-                      style={{ width: "auto", height: "auto" }}
-                    />
-                    <span className="text-xs text-gray-600 font-medium">
+                    <div className="flex items-center justify-center size-10">
+                      <Image
+                        src={opt.imgSrc}
+                        alt={opt.label}
+                        width={40}
+                        height={40}
+                        className="object-contain max-h-full max-w-full"
+                        style={{ width: "auto", height: "auto" }}
+                      />
+                    </div>
+                    <span className="text-[11px] text-gray-600 font-medium leading-tight text-center">
                       {opt.label}
                     </span>
                   </button>

@@ -23,16 +23,19 @@ const stepSchema = z
     country: z.enum(["usa", "canada"], { message: "Country is required" }),
     state: z.string().min(1, "State/Province is required"),
     companies: z.array(z.string()).min(1, "Select at least one company"),
-    tiresOlderThan6Years: z
-      .boolean()
-      .refine((v) => v === true, {
-        message: "Manufacture date must be less than 6 years to proceed",
-      }),
+    tiresOlderThan6Years: z.boolean().optional(),
     batteryOlderThan5Years: z.boolean().optional(),
     voltageGreaterThan12_1V: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.companies.includes("turo")) {
+      if (data.tiresOlderThan6Years !== true) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Manufacture date must be less than 6 years to proceed",
+          path: ["tiresOlderThan6Years"],
+        });
+      }
       if (data.batteryOlderThan5Years === undefined) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

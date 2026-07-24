@@ -143,12 +143,31 @@ describe("inspectionScopeSchema", () => {
     expect(result.success).toBe(false)
   })
 
-  it("rejects tiresOlderThan6Years when false", () => {
+  it("accepts tiresOlderThan6Years false when Turo not selected", () => {
     const result = inspectionScopeSchema.safeParse({
       country: "usa",
       state: "CA",
       companies: ["uber"],
       tiresOlderThan6Years: false,
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("rejects tiresOlderThan6Years false when Turo selected", () => {
+    const result = inspectionScopeSchema.safeParse({
+      country: "usa",
+      state: "CA",
+      companies: ["turo"],
+      tiresOlderThan6Years: false,
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects Turo selected without tiresOlderThan6Years", () => {
+    const result = inspectionScopeSchema.safeParse({
+      country: "usa",
+      state: "CA",
+      companies: ["turo"],
     })
     expect(result.success).toBe(false)
   })

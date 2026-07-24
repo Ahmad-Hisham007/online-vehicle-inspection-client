@@ -15,6 +15,16 @@ vi.mock("next/image", () => ({
     }),
 }))
 
+const mockUpload = vi.fn().mockResolvedValue("https://ucarecdn.com/uuid/photo.jpg")
+const mockCancel = vi.fn()
+
+vi.mock("@/app/hooks/useFileUpload", () => ({
+  useFileUpload: () => ({
+    upload: mockUpload,
+    cancel: mockCancel,
+  }),
+}))
+
 import { FileUploadField } from "@/app/components/FileUploadField"
 
 const mockOnChange = vi.fn()
@@ -51,7 +61,7 @@ describe("FileUploadField", () => {
     expect(clickSpy).toHaveBeenCalled()
   })
 
-  it("calls onChange with file metadata on file selection", async () => {
+  it("calls onChange with uploading status on file selection", async () => {
     const { user, container } = setup()
     const file = new File(["dummy"], "photo.jpg", { type: "image/jpeg" })
     Object.defineProperty(file, "size", { value: 1024 })
@@ -60,16 +70,25 @@ describe("FileUploadField", () => {
     expect(mockOnChange).toHaveBeenCalledWith({
       name: "photo.jpg",
       size: 1024,
-      status: "pending",
+      status: "uploading",
       progress: 0,
     })
   })
 
-  it("renders uploading state with spinner and progress", () => {
+  it("calls upload from hook on file selection", async () => {
+    const { user, container } = setup()
+    const file = new File(["dummy"], "photo.jpg", { type: "image/jpeg" })
+    Object.defineProperty(file, "size", { value: 1024 })
+    const input = container.querySelector('input[type="file"]')!
+    await user.upload(input, file)
+    expect(mockUpload).toHaveBeenCalledWith(file, expect.any(Function))
+  })
+
+  it("renders uploading state with percentage and progress", () => {
     const { container } = setup({
       value: { name: "photo.jpg", status: "uploading", progress: 60 },
     })
-    expect(screen.getByText(/uploading\.\.\./i)).toBeInTheDocument()
+    expect(screen.getByText(/60%/i)).toBeInTheDocument()
     const progressBar = container.querySelector('[style*="60%"]')
     expect(progressBar).toBeInTheDocument()
   })
@@ -85,32 +104,48 @@ describe("FileUploadField", () => {
     expect(tickIcon).toBeInTheDocument()
   })
 
-  it("renders error state with retry prompt", () => {
+  it("renders done state with icon and Uploaded text instead of Image", () => {
+    setup({
+      value: {
+        name: "photo.jpg",
+        status: "done",
+        progress: 100,
+        publicUrl: "https://ucarecdn.com/uuid/photo.jpg",
+      },
+    })
+    expect(screen.getByText(/uploaded/i)).toBeInTheDocument()
+    expect(screen.getByText(/change/i)).toBeInTheDocument()
+  })
+
+  it("renders error state with Retry and Choose different file", () => {
     setup({
       value: { name: "photo.jpg", status: "error" },
     })
     expect(screen.getByText(/upload failed/i)).toBeInTheDocument()
-    expect(screen.getByText(/tap to retry/i)).toBeInTheDocument()
+    expect(screen.getByText(/retry/i)).toBeInTheDocument()
+    expect(screen.getByText(/choose different file/i)).toBeInTheDocument()
   })
 
-  it("error state retry triggers file input", async () => {
+  it("error state retry opens file picker when no file was previously selected", async () => {
     const { user, container } = setup({
       value: { name: "photo.jpg", status: "error" },
     })
     const input = container.querySelector('input[type="file"]')!
     const clickSpy = vi.spyOn(input, "click")
-    const retry = screen.getByText(/tap to retry/i)
+    const retry = screen.getByText(/retry/i)
     await user.click(retry)
     expect(clickSpy).toHaveBeenCalled()
   })
 
-  it("eye button click in default state runs stopPropagation", async () => {
-    const { user } = setup()
-    const eyeBtns = screen.getAllByRole("button")
-    await user.click(eyeBtns[0])
+  it("done state shows Uploaded with tick icon", () => {
+    const { container } = setup({
+      value: { name: "photo.jpg", status: "done", progress: 100 },
+    })
+    const svg = container.querySelector("svg")
+    expect(svg).toBeInTheDocument()
   })
 
-  it("triggers file input again when Change is clicked in done state", async () => {
+  it("triggers upload again when Change is clicked in done state", async () => {
     const { user, container } = setup({
       value: { name: "photo.jpg", status: "done", progress: 100 },
     })
@@ -119,12 +154,7 @@ describe("FileUploadField", () => {
     const input = container.querySelector('input[type="file"]')!
     await user.click(changeBtn)
     await user.upload(input, file)
-    expect(mockOnChange).toHaveBeenCalledWith({
-      name: "new.jpg",
-      size: expect.any(Number),
-      status: "pending",
-      progress: 0,
-    })
+    expect(mockUpload).toHaveBeenCalledWith(file, expect.any(Function))
   })
 
   it("applies SectionHeader styling with Photo/Video split", () => {
@@ -145,10 +175,9 @@ describe("FileUploadField", () => {
     expect(mockOnChange).not.toHaveBeenCalled()
   })
 
-  it("shows fallback text in uploading state when name is missing", () => {
+  it("shows Uploading... text in uploading state when name is missing", () => {
     setup({ value: { status: "uploading" } })
-    const matches = screen.getAllByText("Uploading...")
-    expect(matches.length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText("Uploading...")).toBeInTheDocument()
   })
 
   it("shows zero-width progress bar when progress is missing in uploading state", () => {
@@ -164,5 +193,25 @@ describe("FileUploadField", () => {
       value: { name: "photo.jpg", status: "uploading", progress: 60 },
     })
     expect(container.querySelector('input[type="file"]')).toBeNull()
+  })
+
+  it("uploading state shows Cancel button", () => {
+    setup({
+      value: { name: "photo.jpg", status: "uploading", progress: 50 },
+    })
+    expect(screen.getByText(/cancel/i)).toBeInTheDocument()
+  })
+
+  it("Cancel button calls cancel from hook", async () => {
+    const { user } = setup({
+      value: { name: "photo.jpg", status: "uploading", progress: 50 },
+    })
+    await user.click(screen.getByText(/cancel/i))
+    expect(mockCancel).toHaveBeenCalled()
+  })
+
+  it("shows video prompt when accept includes video", () => {
+    setup({ accept: "video/*" })
+    expect(screen.getByText(/upload video/i)).toBeInTheDocument()
   })
 })

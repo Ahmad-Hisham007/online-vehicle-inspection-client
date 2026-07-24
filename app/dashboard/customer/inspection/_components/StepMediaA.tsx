@@ -2,11 +2,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import toast from "react-hot-toast";
 import { useInspectionStore } from "@/app/store/inspectionStore";
 import { FileUploadField } from "@/app/components/FileUploadField";
 import { FieldGroup } from "@/components/ui/field";
 
-// TODO Phase 3: Add required file validation per field once upload engine is wired
 const stepSchema = z.object({});
 
 type StepInputs = z.infer<typeof stepSchema>;
@@ -29,6 +29,12 @@ export function StepMediaA({ onNext }: Props) {
   });
 
   const onSubmit = () => {
+    const uploadFields = store.uploadFields;
+    const allDone = fields.every((f) => uploadFields?.[f.name]?.status === "done");
+    if (!allDone) {
+      toast.error("Please upload all required files before proceeding");
+      return;
+    }
     onNext();
   };
 
