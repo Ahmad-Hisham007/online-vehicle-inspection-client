@@ -6,7 +6,7 @@ import React from "react"
 import { ImageCheckboxGroup } from "@/app/components/ImageCheckboxGroup"
 
 vi.mock("next/image", () => ({
-  default: ({ src, alt, width, height, style, className }: any) =>
+  default: ({ src, alt, width, height, style, className }: React.ComponentProps<"div">) =>
     React.createElement("div", {
       "data-src": src,
       "data-alt": alt,
