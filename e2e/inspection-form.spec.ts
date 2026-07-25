@@ -7,7 +7,7 @@ const FIXTURES_DIR = path.join(__dirname, "fixtures");
 const testImage = path.join(FIXTURES_DIR, "test-image.jpg");
 const testVideo = path.join(FIXTURES_DIR, "test-video.mp4");
 
-/** Upload a file to the FileUploadField whose label contains the given text. */
+/** Upload a file to the FileUploadField and wait for it to complete. */
 async function uploadFile(
   page: Page,
   stepId: string,
@@ -18,6 +18,10 @@ async function uploadFile(
   const field = heading.locator("..");
   const input = field.locator('input[type="file"]');
   await input.setInputFiles(filePath);
+
+  // Wait for upload to complete - status becomes "done", shows "Uploaded" badge and "Change" button
+  await expect(field.locator('text="Uploaded"')).toBeVisible({ timeout: 60000 });
+  await expect(field.locator('button:has-text("Change")')).toBeVisible({ timeout: 60000 });
 }
 
 /** Log in with test credentials and return to the inspection page. */
@@ -42,6 +46,8 @@ test.describe("7-step inspection form", () => {
     await loginIfNeeded(page);
     await expect(page.locator("#step-1")).toBeVisible({ timeout: 10000 });
   });
+
+  test.setTimeout(180000);
 
   test("fills entire 7-step form, persists data, and shows Proceed to Payment", async ({ page }) => {
     // ── Step 1: Vehicle Selection ──────────────────────────────────
