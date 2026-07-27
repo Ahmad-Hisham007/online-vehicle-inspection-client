@@ -12,6 +12,7 @@ declare module "next-auth" {
     name: string;
     email: string;
     emailVerified: Date | null;
+    role: string;
   }
 
   /**
@@ -32,6 +33,7 @@ declare module "next-auth/jwt" {
       name: string;
       email: string;
       emailVerified: Date | null;
+      role: string;
     };
   }
 }
