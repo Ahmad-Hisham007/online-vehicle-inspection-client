@@ -23,6 +23,7 @@ interface InspectionState {
   inspectionScope: InspectionScope | null;
   uploadFields: UploadFields | null;
   reviewAgreement: ReviewAgreement | null;
+  inspectionId: string | null;
 
   setStep: (step: number) => void;
   updateVehicleInfo: (data: VehicleInfo) => void;
@@ -30,6 +31,7 @@ interface InspectionState {
   updateInspectionScope: (data: InspectionScope) => void;
   updateUploadField: (field: string, meta: FileMeta) => void;
   updateReviewAgreement: (data: ReviewAgreement) => void;
+  setInspectionId: (id: string) => void;
   reset: () => void;
 }
 
@@ -42,6 +44,7 @@ export const useInspectionStore = create<InspectionState>()(
       inspectionScope: null,
       uploadFields: null,
       reviewAgreement: null,
+      inspectionId: null,
 
       setStep: (step) => set({ currentStep: step }),
 
@@ -61,6 +64,8 @@ export const useInspectionStore = create<InspectionState>()(
 
       updateReviewAgreement: (data) => set({ reviewAgreement: data }),
 
+      setInspectionId: (id) => set({ inspectionId: id }),
+
       reset: () =>
         set({
           currentStep: 0,
@@ -69,6 +74,7 @@ export const useInspectionStore = create<InspectionState>()(
           inspectionScope: null,
           uploadFields: null,
           reviewAgreement: null,
+          inspectionId: null,
         }),
     }),
     {

@@ -38,6 +38,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                       name
                       email
                       databaseId
+                      roles {
+                        nodes {
+                          name
+                        }
+                      }
                     }
                   }
                 }
@@ -58,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const data = json.data?.login;
           if (data?.authToken) {
+            const roles = data.user.roles?.nodes?.map((r: { name: string }) => r.name) || [];
             return {
               id: data.user.id,
               wpId: data.user.databaseId,
@@ -65,6 +71,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: data.user.email,
               accessToken: data.authToken,
               emailVerified: null,
+              role: roles[0] || "subscriber",
             };
           }
 

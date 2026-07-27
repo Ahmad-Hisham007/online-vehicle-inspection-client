@@ -76,6 +76,21 @@ export default function InspectionPage() {
         </div>
 
         {/* Navigation */}
+        {isLastStep ? (
+          <div className="flex items-center justify-between mt-6 gap-4 shrink-0">
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handleBack}
+              type="button"
+              className="!w-auto !px-6"
+            >
+              <FiChevronLeft className="size-5" />
+              Back
+            </Button>
+            <div />
+          </div>
+        ) : (
         <div className="flex items-center justify-between mt-6 gap-4 shrink-0">
           {!isFirstStep ? (
             <Button
@@ -98,10 +113,11 @@ export default function InspectionPage() {
             type="button"
             className="!w-auto !px-8"
           >
-            {isLastStep ? "Proceed to Payment" : "Next"}
-            {!isLastStep && <FiChevronRight className="size-5" />}
+            Next
+            <FiChevronRight className="size-5" />
           </Button>
         </div>
+        )}
       </Card>
       </div>
     </section>
