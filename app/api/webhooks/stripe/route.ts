@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { SITE_ORIGIN } from "@/app/lib/site-origin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2026-06-24.dahlia",
@@ -29,7 +30,7 @@ async function getAuthToken(): Promise<string> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Origin: "http://localhost:3000",
+      Origin: SITE_ORIGIN,
     },
     body: JSON.stringify({
       query: loginMutation,
@@ -54,7 +55,7 @@ async function wpMutate(query: string, variables: Record<string, unknown>) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
-      Origin: "http://localhost:3000",
+      Origin: SITE_ORIGIN,
     },
     body: JSON.stringify({ query, variables }),
   });

@@ -3,31 +3,31 @@
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import Stripe from "stripe";
+import { wpFetch } from "@/app/lib/wp-auth";
 
 function formatTimestamp(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
 }
 
-async function wpMutate(
-  query: string,
-  variables: Record<string, unknown>,
-  accessToken: string,
-) {
-  const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      Origin: "http://localhost:3000",
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  const json = await res.json();
-  if (json.errors) {
-    console.error("WPGraphQL mutation error:", json.errors);
-    throw new Error(json.errors[0].message);
-  }
-  return json;
+interface UpdateInspectionPaymentResponse {
+  updateInspectionPayment: {
+    inspectionPayment: { id: string };
+  };
+}
+
+interface UpdateInspectionResponse {
+  updateInspection: {
+    inspection: { id: string };
+  };
+}
+
+interface CreateInspectionPaymentResponse {
+  createInspectionPayment: {
+    inspectionPayment: {
+      id: string;
+      databaseId: number;
+    };
+  };
 }
 
 export async function confirmInspectionPayment(
@@ -52,7 +52,7 @@ export async function confirmInspectionPayment(
     }
   `;
 
-  await wpMutate(
+  await wpFetch<UpdateInspectionPaymentResponse>(
     updatePaymentMutation,
     {
       input: {
@@ -65,7 +65,6 @@ export async function confirmInspectionPayment(
         },
       },
     },
-    session.user.accessToken,
   );
 
   const updateInspectionMutation = `
@@ -78,7 +77,7 @@ export async function confirmInspectionPayment(
 
   const inspectionStatus = status === "succeeded" ? "paid" : "payment_failed";
 
-  await wpMutate(
+  await wpFetch<UpdateInspectionResponse>(
     updateInspectionMutation,
     {
       input: {
@@ -89,7 +88,6 @@ export async function confirmInspectionPayment(
         },
       },
     },
-    session.user.accessToken,
   );
 }
 
@@ -122,7 +120,7 @@ export async function createPaymentIntent(
   const origin =
     headersList.get("origin") ||
     `https://${headersList.get("host")}` ||
-    "http://localhost:3000";
+    (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? "http://localhost:3000");
 
   const mutation = `
     mutation CreateInspectionPayment($input: CreateInspectionPaymentInput!) {
@@ -162,25 +160,10 @@ export async function createPaymentIntent(
     },
   };
 
-  const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.user.accessToken}`,
-      Origin: origin,
-    },
-    body: JSON.stringify({ query: mutation, variables }),
-  });
-
-  const json = await res.json();
-
-  if (json.errors) {
-    console.error("WPGraphQL createInspectionPayment errors:", json.errors);
-    throw new Error(json.errors[0].message);
-  }
+  const data = await wpFetch<CreateInspectionPaymentResponse>(mutation, variables);
 
   const paymentId =
-    json.data.createInspectionPayment.inspectionPayment.databaseId.toString();
+    data.createInspectionPayment.inspectionPayment.databaseId.toString();
 
   await stripe.paymentIntents.update(paymentIntent.id, {
     metadata: { inspectionId, wpPaymentId: paymentId },

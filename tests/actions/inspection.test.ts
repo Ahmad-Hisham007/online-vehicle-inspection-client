@@ -78,7 +78,7 @@ describe("createInspectionDraft", () => {
 
   it("throws if vehicleInfo is missing", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     const data = makeValidFormData();
@@ -91,7 +91,7 @@ describe("createInspectionDraft", () => {
 
   it("throws if vinInfo is missing", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     const data = makeValidFormData();
@@ -104,7 +104,7 @@ describe("createInspectionDraft", () => {
 
   it("throws if inspectionScope is missing", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     const data = makeValidFormData();
@@ -117,7 +117,7 @@ describe("createInspectionDraft", () => {
 
   it("creates inspection draft and returns inspectionId", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     mockFetch.mockResolvedValue({
@@ -149,7 +149,7 @@ describe("createInspectionDraft", () => {
 
   it("includes file URLs in the mutation payload", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     let capturedBody: GraphQLBody | undefined;
@@ -185,7 +185,7 @@ describe("createInspectionDraft", () => {
 
   it("handles Canada scope correctly", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     let capturedBody: GraphQLBody | undefined;
@@ -238,7 +238,7 @@ describe("createInspectionDraft", () => {
 
   it("throws when WPGraphQL returns errors", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     mockFetch.mockResolvedValue({
@@ -256,7 +256,7 @@ describe("createInspectionDraft", () => {
 
   it("includes pricing in the mutation payload", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     let capturedBody: GraphQLBody | undefined;
