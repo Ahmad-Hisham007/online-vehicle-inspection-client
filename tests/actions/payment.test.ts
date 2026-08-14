@@ -53,7 +53,7 @@ describe("createPaymentIntent", () => {
 
   it("throws if STRIPE_SECRET_KEY is not configured", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", email: "test@example.com" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000), email: "test@example.com" },
     });
     delete process.env.STRIPE_SECRET_KEY;
 
@@ -68,6 +68,8 @@ describe("createPaymentIntent", () => {
     mockAuth.mockResolvedValue({
       user: {
         accessToken: "test-token",
+        refreshToken: "test-refresh",
+        refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
         email: "customer@example.com",
         name: "John Doe",
       },
@@ -113,7 +115,7 @@ describe("createPaymentIntent", () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
 
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", email: "test@example.com" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000), email: "test@example.com" },
     });
 
     mockPaymentIntentsCreate.mockResolvedValue({
@@ -155,6 +157,8 @@ describe("createPaymentIntent", () => {
     mockAuth.mockResolvedValue({
       user: {
         accessToken: "test-token",
+        refreshToken: "test-refresh",
+        refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
         email: "customer@example.com",
       },
     });
@@ -240,7 +244,7 @@ describe("createPaymentIntent", () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
 
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", email: "test@example.com" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000), email: "test@example.com" },
     });
 
     mockPaymentIntentsCreate.mockResolvedValue({
@@ -282,7 +286,7 @@ describe("confirmInspectionPayment", () => {
 
   it("updates both payment and inspection CPTs on success", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     const capturedBodies: Array<{ query: string; variables: Record<string, unknown> }> = [];
@@ -329,7 +333,7 @@ describe("confirmInspectionPayment", () => {
 
   it("includes errorLog when status is failed", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     const capturedBodies: Array<{ query: string; variables: Record<string, unknown> }> = [];
@@ -372,7 +376,7 @@ describe("confirmInspectionPayment", () => {
 
   it("throws on WPGraphQL errors", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token" },
+      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
     });
 
     mockFetch.mockResolvedValue({

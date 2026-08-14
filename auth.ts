@@ -2,6 +2,8 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 // import bcrypt from "bcryptjs";
 import authConfig from "./auth.config";
+import { SITE_ORIGIN } from "@/app/lib/site-origin";
+import { WP_SITE_TOKEN_HEADER } from "@/app/lib/wp-headers";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -15,13 +17,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        // [DEBUG-LAYER-1 START] Remove these logs once SiteGround captcha issue is resolved
+        console.log("[DEBUG] authorize() called for email:", credentials.email);
+        console.log("[DEBUG] WP URL:", process.env.WORDPRESS_GRAPHQL_URL);
+        console.log("[DEBUG] WP_SITE_TOKEN_HEADER:", WP_SITE_TOKEN_HEADER, "| secret set:", Boolean(process.env.WP_SITE_TOKEN_SECRET));
+        console.log("[DEBUG] SITE_ORIGIN:", SITE_ORIGIN);
+        // [DEBUG-LAYER-1 END]
+
         try {
           const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-OVI-0982-Token": process.env.WP_SITE_TOKEN_SECRET || "",
-              Origin: "http://localhost:3000",
+              [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
+              Origin: SITE_ORIGIN,
             },
             body: JSON.stringify({
               query: `
@@ -54,7 +63,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
 
-          const json = await res.json();
+          // [DEBUG-LAYER-1 START] Remove these logs once SiteGround captcha issue is resolved
+          console.log("[DEBUG] Response status:", res.status);
+          console.log("[DEBUG] Response statusText:", res.statusText);
+          console.log("[DEBUG] Response content-type:", res.headers.get("content-type"));
+          console.log("[DEBUG] Response sg-captcha header:", res.headers.get("sg-captcha"));
+          console.log("[DEBUG] Response ok:", res.ok);
+
+          const rawText = await res.text();
+          console.log("[DEBUG] Response body (first 200 chars):", rawText.slice(0, 200));
+          // [DEBUG-LAYER-1 END]
+
+          const isJson = res.headers
+            .get("content-type")
+            ?.toLowerCase()
+            .includes("application/json");
+
+          if (!isJson) {
+            // [DEBUG-LAYER-1 START] Remove once issue resolved
+            console.log("[DEBUG] NON-JSON RESPONSE (likely SiteGround captcha / 202 HTML). Aborting login.");
+            // [DEBUG-LAYER-1 END]
+            return null;
+          }
+
+          const json = JSON.parse(rawText);
 
           if (json.errors) {
             console.error("WPGraphQL login errors:", json.errors);
@@ -78,6 +110,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         } catch (error) {
           console.error("WPGraphQL login fetch failed:", error);
+          // [DEBUG-LAYER-1 START] Remove once issue resolved
+          console.error("[DEBUG] Fetch error message:", error instanceof Error ? error.message : String(error));
+          // [DEBUG-LAYER-1 END]
           return null;
         }
       },
@@ -121,8 +156,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-OVI-0982-Token": process.env.WP_SITE_TOKEN_SECRET!,
-              Origin: "http://localhost:3000",
+              [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET!,
+              Origin: SITE_ORIGIN,
             },
             body: JSON.stringify({
               query: siteTokenLoginMutation,

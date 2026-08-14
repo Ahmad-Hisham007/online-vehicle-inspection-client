@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { calculatePrice } from "@/app/lib/constants";
+import { wpFetch } from "@/app/lib/wp-auth";
 import type {
   VehicleInfo,
   VinInfo,
@@ -16,6 +17,24 @@ export interface InspectionFormData {
   inspectionScope: InspectionScope | null;
   uploadFields: UploadFields | null;
   reviewAgreement: ReviewAgreement | null;
+}
+
+interface CreateInspectionResponse {
+  createInspection: {
+    inspection: {
+      id: string;
+      databaseId: number;
+    };
+  };
+}
+
+interface UpdateInspectionResponse {
+  updateInspection: {
+    inspection: {
+      id: string;
+      title: string;
+    };
+  };
 }
 
 export async function createInspectionDraft(
@@ -107,24 +126,9 @@ export async function createInspectionDraft(
     },
   };
 
-  const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.user.accessToken}`,
-      Origin: "http://localhost:3000",
-    },
-    body: JSON.stringify({ query: mutation, variables }),
-  });
+  const data = await wpFetch<CreateInspectionResponse>(mutation, variables);
 
-  const json = await res.json();
-
-  if (json.errors) {
-    console.error("WPGraphQL createInspection errors:", json.errors);
-    throw new Error(json.errors[0].message);
-  }
-
-  const databaseId = json.data.createInspection.inspection.databaseId.toString();
+  const databaseId = data.createInspection.inspection.databaseId.toString();
 
   // Update title to include the inspection ID
   const updateMutation = `
@@ -135,22 +139,11 @@ export async function createInspectionDraft(
     }
   `;
 
-  await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.user.accessToken}`,
-      Origin: "http://localhost:3000",
+  await wpFetch<UpdateInspectionResponse>(updateMutation, {
+    input: {
+      id: databaseId,
+      title: `Inspection #${databaseId} - ${vehicleInfo.licensePlate}`,
     },
-    body: JSON.stringify({
-      query: updateMutation,
-      variables: {
-        input: {
-          id: databaseId,
-          title: `Inspection #${databaseId} - ${vehicleInfo.licensePlate}`,
-        },
-      },
-    }),
   });
 
   return { inspectionId: databaseId };

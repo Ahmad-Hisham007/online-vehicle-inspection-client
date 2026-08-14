@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { SITE_ORIGIN } from "@/app/lib/site-origin";
+import { WP_SITE_TOKEN_HEADER } from "@/app/lib/wp-headers";
 
 // const salt = bcrypt.genSaltSync(10);
 
@@ -10,8 +12,8 @@ export const POST = async (req: Request) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-OVI-0982-Token": process.env.WP_SITE_TOKEN_SECRET || "",
-        Origin: "http://localhost:3000",
+        [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
+        Origin: SITE_ORIGIN,
       },
       body: JSON.stringify({
         query: `
