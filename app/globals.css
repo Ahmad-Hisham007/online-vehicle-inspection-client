@@ -138,6 +138,13 @@
     background-color: rgba(156, 163, 175, 0.4);
     border-radius: 9999px;
   }
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
   body {
     @apply bg-background text-foreground;
   }

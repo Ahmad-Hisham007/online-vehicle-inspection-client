@@ -8,6 +8,8 @@ export const POST = async (req: Request) => {
   try {
     const { firstName, lastName, email, password } = await req.json();
 
+    const displayName = [firstName, lastName].filter(Boolean).join(" ").trim();
+
     const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
       method: "POST",
       headers: {
@@ -17,13 +19,14 @@ export const POST = async (req: Request) => {
       },
       body: JSON.stringify({
         query: `
-          mutation RegisterUser($username: String!, $email: String!, $password: String!, $firstName: String!, $lastName: String!) {
+          mutation RegisterUser($username: String!, $email: String!, $password: String!, $firstName: String!, $lastName: String!, $displayName: String!) {
             registerUser(input: {
               username: $username,
               email: $email,
               password: $password,
               firstName: $firstName,
-              lastName: $lastName
+              lastName: $lastName,
+              displayName: $displayName
             }) {
               user {
                 id
@@ -37,6 +40,7 @@ export const POST = async (req: Request) => {
           password,
           firstName,
           lastName,
+          displayName,
         },
       }),
     });

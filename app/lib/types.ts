@@ -31,3 +31,39 @@ export interface PaymentStatusResponse {
   inspectionStatus: InspectionStatus;
   paymentStatus: PaymentStatus;
 }
+
+export interface InspectionSummary {
+  id: string;
+  licensePlate: string;
+  dateCreated: string;
+  inspectionStatus: InspectionStatus;
+  paymentStatus: PaymentStatus;
+}
+
+export type MediaTab = "general" | "interior" | "exterior" | "tires";
+
+export interface MediaItem {
+  label: string;
+  url: string;
+  type: "image" | "video";
+}
+
+export interface InspectionDetail extends InspectionSummary {
+  vin: string;
+  make: string;
+  model: string;
+  year: string;
+  fuelType: string;
+  mileage: string;
+  color: string;
+  location: { country: string; state: string };
+  companies: string[];
+  inspectionDate: string;
+  expiryDate: string;
+  hostName: string;
+  hostEmail: string;
+  hostPhoneNumber: string;
+  media: Record<MediaTab, MediaItem[]>;
+  certificates: { lyft?: string; uber?: string; turo?: string };
+  orderSubtotal: string;
+}

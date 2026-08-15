@@ -12,6 +12,13 @@ export default auth((req) => {
   const role = req.auth?.user?.role;
   const path = req.nextUrl.pathname;
 
+  if (path === "/inspection") {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    return NextResponse.redirect(new URL("/dashboard/customer", req.url));
+  }
+
   if (role && role !== "administrator") {
     if (path === "/dashboard" || path.startsWith("/dashboard/admin")) {
       return NextResponse.redirect(new URL("/dashboard/customer", req.url));
@@ -22,5 +29,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/inspection"],
 };
