@@ -42,6 +42,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     }
                   }) {
                     authToken
+                    authTokenExpiration
+                    refreshToken
+                    refreshTokenExpiration
                     user {
                       id
                       name
@@ -102,6 +105,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: data.user.name,
               email: data.user.email,
               accessToken: data.authToken,
+              refreshToken: data.refreshToken,
+              refreshTokenExpiration: data.refreshTokenExpiration,
               emailVerified: null,
               role: roles[0] || "subscriber",
             };
@@ -139,6 +144,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 identity: $email
               }) {
                 authToken
+                authTokenExpiration
+                refreshToken
+                refreshTokenExpiration
                 user {
                   databaseId
                   email
@@ -173,6 +181,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (wpData?.authToken) {
             user.accessToken = wpData.authToken;
+            user.refreshToken = wpData.refreshToken;
+            user.refreshTokenExpiration = wpData.refreshTokenExpiration;
             user.wpId = wpData.user.databaseId;
             return true; // লগিন ১০০% সাকসেসফুল!
           }
