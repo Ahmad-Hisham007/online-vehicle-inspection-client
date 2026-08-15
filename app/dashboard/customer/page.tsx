@@ -1,17 +1,74 @@
 "use client";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/app/components/Button";
-import { Separator } from "@/components/ui/separator";
-import { FiPlus } from "react-icons/fi";
+
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FiPlus } from "react-icons/fi";
+import { Button } from "@/app/components/Button";
+import InspectionCard from "@/app/components/InspectionCard";
+import FilterInspectionsModal, {
+  type SortDir,
+} from "@/app/components/FilterInspectionsModal";
+import { listInspections } from "@/app/actions/inspections";
+import type { InspectionStatus, InspectionSummary } from "@/app/lib/types";
 
 export default function CustomerDashboard() {
   const router = useRouter();
+  const [inspections, setInspections] = useState<InspectionSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("newest");
+  const [statusFilter, setStatusFilter] = useState<InspectionStatus[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    listInspections()
+      .then(setInspections)
+      .catch((err) =>
+        setError(err instanceof Error ? err.message : "Failed to load inspections"),
+      )
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    let active = true;
+    listInspections()
+      .then((data) => {
+        if (active) setInspections(data);
+      })
+      .catch((err) => {
+        if (active) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load inspections",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const visible = useMemo(() => {
+    let list = [...inspections];
+    if (statusFilter.length > 0) {
+      list = list.filter((i) => statusFilter.includes(i.inspectionStatus));
+    }
+    list.sort((a, b) => {
+      const diff =
+        new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+      return sortDir === "newest" ? diff : -diff;
+    });
+    return list;
+  }, [inspections, sortDir, statusFilter]);
 
   return (
-    <section className="bg-gray-900 h-screen flex flex-col overflow-x-hidden">
-      <div className="max-w-3xl w-full mx-auto py-8 px-4 flex-1 flex flex-col min-h-0">
-        <div className="flex items-center justify-between mb-6 shrink-0">
+    <section className="flex h-screen flex-col overflow-x-hidden bg-gray-900">
+      <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col px-4 py-8">
+        <div className="mb-6 flex shrink-0 items-center justify-between">
           <h1 className="text-lg font-semibold text-white">
             Submitted Inspections
           </h1>
@@ -30,47 +87,61 @@ export default function CustomerDashboard() {
               size="sm"
               className="!w-auto !px-4 !rounded-full !inline-flex"
               type="button"
+              onClick={() => setFilterOpen(true)}
             >
               Filter
             </Button>
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <Card size="sm" className="flex-1 flex flex-col p-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-primary font-medium">
-                  License Plate No.
-                </p>
-                <p className="text-sm font-semibold text-gray-900">—</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-primary font-medium">Date Created</p>
-                <p className="text-sm text-gray-700">—</p>
-              </div>
+        <div className="flex min-h-0 flex-1 flex-col">
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-            <Separator className="my-3" />
-            <div className="flex items-center justify-between">
-              <select className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white text-gray-500">
-                <option>Pending</option>
-                <option>Paid</option>
-                <option>Approved</option>
-                <option>Rejected</option>
-              </select>
-              <span className="flex items-center gap-1.5 text-xs text-blue-500">
-                <span className="size-2 rounded-full bg-blue-500" />
-                No inspections yet
-              </span>
+          ) : error ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+              <p className="text-sm text-gray-400">{error}</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="!w-auto !px-6"
+                type="button"
+                onClick={load}
+              >
+                Retry
+              </Button>
             </div>
-            <div className="flex-1 flex items-center justify-center">
+          ) : visible.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center">
               <p className="text-center text-sm text-gray-500">
-                Start by adding your first inspection
+                {inspections.length === 0
+                  ? "Start by adding your first inspection"
+                  : "No inspections match your filters"}
               </p>
             </div>
-          </Card>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {visible.map((inspection) => (
+                <InspectionCard key={inspection.id} inspection={inspection} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {filterOpen && (
+        <FilterInspectionsModal
+          open
+          onOpenChange={setFilterOpen}
+          initialSortDir={sortDir}
+          initialStatuses={statusFilter}
+          onSubmit={(dir, statuses) => {
+            setSortDir(dir);
+            setStatusFilter(statuses);
+          }}
+        />
+      )}
     </section>
   );
 }
