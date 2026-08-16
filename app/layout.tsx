@@ -4,7 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ToasterProvider } from "./components/ToasterProvider";
 import SessionWrapper from "./components/SessionWrapper";
-import Header from "./components/Header/Header";
+import HeaderNav from "./components/Header/HeaderNav";
 import { SITE_ORIGIN } from "./lib/site-origin";
 import { WP_SITE_TOKEN_HEADER } from "./lib/wp-headers";
 
@@ -99,7 +99,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ToasterProvider />
         <SessionWrapper>
-          <Header />
+          <HeaderNav />
           <main>{children}</main>
         </SessionWrapper>
       </body>
