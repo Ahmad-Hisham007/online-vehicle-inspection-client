@@ -7,42 +7,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/app/components/Button";
 import { INSPECTION_STATUSES } from "@/app/lib/types";
 import type { InspectionStatus } from "@/app/lib/types";
 import { getStatusLabel } from "@/app/lib/status";
 
-export type SortDir = "newest" | "oldest";
+export type { SortDir } from "@/app/lib/types";
+import type { SortDir } from "@/app/lib/types";
 
 interface FilterInspectionsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialSortDir: SortDir;
-  initialStatuses: InspectionStatus[];
-  onSubmit: (sortDir: SortDir, statuses: InspectionStatus[]) => void;
+  initialStatus: InspectionStatus | null;
+  onSubmit: (sortDir: SortDir, status: InspectionStatus | null) => void;
 }
 
 export default function FilterInspectionsModal({
   open,
   onOpenChange,
   initialSortDir,
-  initialStatuses,
+  initialStatus,
   onSubmit,
 }: FilterInspectionsModalProps) {
   const [sortDir, setSortDir] = useState<SortDir>(initialSortDir);
-  const [statuses, setStatuses] = useState<InspectionStatus[]>(initialStatuses);
-
-  const toggleStatus = (status: InspectionStatus) => {
-    setStatuses((prev) =>
-      prev.includes(status)
-        ? prev.filter((s) => s !== status)
-        : [...prev, status],
-    );
-  };
+  const [status, setStatus] = useState<InspectionStatus | null>(initialStatus);
 
   const handleSubmit = () => {
-    onSubmit(sortDir, statuses);
+    onSubmit(sortDir, status);
     onOpenChange(false);
   };
 
@@ -57,7 +49,9 @@ export default function FilterInspectionsModal({
 
         <div className="space-y-5">
           <div>
-            <p className="mb-2.5 text-sm font-medium text-muted-foreground">By Date</p>
+            <p className="mb-2.5 text-sm font-medium text-muted-foreground">
+              By Date
+            </p>
             <div className="flex flex-col gap-2.5">
               <label className="flex items-center gap-2.5 text-sm text-foreground">
                 <input
@@ -85,18 +79,35 @@ export default function FilterInspectionsModal({
           </div>
 
           <div>
-            <p className="mb-2.5 text-sm font-medium text-muted-foreground">By status</p>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              {INSPECTION_STATUSES.map((status) => (
+            <p className="mb-2.5 text-sm font-medium text-muted-foreground">
+              By status
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <label className="flex items-center gap-2.5 text-sm text-foreground">
+                <input
+                  type="radio"
+                  name="status"
+                  value="all"
+                  checked={status === null}
+                  onChange={() => setStatus(null)}
+                  className="accent-primary size-4"
+                />
+                All
+              </label>
+              {INSPECTION_STATUSES.map((s) => (
                 <label
-                  key={status}
+                  key={s}
                   className="flex items-center gap-2.5 text-sm text-foreground"
                 >
-                  <Checkbox
-                    checked={statuses.includes(status)}
-                    onCheckedChange={() => toggleStatus(status)}
+                  <input
+                    type="radio"
+                    name="status"
+                    value={s}
+                    checked={status === s}
+                    onChange={() => setStatus(s)}
+                    className="accent-primary size-4"
                   />
-                  {getStatusLabel(status)}
+                  {getStatusLabel(s)}
                 </label>
               ))}
             </div>

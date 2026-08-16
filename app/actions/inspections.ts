@@ -1,5 +1,6 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
 import type {
@@ -9,7 +10,23 @@ import type {
   MediaItem,
   MediaTab,
   PaymentStatus,
+  SortDir,
 } from "@/app/lib/types";
+
+export interface ListInspectionsParams {
+  page?: number;
+  perPage?: number;
+  status?: InspectionStatus | null;
+  sortDir?: SortDir;
+}
+
+export interface InspectionsPage {
+  items: InspectionSummary[];
+  page: number;
+  perPage: number;
+  total: number;
+  totalPages: number;
+}
 
 interface InspectionDetailsNode {
   licensePlateNumber: string;
@@ -30,8 +47,8 @@ interface InspectionDetailsNode {
   hostEmail: string;
   hostPhoneNumber: string;
   orderSubtotal: string;
-  inspectionStatus: InspectionStatus;
-  paymentStatus: PaymentStatus;
+  inspectionStatus: string | string[];
+  paymentStatus: string | string[];
   registrationCardPhoto: string;
   odometerPhoto: string;
   hornVideo: string;
@@ -71,12 +88,18 @@ interface InspectionNode {
 interface ListInspectionsResponse {
   inspections: {
     nodes: InspectionNode[];
+    pageInfo?: {
+      total?: number;
+    };
   };
 }
 
 interface GetInspectionResponse {
   inspection: InspectionNode | null;
 }
+
+const DEFAULT_PER_PAGE = 8;
+const LIST_CACHE_REVALIDATE = 60; // seconds
 
 const MEDIA_GROUPS: Record<MediaTab, { field: keyof InspectionDetailsNode; label: string; type: "image" | "video" }[]> = {
   general: [
@@ -115,7 +138,7 @@ function mapMedia(details: InspectionDetailsNode): Record<MediaTab, MediaItem[]>
 
   for (const tab of Object.keys(MEDIA_GROUPS) as MediaTab[]) {
     for (const { field, label, type } of MEDIA_GROUPS[tab]) {
-      const url = details[field];
+      const url = asString(details[field]);
       if (url) {
         media[tab].push({ label, url, type });
       }
@@ -125,13 +148,18 @@ function mapMedia(details: InspectionDetailsNode): Record<MediaTab, MediaItem[]>
   return media;
 }
 
+function asString(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? "";
+  return value ?? "";
+}
+
 function mapSummary(node: InspectionNode): InspectionSummary {
   return {
     id: node.databaseId.toString(),
     licensePlate: node.inspectionDetails.licensePlateNumber,
     dateCreated: node.date,
-    inspectionStatus: node.inspectionDetails.inspectionStatus,
-    paymentStatus: node.inspectionDetails.paymentStatus,
+    inspectionStatus: asString(node.inspectionDetails.inspectionStatus) as InspectionStatus,
+    paymentStatus: asString(node.inspectionDetails.paymentStatus) as PaymentStatus,
   };
 }
 
@@ -170,23 +198,36 @@ function mapDetail(node: InspectionNode): InspectionDetail {
 }
 
 const LIST_QUERY = `
-  query ListMyInspections($author: Int!) {
-    inspections(where: { author: $author }) {
+  query ListMyInspections(
+    $author: Int!
+    $limit: Int
+    $offset: Int
+    $inspectionStatus: String
+    $order: OrderEnum! = DESC
+  ) {
+    inspections(
+      where: {
+        author: $author
+        limit: $limit
+        offset: $offset
+        inspectionStatus: $inspectionStatus
+        orderby: { field: DATE, order: $order }
+      }
+    ) {
       nodes {
         databaseId
         title
         date
-        author {
-          node {
-            databaseId
-            displayName
-          }
-        }
         inspectionDetails {
           licensePlateNumber
           inspectionStatus
           paymentStatus
+          vehicleMake
+          vehicleModel
         }
+      }
+      pageInfo {
+        total
       }
     }
   }
@@ -250,17 +291,87 @@ const DETAIL_QUERY = `
   }
 `;
 
-export async function listInspections(): Promise<InspectionSummary[]> {
+interface InspectionsPageParams {
+  token: string;
+  author: number;
+  page: number;
+  perPage: number;
+  status: InspectionStatus | null;
+  sortDir: SortDir;
+}
+
+const getInspectionsPageCached = unstable_cache(
+  async (params: InspectionsPageParams) => {
+    const { token, author, page, perPage, status, sortDir } = params;
+
+    const data = await wpFetch<ListInspectionsResponse>(
+      LIST_QUERY,
+      {
+        author,
+        inspectionStatus: status ?? null,
+        order: sortDir === "oldest" ? "ASC" : "DESC",
+        limit: perPage,
+        offset: (page - 1) * perPage,
+      },
+      { accessToken: token },
+    );
+
+    const nodes = data.inspections?.nodes ?? [];
+    const total = data.inspections?.pageInfo?.total ?? nodes.length;
+
+    return { items: nodes.map(mapSummary), total };
+  },
+  ["inspections", "page"],
+  { revalidate: LIST_CACHE_REVALIDATE, tags: ["inspections"] },
+);
+
+interface InspectionDetailParams {
+  token: string;
+  id: string;
+}
+
+const getInspectionDetailCached = unstable_cache(
+  async (params: InspectionDetailParams) => {
+    const data = await wpFetch<GetInspectionResponse>(
+      DETAIL_QUERY,
+      { id: params.id },
+      { accessToken: params.token },
+    );
+
+    if (!data.inspection) {
+      throw new Error("Inspection not found");
+    }
+
+    return mapDetail(data.inspection);
+  },
+  ["inspection", "detail"],
+  { revalidate: LIST_CACHE_REVALIDATE, tags: ["inspection"] },
+);
+
+export async function listInspections(
+  params: ListInspectionsParams = {},
+): Promise<InspectionsPage> {
   const session = await auth();
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
 
-  const data = await wpFetch<ListInspectionsResponse>(LIST_QUERY, {
+  const page = Math.max(1, params.page ?? 1);
+  const perPage = Math.max(1, params.perPage ?? DEFAULT_PER_PAGE);
+
+  const { items, total } = await getInspectionsPageCached({
+    token: session.user.accessToken,
     author: session.user.wpId,
+    page,
+    perPage,
+    status: params.status ?? null,
+    sortDir: params.sortDir ?? "newest",
   });
 
-  return (data.inspections?.nodes ?? []).map(mapSummary);
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const safePage = Math.min(page, totalPages);
+
+  return { items, page: safePage, perPage, total, totalPages };
 }
 
 export async function fetchInspection(id: string): Promise<InspectionDetail> {
@@ -269,11 +380,8 @@ export async function fetchInspection(id: string): Promise<InspectionDetail> {
     throw new Error("Unauthorized");
   }
 
-  const data = await wpFetch<GetInspectionResponse>(DETAIL_QUERY, { id });
-
-  if (!data.inspection) {
-    throw new Error("Inspection not found");
-  }
-
-  return mapDetail(data.inspection);
+  return getInspectionDetailCached({
+    token: session.user.accessToken,
+    id,
+  });
 }

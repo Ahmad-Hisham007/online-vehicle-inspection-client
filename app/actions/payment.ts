@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import Stripe from "stripe";
@@ -89,6 +90,9 @@ export async function confirmInspectionPayment(
       },
     },
   );
+
+  revalidatePath("/dashboard/customer");
+  revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
 }
 
 export async function createPaymentIntent(

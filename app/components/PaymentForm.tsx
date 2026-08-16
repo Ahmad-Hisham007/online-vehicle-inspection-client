@@ -23,6 +23,7 @@ interface PaymentFormProps {
   paymentId: string;
   onSuccess: () => void;
   onRetry: () => void;
+  onCancel?: () => void;
 }
 
 function PaymentFormInner({
@@ -32,6 +33,7 @@ function PaymentFormInner({
   paymentId,
   onSuccess,
   onRetry,
+  onCancel,
 }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -115,7 +117,7 @@ function PaymentFormInner({
         <Button
           type="button"
           variant="secondary"
-          onClick={onRetry}
+          onClick={onCancel ?? onRetry}
           disabled={loading}
         >
           Cancel

@@ -11,11 +11,15 @@ vi.mock("@/app/lib/wp-auth", () => ({
   wpFetch: mockWpFetch,
 }));
 
+vi.mock("next/cache", () => ({
+  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+}));
+
 import { listInspections, fetchInspection } from "@/app/actions/inspections";
 
 const SESSION = {
   user: {
-    wpId: 42,
+    wpId: 11,
     accessToken: "test-token",
     refreshToken: "test-refresh",
     refreshTokenExpiration: Date.now() + 3600000,
@@ -30,7 +34,6 @@ function listNode(id: number, overrides: Record<string, unknown> = {}) {
     databaseId: id,
     title: `Inspection #${id}`,
     date: "2026-08-15T17:14:00",
-    author: { node: { databaseId: 42, displayName: "Test User" } },
     inspectionDetails: {
       licensePlateNumber: `PLATE-${id}`,
       inspectionStatus: "pending",
@@ -45,7 +48,7 @@ function detailNode(id: number, overrides: Record<string, unknown> = {}) {
     databaseId: id,
     title: `Inspection #${id}`,
     date: "2026-08-15T17:14:00",
-    author: { node: { databaseId: 42, name: "Test User", email: "test@example.com" } },
+    author: { node: { databaseId: 11, name: "Test User", email: "test@example.com" } },
     inspectionDetails: {
       licensePlateNumber: "ABC123",
       vin: "1HGCM82633A004352",
@@ -107,14 +110,17 @@ describe("listInspections", () => {
     await expect(listInspections()).rejects.toThrow("Unauthorized");
   });
 
-  it("returns mapped summaries for owned inspections", async () => {
+  it("fetches a single page and returns the mapped summaries and total", async () => {
     mockWpFetch.mockResolvedValue({
-      inspections: { nodes: [listNode(1), listNode(2)] },
+      inspections: {
+        nodes: [listNode(1), listNode(2)],
+        pageInfo: { total: 2 },
+      },
     });
 
     const result = await listInspections();
 
-    expect(result).toEqual([
+    expect(result.items).toEqual([
       {
         id: "1",
         licensePlate: "PLATE-1",
@@ -130,16 +136,98 @@ describe("listInspections", () => {
         paymentStatus: "pending",
       },
     ]);
-    expect(mockWpFetch).toHaveBeenCalledWith(
-      expect.stringContaining("ListMyInspections"),
-      { author: 42 },
-    );
+    expect(result.page).toBe(1);
+    expect(result.perPage).toBe(8);
+    expect(result.total).toBe(2);
+    expect(result.totalPages).toBe(1);
+
+    expect(mockWpFetch).toHaveBeenCalledTimes(1);
+    const [query, variables] = mockWpFetch.mock.calls[0] as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(query).toContain("ListMyInspections");
+    expect(query).toContain("inspectionStatus: $inspectionStatus");
+    expect(query).toContain("limit: $limit");
+    expect(query).toContain("offset: $offset");
+    expect(query).toContain("pageInfo {\n        total\n      }");
+    expect(variables).toEqual({
+      author: 11,
+      inspectionStatus: null,
+      order: "DESC",
+      limit: 8,
+      offset: 0,
+    });
   });
 
-  it("returns empty array when no inspections exist", async () => {
-    mockWpFetch.mockResolvedValue({ inspections: { nodes: [] } });
+  it("passes the status filter to the query", async () => {
+    mockWpFetch.mockResolvedValue({
+      inspections: { nodes: [], pageInfo: { total: 0 } },
+    });
 
-    await expect(listInspections()).resolves.toEqual([]);
+    await listInspections({ status: "paid" });
+
+    const [, variables] = mockWpFetch.mock.calls[0] as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(variables.inspectionStatus).toBe("paid");
+  });
+
+  it("sorts oldest first and pages via offset", async () => {
+    mockWpFetch.mockResolvedValue({
+      inspections: { nodes: [], pageInfo: { total: 20 } },
+    });
+
+    const result = await listInspections({ sortDir: "oldest", page: 2 });
+
+    expect(result.page).toBe(2);
+    expect(result.totalPages).toBe(3);
+
+    const [, variables] = mockWpFetch.mock.calls[0] as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(variables).toEqual({
+      author: 11,
+      inspectionStatus: null,
+      order: "ASC",
+      limit: 8,
+      offset: 8,
+    });
+  });
+
+  it("clamps the page when it exceeds the total", async () => {
+    mockWpFetch.mockResolvedValue({
+      inspections: { nodes: [listNode(1)], pageInfo: { total: 1 } },
+    });
+
+    const result = await listInspections({ page: 5 });
+
+    expect(result.page).toBe(1);
+    expect(result.totalPages).toBe(1);
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("normalizes ACF select array values to a single string", async () => {
+    mockWpFetch.mockResolvedValue({
+      inspections: {
+        nodes: [
+          listNode(1, {
+            inspectionStatus: ["paid"],
+            paymentStatus: ["succeeded"],
+          }),
+        ],
+        pageInfo: { total: 1 },
+      },
+    });
+
+    const result = await listInspections();
+
+    expect(result.items[0]).toMatchObject({
+      inspectionStatus: "paid",
+      paymentStatus: "succeeded",
+    });
   });
 });
 

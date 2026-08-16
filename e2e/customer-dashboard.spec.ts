@@ -32,7 +32,7 @@ test.describe("Customer inspections dashboard", () => {
     await expect(page.locator("text=Date Created").first()).toBeVisible();
   });
 
-  test("opens the filter modal, applies a status and submits", async ({
+  test("opens the filter modal, selects a status radio and applies it via URL", async ({
     page,
   }) => {
     await expect(page.locator("text=Submitted Inspections")).toBeVisible();
@@ -45,6 +45,8 @@ test.describe("Customer inspections dashboard", () => {
     await page.click("button:has-text('Submit')");
 
     await expect(page.locator("text=Filter inspections")).toBeHidden();
+    await page.waitForURL(/\?status=approved/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/dashboard\/customer\?status=approved/);
   });
 
   test("unfolds a card and navigates to the detail page", async ({ page }) => {

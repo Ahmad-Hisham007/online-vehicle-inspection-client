@@ -69,6 +69,20 @@ describe("InspectionCard", () => {
     expect(screen.getByText("Car details")).toBeInTheDocument();
   });
 
+  it("hides Payment Link when inspection status is paid but payment status is pending", async () => {
+    const user = userEvent.setup();
+    render(
+      <InspectionCard
+        inspection={summary({ paymentStatus: "pending", inspectionStatus: "paid" })}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /status/i }));
+
+    expect(screen.queryByText("Payment Link")).not.toBeInTheDocument();
+    expect(screen.getByText("Car details")).toBeInTheDocument();
+  });
+
   it("navigates to pay page from Payment Link", async () => {
     const user = userEvent.setup();
     render(<InspectionCard inspection={summary()} />);

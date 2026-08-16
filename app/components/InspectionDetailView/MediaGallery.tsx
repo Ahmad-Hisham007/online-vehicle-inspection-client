@@ -21,12 +21,12 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
   return (
     <div className="rounded-2xl border border-dashed border-border p-4">
       <Tabs defaultValue="general">
-        <TabsList className="flex w-full flex-nowrap overflow-x-auto rounded-xl bg-primary/10 p-1 scrollbar-none md:grid md:grid-cols-4">
+        <TabsList className="flex h-auto w-full flex-nowrap items-stretch overflow-x-auto rounded-xl bg-primary/10 p-1 scrollbar-none md:grid md:grid-cols-4">
           {TAB_ORDER.map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
-              className="flex-1 rounded-lg px-3 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-transparent data-[state=inactive]:text-primary"
+              className="shrink-0 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-transparent data-[state=inactive]:text-primary"
             >
               {TAB_LABELS[tab]}
             </TabsTrigger>

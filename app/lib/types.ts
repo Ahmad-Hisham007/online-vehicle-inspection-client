@@ -21,6 +21,8 @@ export const PAYMENT_STATUSES = [
 
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+export type SortDir = "newest" | "oldest";
+
 export interface PaymentIntentResponse {
   clientSecret: string;
   paymentId: string;
