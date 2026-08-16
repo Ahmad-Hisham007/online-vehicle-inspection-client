@@ -21,7 +21,7 @@ export default function InspectionToolbar({
   const [filterOpen, setFilterOpen] = useState(false);
 
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center justify-between gap-2 md:flex-row flex-col">
       <h1 className="text-lg font-semibold text-foreground">
         Submitted Inspections
       </h1>
@@ -54,7 +54,9 @@ export default function InspectionToolbar({
           initialSortDir={sortDir}
           initialStatus={status}
           onSubmit={(dir, nextStatus) => {
-            router.push(buildListHref({ page: 1, status: nextStatus, sortDir: dir }));
+            router.push(
+              buildListHref({ page: 1, status: nextStatus, sortDir: dir }),
+            );
           }}
         />
       )}

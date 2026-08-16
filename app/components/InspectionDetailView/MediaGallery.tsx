@@ -19,7 +19,7 @@ interface MediaGalleryProps {
 
 export default function MediaGallery({ media }: MediaGalleryProps) {
   return (
-    <div className="rounded-2xl border border-dashed border-border p-4">
+    <div className="rounded-2xl border border-dashed border-border md:p-4 p-2.5">
       <Tabs defaultValue="general">
         <TabsList className="flex h-auto w-full flex-nowrap items-stretch overflow-x-auto rounded-xl bg-primary/10 p-1 scrollbar-none md:grid md:grid-cols-4">
           {TAB_ORDER.map((tab) => (
