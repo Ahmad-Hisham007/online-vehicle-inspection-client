@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { WP_SITE_TOKEN_HEADER } from "./wp-headers";
+import { SITE_ORIGIN } from "./site-origin";
 
 interface TokenUser {
   accessToken: string;
@@ -36,7 +37,7 @@ export async function getValidAccessToken(): Promise<string> {
     headers: {
       "Content-Type": "application/json",
       [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
-      Origin: process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? "http://localhost:3000",
+      Origin: SITE_ORIGIN,
     },
     body: JSON.stringify({
       query: `
@@ -74,7 +75,7 @@ export async function wpFetch<T = Record<string, unknown>>(
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
-      Origin: process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? "http://localhost:3000",
+      Origin: SITE_ORIGIN,
     },
     body: JSON.stringify({ query, variables }),
   });

@@ -13,6 +13,9 @@ import {
 } from "react-icons/fi";
 import type { IconType } from "react-icons";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +51,14 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
   const { status } = useSession();
   const authenticated = status === "authenticated";
   const authPending = status === "loading";
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    setIsMenuOpen(false);
+    toast.success("Logged out successfully");
+    router.push("/");
+  };
 
   const languages = [
     { code: "En", flag: "/us.png" },
@@ -90,19 +101,19 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
 
     if (classes.includes("login-menu")) {
       return (
-        <a href="/login" className={baseClass}>
+        <Link href="/login" className={baseClass}>
           {Icon && <Icon className="size-4" />}
           {item.label}
-        </a>
+        </Link>
       );
     }
 
     if (classes.includes("dashboard-menu")) {
       return (
-        <a href="/dashboard" className={baseClass}>
+        <Link href="/dashboard" className={baseClass}>
           {Icon && <Icon className="size-4" />}
           {item.label}
-        </a>
+        </Link>
       );
     }
 
@@ -110,7 +121,7 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
       return (
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={handleLogout}
           className={`${baseClass} cursor-pointer`}
         >
           {Icon && <Icon className="size-4" />}
@@ -133,10 +144,10 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
       item.path && !item.path.startsWith("http") ? item.path : item.url;
 
     return (
-      <a href={href} className={`${baseClass} ${classes}`}>
+      <Link href={href} className={`${baseClass} ${classes}`}>
         {Icon && <Icon className="size-4" />}
         {item.label}
-      </a>
+      </Link>
     );
   };
 
@@ -148,19 +159,27 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
 
     if (classes.includes("login-menu")) {
       return (
-        <a href="/login" className={rowClass}>
+        <Link
+          href="/login"
+          onClick={() => setIsMenuOpen(false)}
+          className={rowClass}
+        >
           {Icon && <Icon className="size-5" />}
           {item.label}
-        </a>
+        </Link>
       );
     }
 
     if (classes.includes("dashboard-menu")) {
       return (
-        <a href="/dashboard" className={rowClass}>
+        <Link
+          href="/dashboard"
+          onClick={() => setIsMenuOpen(false)}
+          className={rowClass}
+        >
           {Icon && <Icon className="size-5" />}
           {item.label}
-        </a>
+        </Link>
       );
     }
 
@@ -168,7 +187,7 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
       return (
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={handleLogout}
           className={`${rowClass} cursor-pointer`}
         >
           {Icon && <Icon className="size-5" />}
@@ -191,10 +210,14 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
       item.path && !item.path.startsWith("http") ? item.path : item.url;
 
     return (
-      <a href={href} className={`${rowClass} ${classes}`}>
+      <Link
+        href={href}
+        onClick={() => setIsMenuOpen(false)}
+        className={`${rowClass} ${classes}`}
+      >
         {Icon && <Icon className="size-5" />}
         {item.label}
-      </a>
+      </Link>
     );
   };
 
