@@ -16,7 +16,7 @@ export default function InspectionDetailView({
 }: InspectionDetailViewProps) {
   return (
     <div>
-      <div className="p-4">
+      <div className="md:p-4 p-2">
         <h1 className="mb-4 text-center text-xl font-bold text-foreground">
           Car details
         </h1>
