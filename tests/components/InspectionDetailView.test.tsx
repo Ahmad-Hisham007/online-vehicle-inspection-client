@@ -134,13 +134,11 @@ describe("InspectionDetailView", () => {
     expect(screen.getByAltText("Left Front Tire")).toBeInTheDocument();
   });
 
-  it("shows certificates placeholder when not approved", () => {
+  it("shows a payment message when inspection is not approved", () => {
     render(<InspectionDetailView inspection={detail()} role="customer" />);
 
     expect(
-      screen.getByText(
-        "Certificates will be available once the inspection is approved.",
-      ),
+      screen.getByText("This inspection requires payment."),
     ).toBeInTheDocument();
   });
 
@@ -171,10 +169,24 @@ describe("InspectionDetailView", () => {
     expect(mockPush).toHaveBeenCalledWith("/dashboard/customer/pay/1");
   });
 
-  it("hides Pay action for paid customer", () => {
+  it("hides Pay action when payment succeeded", () => {
     render(
       <InspectionDetailView
         inspection={detail({ paymentStatus: "succeeded" })}
+        role="customer"
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: /pay/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Payment received\. Certificates will be available once approved/i),
+    ).toBeInTheDocument();
+  });
+
+  it("hides Pay action when inspection status is paid even if payment status is pending", () => {
+    render(
+      <InspectionDetailView
+        inspection={detail({ paymentStatus: "pending", inspectionStatus: "paid" })}
         role="customer"
       />,
     );
@@ -189,6 +201,6 @@ describe("InspectionDetailView", () => {
     const reject = screen.getByRole("button", { name: /reject/i });
     expect(approve).toBeDisabled();
     expect(reject).toBeDisabled();
-    expect(screen.getByText(/Admin actions/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /pay/i })).not.toBeInTheDocument();
   });
 });

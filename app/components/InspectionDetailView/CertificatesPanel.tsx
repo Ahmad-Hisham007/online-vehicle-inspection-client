@@ -21,44 +21,56 @@ export default function CertificatesPanel({
 }: CertificatesPanelProps) {
   const router = useRouter();
   const isApproved = inspection.inspectionStatus === "approved";
-  const isUnpaid = inspection.paymentStatus !== "succeeded";
+  const isPaid =
+    inspection.paymentStatus === "succeeded" ||
+    inspection.inspectionStatus === "paid";
 
   const availableCertificates = CERTIFICATE_LABELS.filter(
     ({ key }) => inspection.certificates[key],
   );
 
-  return (
-    <div className="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-      <p className="text-sm font-bold text-foreground">Certificates</p>
+  let message: string;
+  if (isApproved && availableCertificates.length === 0) {
+    message = "No certificates available.";
+  } else if (isApproved) {
+    message = "";
+  } else if (isPaid) {
+    message = "Payment received. Certificates will be available once approved.";
+  } else {
+    message = "This inspection requires payment.";
+  }
 
-      {isApproved && availableCertificates.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {availableCertificates.map(({ key, label }) => (
-            <a
-              key={key}
-              href={inspection.certificates[key]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-            >
-              Download {label} certificate (PDF)
-            </a>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {isApproved
-            ? "No certificates available."
-            : "Certificates will be available once the inspection is approved."}
-        </p>
-      )}
+  return (
+    <div className="flex items-center gap-3 p-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-bold text-foreground">Certificates</p>
+        {isApproved && availableCertificates.length > 0 ? (
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+            {availableCertificates.map(({ key, label }) => (
+              <a
+                key={key}
+                href={inspection.certificates[key]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Download {label} certificate (PDF)
+              </a>
+            ))}
+          </div>
+        ) : (
+          message && (
+            <p className="mt-1 text-xs text-muted-foreground">{message}</p>
+          )
+        )}
+      </div>
 
       {role === "customer" ? (
-        isUnpaid && (
+        !isPaid && (
           <Button
             variant="primary"
             size="sm"
-            className="!w-auto !px-8"
+            className="!w-auto !px-6 shrink-0"
             onClick={() =>
               router.push(`/dashboard/customer/pay/${inspection.id}`)
             }
@@ -67,11 +79,11 @@ export default function CertificatesPanel({
           </Button>
         )
       ) : (
-        <div className="flex gap-3">
+        <div className="flex shrink-0 gap-2">
           <Button
             variant="primary"
             size="sm"
-            className="!w-auto !px-6"
+            className="!w-auto !px-5"
             type="button"
             disabled
           >
@@ -80,15 +92,12 @@ export default function CertificatesPanel({
           <Button
             variant="secondary"
             size="sm"
-            className="!w-auto !px-6"
+            className="!w-auto !px-5"
             type="button"
             disabled
           >
             Reject
           </Button>
-          <span className="text-xs text-muted-foreground self-center">
-            Admin actions (Phase 6)
-          </span>
         </div>
       )}
     </div>

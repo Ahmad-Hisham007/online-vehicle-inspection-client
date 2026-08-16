@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { calculatePrice } from "@/app/lib/constants";
 import { wpFetch } from "@/app/lib/wp-auth";
@@ -145,6 +146,8 @@ export async function createInspectionDraft(
       title: `Inspection #${databaseId} - ${vehicleInfo.licensePlate}`,
     },
   });
+
+  revalidatePath("/dashboard/customer");
 
   return { inspectionId: databaseId };
 }

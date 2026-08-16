@@ -14,13 +14,13 @@ beforeEach(() => {
 });
 
 describe("FilterInspectionsModal", () => {
-  it("renders title, date radios and status checkboxes", () => {
+  it("renders title, date radios and status radios including All", () => {
     render(
       <FilterInspectionsModal
         open
         onOpenChange={mockOnOpenChange}
         initialSortDir="newest"
-        initialStatuses={[]}
+        initialStatus={null}
         onSubmit={mockOnSubmit}
       />,
     );
@@ -34,18 +34,20 @@ describe("FilterInspectionsModal", () => {
     expect(newest.checked).toBe(true);
     expect(oldest.checked).toBe(false);
 
+    const all = screen.getByLabelText("All") as HTMLInputElement;
+    expect(all.checked).toBe(true);
     expect(screen.getByLabelText("Pending")).toBeInTheDocument();
     expect(screen.getByLabelText("Approved")).toBeInTheDocument();
     expect(screen.getByLabelText("Cancelled")).toBeInTheDocument();
   });
 
-  it("reflects provided initial sort and statuses", () => {
+  it("reflects provided initial sort and status", () => {
     render(
       <FilterInspectionsModal
         open
         onOpenChange={mockOnOpenChange}
         initialSortDir="oldest"
-        initialStatuses={["paid", "rejected"]}
+        initialStatus="paid"
         onSubmit={mockOnSubmit}
       />,
     );
@@ -53,54 +55,68 @@ describe("FilterInspectionsModal", () => {
     expect((screen.getByLabelText("Oldest") as HTMLInputElement).checked).toBe(
       true,
     );
-    const paid = screen.getByLabelText("Paid") as HTMLButtonElement;
-    const rejected = screen.getByLabelText("Rejected") as HTMLButtonElement;
-    const pending = screen.getByLabelText("Pending") as HTMLButtonElement;
-    expect(paid.getAttribute("data-state")).toBe("checked");
-    expect(rejected.getAttribute("data-state")).toBe("checked");
-    expect(pending.getAttribute("data-state")).toBe("unchecked");
+    expect((screen.getByLabelText("Paid") as HTMLInputElement).checked).toBe(
+      true,
+    );
+    expect((screen.getByLabelText("All") as HTMLInputElement).checked).toBe(
+      false,
+    );
   });
 
-  it("submits selected sort dir and statuses then closes", async () => {
+  it("selects a single status radio and submits it", async () => {
     const user = userEvent.setup();
     render(
       <FilterInspectionsModal
         open
         onOpenChange={mockOnOpenChange}
         initialSortDir="newest"
-        initialStatuses={[]}
+        initialStatus={null}
         onSubmit={mockOnSubmit}
       />,
     );
 
     await user.click(screen.getByLabelText("Oldest"));
     await user.click(screen.getByLabelText("Approved"));
-    await user.click(screen.getByLabelText("In Progress"));
     await user.click(screen.getByRole("button", { name: /submit/i }));
 
-    expect(mockOnSubmit).toHaveBeenCalledWith("oldest", [
-      "approved",
-      "in_progress",
-    ]);
+    expect(mockOnSubmit).toHaveBeenCalledWith("oldest", "approved");
     expect(mockOnOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("unchecking a status removes it from selection", async () => {
+  it("selecting another status replaces the previous selection", async () => {
     const user = userEvent.setup();
     render(
       <FilterInspectionsModal
         open
         onOpenChange={mockOnOpenChange}
         initialSortDir="newest"
-        initialStatuses={["paid"]}
+        initialStatus="pending"
         onSubmit={mockOnSubmit}
       />,
     );
 
-    await user.click(screen.getByLabelText("Paid"));
+    await user.click(screen.getByLabelText("In Progress"));
     await user.click(screen.getByRole("button", { name: /submit/i }));
 
-    expect(mockOnSubmit).toHaveBeenCalledWith("newest", []);
+    expect(mockOnSubmit).toHaveBeenCalledWith("newest", "in_progress");
+  });
+
+  it("submits null status when All is selected", async () => {
+    const user = userEvent.setup();
+    render(
+      <FilterInspectionsModal
+        open
+        onOpenChange={mockOnOpenChange}
+        initialSortDir="newest"
+        initialStatus="paid"
+        onSubmit={mockOnSubmit}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("All"));
+    await user.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(mockOnSubmit).toHaveBeenCalledWith("newest", null);
   });
 
   it("closes via the close button without submitting", async () => {
@@ -110,7 +126,7 @@ describe("FilterInspectionsModal", () => {
         open
         onOpenChange={mockOnOpenChange}
         initialSortDir="newest"
-        initialStatuses={[]}
+        initialStatus={null}
         onSubmit={mockOnSubmit}
       />,
     );

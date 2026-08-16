@@ -15,7 +15,9 @@ export default function InspectionCard({ inspection }: InspectionCardProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isUnpaid = inspection.paymentStatus !== "succeeded";
+  const isPaid =
+    inspection.paymentStatus === "succeeded" ||
+    inspection.inspectionStatus === "paid";
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -59,7 +61,7 @@ export default function InspectionCard({ inspection }: InspectionCardProps) {
 
       {isOpen && (
         <div className="flex flex-col items-center gap-3 pt-2 pb-4">
-          {isUnpaid && (
+          {!isPaid && (
             <button
               type="button"
               onClick={() =>

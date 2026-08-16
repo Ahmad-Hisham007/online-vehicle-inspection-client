@@ -7,6 +7,10 @@ vi.mock("@/auth", () => ({
   auth: mockAuth,
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 import { createInspectionDraft, type InspectionFormData } from "@/app/actions/inspection";
 
 interface GraphQLBody {
