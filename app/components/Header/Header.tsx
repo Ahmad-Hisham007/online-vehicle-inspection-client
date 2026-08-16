@@ -13,8 +13,8 @@ import {
 } from "react-icons/fi";
 import type { IconType } from "react-icons";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import NavLink from "@/app/components/NavLink";
 import toast from "react-hot-toast";
 import {
   DropdownMenu,
@@ -53,9 +53,11 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
   const authPending = status === "loading";
   const router = useRouter();
 
+  const closeMenu = () => setIsMenuOpen(false);
+
   const handleLogout = async () => {
     await signOut({ redirect: false });
-    setIsMenuOpen(false);
+    closeMenu();
     toast.success("Logged out successfully");
     router.push("/");
   };
@@ -101,19 +103,29 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
 
     if (classes.includes("login-menu")) {
       return (
-        <Link href="/login" className={baseClass}>
+        <NavLink
+          href="/login"
+          className={baseClass}
+          activeClassName="text-primary"
+          onNavigate={closeMenu}
+        >
           {Icon && <Icon className="size-4" />}
           {item.label}
-        </Link>
+        </NavLink>
       );
     }
 
     if (classes.includes("dashboard-menu")) {
       return (
-        <Link href="/dashboard" className={baseClass}>
+        <NavLink
+          href="/dashboard"
+          className={baseClass}
+          activeClassName="text-primary"
+          onNavigate={closeMenu}
+        >
           {Icon && <Icon className="size-4" />}
           {item.label}
-        </Link>
+        </NavLink>
       );
     }
 
@@ -144,10 +156,15 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
       item.path && !item.path.startsWith("http") ? item.path : item.url;
 
     return (
-      <Link href={href} className={`${baseClass} ${classes}`}>
+      <NavLink
+        href={href}
+        className={`${baseClass} ${classes}`}
+        activeClassName="text-primary"
+        onNavigate={closeMenu}
+      >
         {Icon && <Icon className="size-4" />}
         {item.label}
-      </Link>
+      </NavLink>
     );
   };
 
@@ -159,27 +176,29 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
 
     if (classes.includes("login-menu")) {
       return (
-        <Link
+        <NavLink
           href="/login"
-          onClick={() => setIsMenuOpen(false)}
+          onClick={closeMenu}
           className={rowClass}
+          activeClassName="text-primary bg-teal-50!"
         >
           {Icon && <Icon className="size-5" />}
           {item.label}
-        </Link>
+        </NavLink>
       );
     }
 
     if (classes.includes("dashboard-menu")) {
       return (
-        <Link
+        <NavLink
           href="/dashboard"
-          onClick={() => setIsMenuOpen(false)}
+          onClick={closeMenu}
           className={rowClass}
+          activeClassName="text-primary bg-teal-50!"
         >
           {Icon && <Icon className="size-5" />}
           {item.label}
-        </Link>
+        </NavLink>
       );
     }
 
@@ -210,14 +229,15 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
       item.path && !item.path.startsWith("http") ? item.path : item.url;
 
     return (
-      <Link
+      <NavLink
         href={href}
-        onClick={() => setIsMenuOpen(false)}
+        onClick={closeMenu}
         className={`${rowClass} ${classes}`}
+        activeClassName="text-primary bg-teal-50!"
       >
         {Icon && <Icon className="size-5" />}
         {item.label}
-      </Link>
+      </NavLink>
     );
   };
 
