@@ -3,14 +3,21 @@ import { NextResponse } from "next/server";
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
-  const isDashboard = req.nextUrl.pathname.startsWith("/dashboard");
+  const path = req.nextUrl.pathname;
+  const isDashboard = path.startsWith("/dashboard");
 
   if (isDashboard && !isLoggedIn) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   const role = req.auth?.user?.role;
-  const path = req.nextUrl.pathname;
+  const dashboardUrl =
+    role === "administrator" ? "/dashboard/admin" : "/dashboard/customer";
+
+  // Logged-in users are redirected away from auth pages to their dashboard
+  if (isLoggedIn && (path === "/login" || path === "/register")) {
+    return NextResponse.redirect(new URL(dashboardUrl, req.url));
+  }
 
   if (path === "/inspection") {
     if (!isLoggedIn) {
@@ -29,5 +36,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/inspection"],
+  matcher: ["/dashboard/:path*", "/inspection", "/login", "/register"],
 };
