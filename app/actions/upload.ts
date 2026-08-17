@@ -15,7 +15,12 @@ export async function generateUploadUrl(
 ): Promise<UploadUrlResponse> {
   const fileKey = `${crypto.randomUUID()}-${Date.now()}`;
 
-  if (process.env.UPLOADCARE_PUBLIC_KEY && !process.env.AWS_ACCESS_KEY_ID) {
+  const uploadcareKey = process.env.UPLOADCARE_PUBLIC_KEY;
+  const awsKey = process.env.AWS_ACCESS_KEY_ID;
+  const awsSecret = process.env.AWS_SECRET_ACCESS_KEY;
+  const awsBucket = process.env.AWS_BUCKET;
+
+  if (uploadcareKey && !(awsKey && awsSecret && awsBucket)) {
     return {
       uploadUrl: "uploadcare",
       publicUrl: "",
@@ -23,12 +28,12 @@ export async function generateUploadUrl(
     };
   }
 
-  if (process.env.AWS_ACCESS_KEY_ID) {
+  if (awsKey && awsSecret && awsBucket) {
     const s3 = new S3Client({
       region: process.env.AWS_REGION ?? "us-east-1",
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: awsKey,
+        secretAccessKey: awsSecret,
       },
     });
 
@@ -36,7 +41,7 @@ export async function generateUploadUrl(
     const key = `uploads/${fileKey}.${extension}`;
 
     const command = new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKET,
+      Bucket: awsBucket,
       Key: key,
       ContentType: fileType,
       ContentLength: fileSize,
@@ -46,12 +51,12 @@ export async function generateUploadUrl(
 
     return {
       uploadUrl,
-      publicUrl: `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`,
+      publicUrl: `https://${awsBucket}.s3.${process.env.AWS_REGION ?? "us-east-1"}.amazonaws.com/${key}`,
       fileKey,
     };
   }
 
   throw new Error(
-    "No upload provider configured. Set UPLOADCARE_PUBLIC_KEY or AWS_ACCESS_KEY_ID.",
+    "No upload provider fully configured. Set UPLOADCARE_PUBLIC_KEY, or all of AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_BUCKET.",
   );
 }

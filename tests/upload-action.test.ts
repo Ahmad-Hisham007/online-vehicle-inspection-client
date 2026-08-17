@@ -41,12 +41,26 @@ describe("generateUploadUrl", () => {
     expect(result.fileKey).toContain("-")
   })
 
+  it("falls back to Uploadcare when AWS is only partially configured", async () => {
+    process.env = {
+      UPLOADCARE_PUBLIC_KEY: "demopublickey",
+      AWS_ACCESS_KEY_ID: "AKIAEXAMPLE",
+      AWS_SECRET_ACCESS_KEY: "secret",
+    }
+    delete process.env.AWS_BUCKET
+
+    const result = await generateUploadUrl("image/jpeg", 1024)
+
+    expect(result.uploadUrl).toBe("uploadcare")
+    expect(result.publicUrl).toBe("")
+  })
+
   it("throws when no upload provider is configured", async () => {
     delete process.env.UPLOADCARE_PUBLIC_KEY
     delete process.env.AWS_ACCESS_KEY_ID
 
     await expect(generateUploadUrl("image/jpeg", 1024)).rejects.toThrow(
-      "No upload provider configured",
+      "No upload provider fully configured",
     )
   })
 })
