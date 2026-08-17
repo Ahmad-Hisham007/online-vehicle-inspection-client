@@ -51,35 +51,107 @@ afterEach(() => {
 });
 
 describe("createPaymentIntent", () => {
+  const authUser = {
+    accessToken: "test-token",
+    refreshToken: "test-refresh",
+    refreshTokenExpiration: Date.now() + 3600000,
+    accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
+    email: "customer@example.com",
+    name: "John Doe",
+    wpId: 1,
+  };
+
+  const inspectionResponse = (orderSubtotal: string) => ({
+    ok: true,
+    json: () =>
+      Promise.resolve({
+        data: {
+          inspection: {
+            databaseId: 123,
+            author: { node: { databaseId: 1 } },
+            inspectionDetails: { orderSubtotal },
+          },
+        },
+      }),
+  });
+
+  const paymentResponse = {
+    ok: true,
+    json: () =>
+      Promise.resolve({
+        data: {
+          createInspectionPayment: {
+            inspectionPayment: {
+              id: "cG9zdDo1Njc=",
+              databaseId: 567,
+            },
+          },
+        },
+      }),
+  };
+
+  const mockInspectionThenPayment = (orderSubtotal = "39") => {
+    mockFetch.mockImplementation(async (_url: string, opts: RequestInit) => {
+      const body = JSON.parse(opts.body as string) as { query?: string };
+      if (body.query?.includes("GetInspectionForPayment")) {
+        return inspectionResponse(orderSubtotal);
+      }
+      return paymentResponse;
+    });
+  };
+
   it("throws if user is not authenticated", async () => {
     mockAuth.mockResolvedValue(null);
 
-    await expect(createPaymentIntent("123", 3900)).rejects.toThrow("Unauthorized");
+    await expect(createPaymentIntent("123")).rejects.toThrow("Unauthorized");
   });
 
   it("throws if STRIPE_SECRET_KEY is not configured", async () => {
-    mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000), email: "test@example.com" },
-    });
+    mockAuth.mockResolvedValue({ user: authUser });
     delete process.env.STRIPE_SECRET_KEY;
 
-    await expect(createPaymentIntent("123", 3900)).rejects.toThrow(
+    await expect(createPaymentIntent("123")).rejects.toThrow(
       "STRIPE_SECRET_KEY is not configured",
     );
   });
 
-  it("creates PaymentIntent and returns clientSecret, paymentId, returnUrl", async () => {
+  it("throws if inspection is not found", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
-
-    mockAuth.mockResolvedValue({
-      user: {
-        accessToken: "test-token",
-        refreshToken: "test-refresh",
-        refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
-        email: "customer@example.com",
-        name: "John Doe",
-      },
+    mockAuth.mockResolvedValue({ user: authUser });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ data: { inspection: null } }),
     });
+
+    await expect(createPaymentIntent("123")).rejects.toThrow(
+      "Inspection not found",
+    );
+  });
+
+  it("throws if inspection belongs to another user", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
+    mockAuth.mockResolvedValue({ user: authUser });
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          data: {
+            inspection: {
+              databaseId: 123,
+              author: { node: { databaseId: 999 } },
+              inspectionDetails: { orderSubtotal: "39" },
+            },
+          },
+        }),
+    });
+
+    await expect(createPaymentIntent("123")).rejects.toThrow("Unauthorized");
+  });
+
+  it("creates PaymentIntent from server-side price and returns clientSecret, paymentId, returnUrl", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
+    mockAuth.mockResolvedValue({ user: authUser });
+    mockInspectionThenPayment();
 
     mockPaymentIntentsCreate.mockResolvedValue({
       id: "pi_3R123456789",
@@ -89,23 +161,14 @@ describe("createPaymentIntent", () => {
       metadata: { inspectionId: "123" },
     });
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          data: {
-            createInspectionPayment: {
-              inspectionPayment: {
-                id: "cG9zdDo1Njc=",
-                databaseId: 567,
-              },
-            },
-          },
-        }),
+    const result = await createPaymentIntent("123");
+
+    expect(mockPaymentIntentsCreate).toHaveBeenCalledWith({
+      amount: 3900,
+      currency: "usd",
+      metadata: { inspectionId: "123" },
+      automatic_payment_methods: { enabled: true },
     });
-
-    const result = await createPaymentIntent("123", 3900);
-
     expect(result.clientSecret).toBe("pi_3R123456789_secret_abc123");
     expect(result.paymentId).toBe("567");
     expect(result.returnUrl).toBe(
@@ -117,12 +180,10 @@ describe("createPaymentIntent", () => {
     });
   });
 
-  it("passes correct amount and metadata to Stripe", async () => {
+  it("charges the inspection orderSubtotal regardless of any client amount", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
-
-    mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000), email: "test@example.com" },
-    });
+    mockAuth.mockResolvedValue({ user: authUser });
+    mockInspectionThenPayment("63");
 
     mockPaymentIntentsCreate.mockResolvedValue({
       id: "pi_3R999999999",
@@ -132,22 +193,7 @@ describe("createPaymentIntent", () => {
       metadata: { inspectionId: "456" },
     });
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () =>
-        Promise.resolve({
-          data: {
-            createInspectionPayment: {
-              inspectionPayment: {
-                id: "cG9zdDo3ODk=",
-                databaseId: 789,
-              },
-            },
-          },
-        }),
-    });
-
-    await createPaymentIntent("456", 6300);
+    await createPaymentIntent("456");
 
     expect(mockPaymentIntentsCreate).toHaveBeenCalledWith({
       amount: 6300,
@@ -159,15 +205,7 @@ describe("createPaymentIntent", () => {
 
   it("sends correct WPGraphQL mutation with payment data", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
-
-    mockAuth.mockResolvedValue({
-      user: {
-        accessToken: "test-token",
-        refreshToken: "test-refresh",
-        refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
-        email: "customer@example.com",
-      },
-    });
+    mockAuth.mockResolvedValue({ user: authUser });
 
     mockPaymentIntentsCreate.mockResolvedValue({
       id: "pi_3R123456789",
@@ -200,37 +238,28 @@ describe("createPaymentIntent", () => {
       };
     };
 
-    mockFetch.mockImplementation(
-      async (_url: string, opts: RequestInit) => {
-        capturedBody = JSON.parse(opts.body as string);
-        return {
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              data: {
-                createInspectionPayment: {
-                  inspectionPayment: {
-                    id: "cG9zdDo1Njc=",
-                    databaseId: 567,
-                  },
-                },
-              },
-            }),
-        };
-      },
-    );
+    mockFetch.mockImplementation(async (_url: string, opts: RequestInit) => {
+      const body = JSON.parse(opts.body as string) as { query?: string };
+      if (body.query?.includes("GetInspectionForPayment")) {
+        return inspectionResponse("39");
+      }
+      capturedBody = body as typeof capturedBody;
+      return paymentResponse;
+    });
 
-    await createPaymentIntent("123", 3900);
+    await createPaymentIntent("123");
 
     const pf = capturedBody!.variables.input.paymentFields;
-    expect(capturedBody!.variables.input.title).toBe("Payment for Inspection #123");
+    expect(capturedBody!.variables.input.title).toBe(
+      "Payment for Inspection #123",
+    );
     expect(pf.stripeId).toBe("pi_3R123456789");
     expect(pf.amount).toBe(39);
     expect(pf.currency).toBe("usd");
     expect(pf.status).toBe("pending");
     expect(pf.inspectionId).toBe(123);
     expect(pf.customerEmail).toBe("customer@example.com");
-    expect(pf.customerName).toBe("");
+    expect(pf.customerName).toBe("John Doe");
     expect(pf.stripeClientSecret).toBe(
       "pi_3R123456789_secret_abc123",
     );
@@ -248,27 +277,22 @@ describe("createPaymentIntent", () => {
 
   it("throws when WPGraphQL returns errors", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_xxx";
-
-    mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000), email: "test@example.com" },
-    });
-
-    mockPaymentIntentsCreate.mockResolvedValue({
-      id: "pi_3R123456789",
-      client_secret: "pi_3R123456789_secret_abc123",
-      amount: 3900,
-      currency: "usd",
-    });
+    mockAuth.mockResolvedValue({ user: authUser });
 
     mockFetch.mockResolvedValue({
       ok: true,
       json: () =>
         Promise.resolve({
-          errors: [{ message: "Field 'unknownField' not found on type 'InspectionPayment'" }],
+          errors: [
+            {
+              message:
+                "Field 'unknownField' not found on type 'InspectionPayment'",
+            },
+          ],
         }),
     });
 
-    await expect(createPaymentIntent("123", 3900)).rejects.toThrow(
+    await expect(createPaymentIntent("123")).rejects.toThrow(
       "Field 'unknownField' not found on type 'InspectionPayment'",
     );
   });

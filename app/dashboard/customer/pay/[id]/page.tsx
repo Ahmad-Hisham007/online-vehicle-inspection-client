@@ -39,8 +39,7 @@ export default function PayInspectionPage() {
         if (detail.paymentStatus === "succeeded") {
           return;
         }
-        const amountCents = Math.round(Number(detail.orderSubtotal) * 100);
-        return createPaymentIntent(id, amountCents);
+        return createPaymentIntent(id);
       })
       .then((setup) => {
         if (setup) {
@@ -62,8 +61,7 @@ export default function PayInspectionPage() {
         if (detail.paymentStatus === "succeeded") {
           return;
         }
-        const amountCents = Math.round(Number(detail.orderSubtotal) * 100);
-        return createPaymentIntent(id, amountCents);
+        return createPaymentIntent(id);
       })
       .then((setup) => {
         if (active && setup) {

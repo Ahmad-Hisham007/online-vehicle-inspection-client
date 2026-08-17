@@ -117,9 +117,22 @@ export async function confirmInspectionPayment(
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
 }
 
+interface GetInspectionForPaymentResponse {
+  inspection: {
+    databaseId: number;
+    author: {
+      node: {
+        databaseId: number;
+      };
+    } | null;
+    inspectionDetails: {
+      orderSubtotal: string;
+    };
+  } | null;
+}
+
 export async function createPaymentIntent(
   inspectionId: string,
-  amountCents: number,
 ): Promise<{ clientSecret: string; paymentId: string; returnUrl: string }> {
   const session = await auth();
   if (!session?.user?.accessToken) {
@@ -129,6 +142,43 @@ export async function createPaymentIntent(
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {
     throw new Error("STRIPE_SECRET_KEY is not configured");
+  }
+
+  const inspectionQuery = `
+    query GetInspectionForPayment($id: ID!) {
+      inspection(id: $id, idType: DATABASE_ID) {
+        databaseId
+        author {
+          node {
+            databaseId
+          }
+        }
+        inspectionDetails {
+          orderSubtotal
+        }
+      }
+    }
+  `;
+
+  const inspection = await wpFetch<GetInspectionForPaymentResponse>(
+    inspectionQuery,
+    { id: inspectionId },
+  );
+
+  const node = inspection.inspection;
+  if (!node) {
+    throw new Error("Inspection not found");
+  }
+
+  if (node.author?.node?.databaseId !== session.user.wpId) {
+    throw new Error("Unauthorized");
+  }
+
+  const amountCents = Math.round(
+    parseFloat(node.inspectionDetails.orderSubtotal) * 100,
+  );
+  if (!Number.isFinite(amountCents) || amountCents <= 0) {
+    throw new Error("Invalid inspection price");
   }
 
   const stripe = new Stripe(stripeKey, {

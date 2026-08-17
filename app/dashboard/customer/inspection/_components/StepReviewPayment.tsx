@@ -14,7 +14,6 @@ import { FieldGroup } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { createInspectionDraft } from "@/app/actions/inspection";
 import { createPaymentIntent } from "@/app/actions/payment";
-import { calculatePrice } from "@/app/lib/constants";
 import toast from "react-hot-toast";
 
 const stepSchema = z.object({
@@ -54,10 +53,6 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
     setPhase("submitting");
 
     try {
-      const companies = store.inspectionScope?.companies ?? [];
-      const price = calculatePrice(companies);
-      const amountCents = price.total * 100;
-
       const formData = {
         vehicleInfo: store.vehicleInfo,
         vinInfo: store.vinInfo,
@@ -69,7 +64,7 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
       const { inspectionId } = await createInspectionDraft(formData);
       store.setInspectionId(inspectionId);
 
-      const result = await createPaymentIntent(inspectionId, amountCents);
+      const result = await createPaymentIntent(inspectionId);
       setClientSecret(result.clientSecret);
       setPaymentId(result.paymentId);
       setReturnUrl(result.returnUrl);
