@@ -73,6 +73,9 @@ const MENU_QUERY = `
 `;
 
 const MENU_CACHE_REVALIDATE = 3600; // seconds
+const MENU_MEMO_TTL_MS = MENU_CACHE_REVALIDATE * 1000;
+
+let menuMemo: { items: NavMenuItem[]; timestamp: number } | null = null;
 
 function mapNode(node: MenuItemNode): NavMenuItem {
   return {
@@ -90,6 +93,10 @@ function mapNode(node: MenuItemNode): NavMenuItem {
 }
 
 export async function getMainMenu(): Promise<NavMenuItem[]> {
+  if (menuMemo && Date.now() - menuMemo.timestamp < MENU_MEMO_TTL_MS) {
+    return menuMemo.items;
+  }
+
   const url = process.env.WORDPRESS_GRAPHQL_URL;
   if (!url) return [];
 
@@ -105,15 +112,17 @@ export async function getMainMenu(): Promise<NavMenuItem[]> {
       next: { revalidate: MENU_CACHE_REVALIDATE },
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) return menuMemo?.items ?? [];
 
     const json = (await res.json()) as MenuResponse;
     const nodes = json.data?.menu?.menuItems?.nodes;
 
-    if (!nodes) return [];
+    if (!nodes) return menuMemo?.items ?? [];
 
-    return nodes.map(mapNode);
+    const items = nodes.map(mapNode);
+    menuMemo = { items, timestamp: Date.now() };
+    return items;
   } catch {
-    return [];
+    return menuMemo?.items ?? [];
   }
 }

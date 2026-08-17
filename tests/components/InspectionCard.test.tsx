@@ -7,9 +7,11 @@ import InspectionCard from "@/app/components/InspectionCard";
 import type { InspectionSummary } from "@/app/lib/types";
 
 const mockPush = vi.hoisted(() => vi.fn());
+const mockPrefetch = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, prefetch: mockPrefetch }),
+  usePathname: () => "/dashboard/customer",
 }));
 
 function summary(overrides: Partial<InspectionSummary> = {}): InspectionSummary {

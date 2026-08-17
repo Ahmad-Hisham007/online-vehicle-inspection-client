@@ -290,16 +290,18 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
 
           {/* --- Center Section: Logo --- */}
           <div className="flex-1 flex justify-center">
-            <h1 className="text-3xl font-black tracking-tight text-gray-900 cursor-pointer">
-              <Image
-                src="/Online_Vehicle_Inspection_Logo_No_BG.png"
-                width={140}
-                height={70}
-                alt="Website Logo"
-                className="object-contain"
-                style={{ width: "auto", height: "auto", maxHeight: "50px" }}
-              />
-            </h1>
+            <NavLink href="/" aria-label="Go to homepage" className="cursor-pointer">
+              <h1 className="text-3xl font-black tracking-tight text-gray-900">
+                <Image
+                  src="/Online_Vehicle_Inspection_Logo_No_BG.png"
+                  width={140}
+                  height={70}
+                  alt="Website Logo"
+                  className="object-contain"
+                  style={{ width: "auto", height: "auto", maxHeight: "50px" }}
+                />
+              </h1>
+            </NavLink>
           </div>
 
           {/* --- Right Section: Hamburger Menu --- */}

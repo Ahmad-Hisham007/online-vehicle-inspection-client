@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import NavLink from "@/app/components/NavLink";
 import StatusBadge from "@/app/components/StatusBadge";
 import { formatInspectionDate } from "@/app/lib/format";
 import type { InspectionSummary } from "@/app/lib/types";
@@ -12,7 +12,6 @@ interface InspectionCardProps {
 }
 
 export default function InspectionCard({ inspection }: InspectionCardProps) {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const isPaid =
@@ -62,25 +61,19 @@ export default function InspectionCard({ inspection }: InspectionCardProps) {
       {isOpen && (
         <div className="flex flex-col items-center gap-3 pt-2 pb-4">
           {!isPaid && (
-            <button
-              type="button"
-              onClick={() =>
-                router.push(`/dashboard/customer/pay/${inspection.id}`)
-              }
+            <NavLink
+              href={`/dashboard/customer/pay/${inspection.id}`}
               className="text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
               Payment Link
-            </button>
+            </NavLink>
           )}
-          <button
-            type="button"
-            onClick={() =>
-              router.push(`/dashboard/customer/inspection/${inspection.id}`)
-            }
+          <NavLink
+            href={`/dashboard/customer/inspection/${inspection.id}`}
             className="text-sm font-medium text-primary underline-offset-4 hover:underline"
           >
             Car details
-          </button>
+          </NavLink>
         </div>
       )}
     </div>
