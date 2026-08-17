@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ToasterProvider } from "./components/ToasterProvider";
 import SessionWrapper from "./components/SessionWrapper";
 import HeaderNav from "./components/Header/HeaderNav";
+import TopLoader from "./components/TopLoader";
 import { SITE_ORIGIN } from "./lib/site-origin";
 import { WP_SITE_TOKEN_HEADER } from "./lib/wp-headers";
 
@@ -23,14 +24,23 @@ interface GeneralSettings {
   } | null;
 }
 
+const SETTINGS_MEMO_TTL_MS = 3600 * 1000;
+
+let settingsMemo: { settings: { title: string; description: string }; timestamp: number } | null =
+  null;
+
 async function getSiteSettings(): Promise<{ title: string; description: string }> {
   const fallback = {
     title: "Online Vehicle Inspection",
     description: "Online vehicle inspection platform",
   };
 
+  if (settingsMemo && Date.now() - settingsMemo.timestamp < SETTINGS_MEMO_TTL_MS) {
+    return settingsMemo.settings;
+  }
+
   const url = process.env.WORDPRESS_GRAPHQL_URL;
-  if (!url) return fallback;
+  if (!url) return settingsMemo?.settings ?? fallback;
 
   try {
     const res = await fetch(url, {
@@ -53,17 +63,20 @@ async function getSiteSettings(): Promise<{ title: string; description: string }
       next: { revalidate: 3600 },
     });
 
-    if (!res.ok) return fallback;
+    if (!res.ok) return settingsMemo?.settings ?? fallback;
 
     const json = (await res.json()) as GeneralSettings;
     const settings = json.data?.generalSettings;
 
-    return {
+    const result = {
       title: settings?.title?.trim() || fallback.title,
       description: settings?.description?.trim() || fallback.description,
     };
+
+    settingsMemo = { settings: result, timestamp: Date.now() };
+    return result;
   } catch {
-    return fallback;
+    return settingsMemo?.settings ?? fallback;
   }
 }
 
@@ -97,6 +110,7 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", figtree.variable, inter.variable)}
     >
       <body className="min-h-full flex flex-col">
+        <TopLoader />
         <ToasterProvider />
         <SessionWrapper>
           <HeaderNav />
