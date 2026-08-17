@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 const mockAuth = vi.hoisted(() => vi.fn());
 const mockPaymentIntentsCreate = vi.hoisted(() => vi.fn());
 const mockPaymentIntentsUpdate = vi.hoisted(() => vi.fn());
+const mockPaymentIntentsRetrieve = vi.hoisted(() => vi.fn());
 const mockFetch = vi.hoisted(() => vi.fn());
 
 vi.mock("@/auth", () => ({
@@ -15,6 +16,7 @@ vi.mock("stripe", () => ({
       paymentIntents: {
         create: mockPaymentIntentsCreate,
         update: mockPaymentIntentsUpdate,
+        retrieve: mockPaymentIntentsRetrieve,
       },
     };
   },
@@ -284,13 +286,40 @@ describe("confirmInspectionPayment", () => {
     mockAuth.mockResolvedValue(null);
 
     await expect(
-      confirmInspectionPayment("123", "567", "succeeded"),
+      confirmInspectionPayment("123", "567", "pi_3R123456789"),
     ).rejects.toThrow("Unauthorized");
   });
 
-  it("updates both payment and inspection CPTs on success", async () => {
+  it("throws if STRIPE_SECRET_KEY is not configured", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
+      user: {
+        accessToken: "test-token",
+        refreshToken: "test-refresh",
+        refreshTokenExpiration: Date.now() + 3600000,
+        accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
+      },
+    });
+    delete process.env.STRIPE_SECRET_KEY;
+
+    await expect(
+      confirmInspectionPayment("123", "567", "pi_3R123456789"),
+    ).rejects.toThrow("STRIPE_SECRET_KEY is not configured");
+  });
+
+  it("updates both payment and inspection CPTs when Stripe confirms succeeded", async () => {
+    mockAuth.mockResolvedValue({
+      user: {
+        accessToken: "test-token",
+        refreshToken: "test-refresh",
+        refreshTokenExpiration: Date.now() + 3600000,
+        accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
+      },
+    });
+
+    mockPaymentIntentsRetrieve.mockResolvedValue({
+      id: "pi_3R123456789",
+      status: "succeeded",
+      metadata: { inspectionId: "123", wpPaymentId: "567" },
     });
 
     const capturedBodies: Array<{ query: string; variables: Record<string, unknown> }> = [];
@@ -310,8 +339,9 @@ describe("confirmInspectionPayment", () => {
       },
     );
 
-    await confirmInspectionPayment("123", "567", "succeeded");
+    await confirmInspectionPayment("123", "567", "pi_3R123456789");
 
+    expect(mockPaymentIntentsRetrieve).toHaveBeenCalledWith("pi_3R123456789");
     expect(capturedBodies).toHaveLength(2);
 
     const paymentUpdate = capturedBodies[0];
@@ -335,9 +365,21 @@ describe("confirmInspectionPayment", () => {
     });
   });
 
-  it("includes errorLog when status is failed", async () => {
+  it("marks failed when Stripe reports the PaymentIntent did not succeed", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
+      user: {
+        accessToken: "test-token",
+        refreshToken: "test-refresh",
+        refreshTokenExpiration: Date.now() + 3600000,
+        accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
+      },
+    });
+
+    mockPaymentIntentsRetrieve.mockResolvedValue({
+      id: "pi_3R123456789",
+      status: "requires_payment_method",
+      metadata: { inspectionId: "123", wpPaymentId: "567" },
+      last_payment_error: { message: "Your card was declined." },
     });
 
     const capturedBodies: Array<{ query: string; variables: Record<string, unknown> }> = [];
@@ -357,7 +399,7 @@ describe("confirmInspectionPayment", () => {
       },
     );
 
-    await confirmInspectionPayment("123", "567", "failed", "Card declined");
+    await confirmInspectionPayment("123", "567", "pi_3R123456789");
 
     const paymentUpdate = capturedBodies[0];
     expect(
@@ -365,7 +407,60 @@ describe("confirmInspectionPayment", () => {
         .paymentFields as Record<string, unknown>,
     ).toMatchObject({
       status: "failed",
-      errorLog: "Card declined",
+      errorLog: "Your card was declined.",
+    });
+
+    const inspectionUpdate = capturedBodies[1];
+    expect(
+      (inspectionUpdate.variables.input as Record<string, unknown>)
+        .inspectionDetails as Record<string, unknown>,
+    ).toMatchObject({
+      paymentStatus: "failed",
+      inspectionStatus: "payment_failed",
+    });
+  });
+
+  it("marks failed when PaymentIntent metadata does not match the inspection", async () => {
+    mockAuth.mockResolvedValue({
+      user: {
+        accessToken: "test-token",
+        refreshToken: "test-refresh",
+        refreshTokenExpiration: Date.now() + 3600000,
+        accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
+      },
+    });
+
+    mockPaymentIntentsRetrieve.mockResolvedValue({
+      id: "pi_3R123456789",
+      status: "succeeded",
+      metadata: { inspectionId: "999", wpPaymentId: "999" },
+    });
+
+    const capturedBodies: Array<{ query: string; variables: Record<string, unknown> }> = [];
+
+    mockFetch.mockImplementation(
+      async (_url: string, opts: RequestInit) => {
+        capturedBodies.push(JSON.parse(opts.body as string));
+        return {
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              data: {
+                updateInspectionPayment: { inspectionPayment: { id: "cg==" } },
+              },
+            }),
+        };
+      },
+    );
+
+    await confirmInspectionPayment("123", "567", "pi_3R123456789");
+
+    const paymentUpdate = capturedBodies[0];
+    expect(
+      (paymentUpdate.variables.input as Record<string, unknown>)
+        .paymentFields as Record<string, unknown>,
+    ).toMatchObject({
+      status: "failed",
     });
 
     const inspectionUpdate = capturedBodies[1];
@@ -380,7 +475,18 @@ describe("confirmInspectionPayment", () => {
 
   it("throws on WPGraphQL errors", async () => {
     mockAuth.mockResolvedValue({
-      user: { accessToken: "test-token", refreshToken: "test-refresh", refreshTokenExpiration: Date.now() + 3600000, accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000) },
+      user: {
+        accessToken: "test-token",
+        refreshToken: "test-refresh",
+        refreshTokenExpiration: Date.now() + 3600000,
+        accessTokenExpiration: Math.floor((Date.now() + 3600000) / 1000),
+      },
+    });
+
+    mockPaymentIntentsRetrieve.mockResolvedValue({
+      id: "pi_3R123456789",
+      status: "succeeded",
+      metadata: { inspectionId: "123", wpPaymentId: "567" },
     });
 
     mockFetch.mockResolvedValue({
@@ -392,7 +498,7 @@ describe("confirmInspectionPayment", () => {
     });
 
     await expect(
-      confirmInspectionPayment("123", "567", "succeeded"),
+      confirmInspectionPayment("123", "567", "pi_3R123456789"),
     ).rejects.toThrow("Field 'unknownField' not found");
   });
 });
