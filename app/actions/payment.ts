@@ -34,13 +34,35 @@ interface CreateInspectionPaymentResponse {
 export async function confirmInspectionPayment(
   inspectionId: string,
   paymentId: string,
-  status: "succeeded" | "failed",
-  errorLog?: string | null,
+  paymentIntentId: string,
 ) {
   const session = await auth();
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
+
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeKey) {
+    throw new Error("STRIPE_SECRET_KEY is not configured");
+  }
+
+  const stripe = new Stripe(stripeKey, {
+    apiVersion: "2026-06-24.dahlia",
+  });
+
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+  const verified =
+    (paymentIntent.status === "succeeded" ||
+      paymentIntent.status === "processing") &&
+    paymentIntent.metadata?.inspectionId === inspectionId &&
+    paymentIntent.metadata?.wpPaymentId === paymentId;
+
+  const status: "succeeded" | "failed" = verified ? "succeeded" : "failed";
+  const errorLog = verified
+    ? undefined
+    : paymentIntent.last_payment_error?.message ??
+      "PaymentIntent did not reach a successful state";
 
   const now = new Date();
   const timestamp = formatTimestamp(now);

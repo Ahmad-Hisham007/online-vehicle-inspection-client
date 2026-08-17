@@ -70,17 +70,28 @@ function PaymentFormInner({
       return;
     }
 
-    if (paymentIntent?.status === "succeeded") {
-      toast.success("Payment successful!");
-      confirmInspectionPayment(inspectionId, paymentId, "succeeded").catch(
-        () => {},
+    if (
+      paymentIntent &&
+      (paymentIntent.status === "succeeded" ||
+        paymentIntent.status === "processing")
+    ) {
+      toast.success(
+        paymentIntent.status === "succeeded"
+          ? "Payment successful!"
+          : "Payment is processing...",
       );
-      onSuccess();
-    } else if (paymentIntent?.status === "processing") {
-      toast.success("Payment is processing...");
-      confirmInspectionPayment(inspectionId, paymentId, "succeeded").catch(
-        () => {},
-      );
+      try {
+        await confirmInspectionPayment(
+          inspectionId,
+          paymentId,
+          paymentIntent.id,
+        );
+      } catch (err) {
+        console.error("Payment verification failed:", err);
+        toast.error(
+          "Payment succeeded, but confirmation failed. We will reconcile automatically.",
+        );
+      }
       onSuccess();
     }
   };
