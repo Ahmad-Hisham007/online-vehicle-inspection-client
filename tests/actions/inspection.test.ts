@@ -60,13 +60,13 @@ function makeValidFormData() {
         name: "card.jpg",
         status: "done" as const,
         progress: 100,
-        publicUrl: "https://ucarecdn.com/abc123",
+        publicUrl: "https://rideshareinspection.b-cdn.net/abc123",
       },
       hornVideo: {
         name: "horn.mp4",
         status: "done" as const,
         progress: 100,
-        publicUrl: "https://ucarecdn.com/def456",
+        publicUrl: "https://rideshareinspection.b-cdn.net/def456",
       },
     },
     reviewAgreement: { userAgreement: true as const, inspectionAgreement: true as const },
@@ -182,8 +182,8 @@ describe("createInspectionDraft", () => {
     expect(result.inspectionId).toBe("456");
 
     const details = capturedBody!.variables.input.inspectionDetails;
-    expect(details.registrationCardPhoto).toBe("https://ucarecdn.com/abc123");
-    expect(details.hornVideo).toBe("https://ucarecdn.com/def456");
+    expect(details.registrationCardPhoto).toBe("https://rideshareinspection.b-cdn.net/abc123");
+    expect(details.hornVideo).toBe("https://rideshareinspection.b-cdn.net/def456");
     expect(details.fuelType).toBe("gasoline");
   });
 

@@ -4,8 +4,11 @@ import LoginForm from "./LoginForm";
 import { useState, useEffect, useRef } from "react";
 import SignupForm from "./SignupForm";
 import { signIn } from "next-auth/react";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/app/components/Button";
+
+const USE_NEXT_IMAGE_BANNER = true;
 
 const Container = () => {
   const [isLoginCol, setIsLoginCol] = useState<boolean>(true);
@@ -93,12 +96,26 @@ const Container = () => {
         className={`w-full relative lg:basis-1/2 flex flex-col items-center justify-center gap-5 text-center min-h-100 lg:h-auto py-10 px-4 transition-transform duration-700 
       ${isLoginCol ? "" : "lg:-translate-x-full lg:translate-y-0"} 
       z-50`}
-        style={{
-          backgroundImage:
-            'url("/car-headlight-buildings-reflecting-headlight-car.jpg")',
-          backgroundSize: "cover",
-        }}
+        style={
+          USE_NEXT_IMAGE_BANNER
+            ? undefined
+            : {
+                backgroundImage:
+                  'url("/car-headlight-buildings-reflecting-headlight-car.webp")',
+                backgroundSize: "cover",
+              }
+        }
       >
+        {USE_NEXT_IMAGE_BANNER && (
+          <Image
+            src="/car-headlight-buildings-reflecting-headlight-car.webp"
+            alt=""
+            fill
+            unoptimized
+            priority
+            className="object-cover"
+          />
+        )}
         <div className="absolute w-full h-full bg-black/50 border-full top-half left-0 z-1 "></div>
 
         <div className="z-10 flex flex-col items-center justify-center gap-5 text-center">

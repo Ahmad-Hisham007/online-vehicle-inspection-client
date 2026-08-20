@@ -70,24 +70,24 @@ function detailNode(id: number, overrides: Record<string, unknown> = {}) {
       orderSubtotal: "63",
       inspectionStatus: "pending",
       paymentStatus: "pending",
-      registrationCardPhoto: "https://ucarecdn.com/reg",
-      odometerPhoto: "https://ucarecdn.com/odo",
-      hornVideo: "https://ucarecdn.com/horn",
+      registrationCardPhoto: "https://rideshareinspection.b-cdn.net/reg",
+      odometerPhoto: "https://rideshareinspection.b-cdn.net/odo",
+      hornVideo: "https://rideshareinspection.b-cdn.net/horn",
       interiorDriverSidePhoto: "",
       driverSeatAdjustmentPhoto: "",
       interiorPassengerSidePhoto: "",
       passengerSeatAdjustmentPhoto: "",
       interiorBackseatPhoto: "",
-      exteriorLeftPhoto: "https://ucarecdn.com/ext-left",
+      exteriorLeftPhoto: "https://rideshareinspection.b-cdn.net/ext-left",
       exteriorRightPhoto: "",
       exteriorFrontVideo: "",
       exteriorRearVideo: "",
-      leftFrontTirePhoto: "https://ucarecdn.com/tire-lf",
+      leftFrontTirePhoto: "https://rideshareinspection.b-cdn.net/tire-lf",
       rightFrontTirePhoto: "",
       leftRearTirePhoto: "",
       rightRearTirePhoto: "",
       lyftCertificate: "",
-      uberCertificate: "https://ucarecdn.com/cert-uber",
+      uberCertificate: "https://rideshareinspection.b-cdn.net/cert-uber",
       turoCertificate: "",
       ...overrides,
     },
@@ -257,21 +257,21 @@ describe("fetchInspection", () => {
     expect(result.location).toEqual({ country: "USA", state: "AR" });
     expect(result.certificates).toEqual({
       lyft: undefined,
-      uber: "https://ucarecdn.com/cert-uber",
+      uber: "https://rideshareinspection.b-cdn.net/cert-uber",
       turo: undefined,
     });
 
     expect(result.media.general.map((m) => m.url)).toEqual([
-      "https://ucarecdn.com/reg",
-      "https://ucarecdn.com/odo",
-      "https://ucarecdn.com/horn",
+      "https://rideshareinspection.b-cdn.net/reg",
+      "https://rideshareinspection.b-cdn.net/odo",
+      "https://rideshareinspection.b-cdn.net/horn",
     ]);
     expect(result.media.general[2].type).toBe("video");
     expect(result.media.exterior.map((m) => m.url)).toEqual([
-      "https://ucarecdn.com/ext-left",
+      "https://rideshareinspection.b-cdn.net/ext-left",
     ]);
     expect(result.media.tires.map((m) => m.url)).toEqual([
-      "https://ucarecdn.com/tire-lf",
+      "https://rideshareinspection.b-cdn.net/tire-lf",
     ]);
     expect(result.media.interior).toEqual([]);
   });

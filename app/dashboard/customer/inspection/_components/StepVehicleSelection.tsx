@@ -62,14 +62,16 @@ interface Props {
 }
 
 export function StepVehicleSelection({ onNext }: Props) {
-  const store = useInspectionStore();
-  const scope = store.inspectionScope;
+  const vehicleInfo = useInspectionStore((s) => s.vehicleInfo);
+  const scope = useInspectionStore((s) => s.inspectionScope);
+  const updateVehicleInfo = useInspectionStore((s) => s.updateVehicleInfo);
+  const updateInspectionScope = useInspectionStore((s) => s.updateInspectionScope);
 
   const form = useForm<StepInputs>({
     resolver: zodResolver(stepSchema),
     defaultValues: {
-      licensePlate: store.vehicleInfo?.licensePlate ?? "",
-      mileage: store.vehicleInfo?.mileage ?? ("" as unknown as number),
+      licensePlate: vehicleInfo?.licensePlate ?? "",
+      mileage: vehicleInfo?.mileage ?? ("" as unknown as number),
       country: (scope?.country as StepInputs["country"]) ?? undefined,
       state: scope?.state ?? "",
       companies: scope?.companies ?? [],
@@ -83,11 +85,11 @@ export function StepVehicleSelection({ onNext }: Props) {
   const watchedCompanies = form.watch("companies");
 
   const onSubmit = (data: StepInputs) => {
-    store.updateVehicleInfo({
+    updateVehicleInfo({
       licensePlate: data.licensePlate,
       mileage: data.mileage,
     });
-    store.updateInspectionScope({
+    updateInspectionScope({
       country: data.country,
       state: data.state,
       companies: data.companies,

@@ -99,7 +99,8 @@ interface GetInspectionResponse {
 }
 
 const DEFAULT_PER_PAGE = 8;
-const LIST_CACHE_REVALIDATE = 60; // seconds
+const LIST_CACHE_REVALIDATE = 300; // seconds (5 min — list freshness)
+const DETAIL_CACHE_REVALIDATE = 86400; // seconds (24h — detail is immutable after approval)
 
 const MEDIA_GROUPS: Record<MediaTab, { field: keyof InspectionDetailsNode; label: string; type: "image" | "video" }[]> = {
   general: [
@@ -345,7 +346,7 @@ const getInspectionDetailCached = unstable_cache(
     return mapDetail(data.inspection);
   },
   ["inspection", "detail"],
-  { revalidate: LIST_CACHE_REVALIDATE, tags: ["inspection"] },
+  { revalidate: DETAIL_CACHE_REVALIDATE, tags: ["inspection"] },
 );
 
 export async function listInspections(

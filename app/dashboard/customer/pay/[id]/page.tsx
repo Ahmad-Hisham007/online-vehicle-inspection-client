@@ -6,23 +6,19 @@ import { PaymentForm } from "@/app/components/PaymentForm";
 import { Button } from "@/app/components/Button";
 import CustomerPageShell from "@/app/components/customer/CustomerPageShell";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchInspection } from "@/app/actions/inspections";
-import { createPaymentIntent } from "@/app/actions/payment";
-import type { InspectionDetail } from "@/app/lib/types";
-
-interface PaymentSetup {
-  clientSecret: string;
-  paymentId: string;
-  returnUrl: string;
-}
+import { getPaymentSetup, type PaymentSetup } from "@/app/actions/payment";
 
 export default function PayInspectionPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
 
-  const [inspection, setInspection] = useState<InspectionDetail | null>(null);
-  const [payment, setPayment] = useState<PaymentSetup | null>(null);
+  const [inspection, setInspection] = useState<
+    PaymentSetup["inspection"] | null
+  >(null);
+  const [payment, setPayment] = useState<
+    Extract<PaymentSetup, { alreadyPaid: false }> | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,16 +29,10 @@ export default function PayInspectionPage() {
   const startPayment = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetchInspection(id)
-      .then((detail) => {
-        setInspection(detail);
-        if (detail.paymentStatus === "succeeded") {
-          return;
-        }
-        return createPaymentIntent(id);
-      })
+    getPaymentSetup(id)
       .then((setup) => {
-        if (setup) {
+        setInspection(setup.inspection);
+        if (!setup.alreadyPaid) {
           setPayment(setup);
         }
       })
@@ -54,17 +44,11 @@ export default function PayInspectionPage() {
 
   useEffect(() => {
     let active = true;
-    fetchInspection(id)
-      .then((detail) => {
-        if (!active) return;
-        setInspection(detail);
-        if (detail.paymentStatus === "succeeded") {
-          return;
-        }
-        return createPaymentIntent(id);
-      })
+    getPaymentSetup(id)
       .then((setup) => {
-        if (active && setup) {
+        if (!active) return;
+        setInspection(setup.inspection);
+        if (!setup.alreadyPaid) {
           setPayment(setup);
         }
       })

@@ -15,7 +15,7 @@ vi.mock("next/image", () => ({
     }),
 }))
 
-const mockUpload = vi.fn().mockResolvedValue("https://ucarecdn.com/uuid/photo.jpg")
+const mockUpload = vi.fn().mockResolvedValue("https://rideshareinspection.b-cdn.net/uuid/photo.jpg")
 const mockCancel = vi.fn()
 
 vi.mock("@/app/hooks/useFileUpload", () => ({
@@ -110,7 +110,7 @@ describe("FileUploadField", () => {
         name: "photo.jpg",
         status: "done",
         progress: 100,
-        publicUrl: "https://ucarecdn.com/uuid/photo.jpg",
+        publicUrl: "https://rideshareinspection.b-cdn.net/uuid/photo.jpg",
       },
     })
     expect(screen.getByText(/uploaded/i)).toBeInTheDocument()

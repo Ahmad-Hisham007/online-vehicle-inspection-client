@@ -62,6 +62,7 @@ export default function MediaGallery({ media }: MediaGalleryProps) {
                       alt={item.label}
                       width={1280}
                       height={720}
+                      unoptimized
                       className="size-full object-cover"
                     />
                   </div>

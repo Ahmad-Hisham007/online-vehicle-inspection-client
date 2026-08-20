@@ -5,6 +5,12 @@ import { auth } from "@/auth";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { wpFetch } from "@/app/lib/wp-auth";
+import {
+  createInspectionDraft,
+  type InspectionFormData,
+} from "@/app/actions/inspection";
+import { fetchInspection } from "@/app/actions/inspections";
+import type { InspectionDetail } from "@/app/lib/types";
 
 function formatTimestamp(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
@@ -252,4 +258,40 @@ export async function createPaymentIntent(
     paymentId,
     returnUrl,
   };
+}
+
+export type PaymentSetup =
+  | { alreadyPaid: true; inspection: InspectionDetail }
+  | {
+      alreadyPaid: false;
+      inspection: InspectionDetail;
+      clientSecret: string;
+      paymentId: string;
+      returnUrl: string;
+    };
+
+export async function getPaymentSetup(
+  inspectionId: string,
+): Promise<PaymentSetup> {
+  const inspection = await fetchInspection(inspectionId);
+
+  if (inspection.paymentStatus === "succeeded") {
+    return { alreadyPaid: true, inspection };
+  }
+
+  const setup = await createPaymentIntent(inspectionId);
+  return { alreadyPaid: false, inspection, ...setup };
+}
+
+export async function createInspectionAndPaymentIntent(
+  formData: InspectionFormData,
+): Promise<{
+  inspectionId: string;
+  clientSecret: string;
+  paymentId: string;
+  returnUrl: string;
+}> {
+  const { inspectionId } = await createInspectionDraft(formData);
+  const setup = await createPaymentIntent(inspectionId);
+  return { inspectionId, ...setup };
 }

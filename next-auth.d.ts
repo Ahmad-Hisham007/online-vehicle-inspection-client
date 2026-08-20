@@ -9,6 +9,7 @@ declare module "next-auth" {
     id: string;
     wpId: number;
     accessToken: string;
+    accessTokenExpiration?: number;
     refreshToken: string;
     refreshTokenExpiration: number;
     name: string;
@@ -32,6 +33,7 @@ declare module "next-auth/jwt" {
       id: string;
       wpId: number;
       accessToken: string;
+      accessTokenExpiration?: number;
       refreshToken: string;
       refreshTokenExpiration: number;
       name: string;

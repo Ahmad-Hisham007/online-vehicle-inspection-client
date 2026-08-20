@@ -2,6 +2,7 @@
 
 import { useEffect, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useUIStore } from "@/app/store/uiStore";
 import type { AnchorHTMLAttributes, MouseEvent, ReactNode } from "react";
 
 interface NavLinkProps
@@ -42,6 +43,14 @@ const NavLink = ({
   const pathname = usePathname();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const setNavPending = useUIStore((s) => s.setNavPending);
+
+  useEffect(() => {
+    setNavPending(isPending);
+    return () => {
+      if (isPending) setNavPending(false);
+    };
+  }, [isPending, setNavPending]);
 
   const isActive = isHrefActive(pathname, href);
   const resolvedClassName =

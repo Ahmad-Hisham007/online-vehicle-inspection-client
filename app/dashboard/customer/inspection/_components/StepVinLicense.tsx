@@ -43,21 +43,22 @@ interface Props {
 }
 
 export function StepVinLicense({ onNext }: Props) {
-  const store = useInspectionStore();
+  const vinInfo = useInspectionStore((s) => s.vinInfo);
+  const updateVinInfo = useInspectionStore((s) => s.updateVinInfo);
 
   const form = useForm<StepInputs>({
     resolver: zodResolver(stepSchema),
     defaultValues: {
-      vin: store.vinInfo?.vin ?? "",
-      make: store.vinInfo?.make ?? "",
-      model: store.vinInfo?.model ?? "",
-      year: store.vinInfo?.year?.toString() ?? "",
-      fuelType: (store.vinInfo?.fuelType as StepInputs["fuelType"]) ?? undefined,
+      vin: vinInfo?.vin ?? "",
+      make: vinInfo?.make ?? "",
+      model: vinInfo?.model ?? "",
+      year: vinInfo?.year?.toString() ?? "",
+      fuelType: (vinInfo?.fuelType as StepInputs["fuelType"]) ?? undefined,
     },
   });
 
   const onSubmit = (data: StepInputs) => {
-    store.updateVinInfo({
+    updateVinInfo({
       vin: data.vin,
       make: data.make,
       model: data.model,

@@ -72,7 +72,7 @@ const MENU_QUERY = `
   }
 `;
 
-const MENU_CACHE_REVALIDATE = 3600; // seconds
+const MENU_CACHE_REVALIDATE = 86400; // seconds (24h — menu is static content)
 const MENU_MEMO_TTL_MS = MENU_CACHE_REVALIDATE * 1000;
 
 let menuMemo: { items: NavMenuItem[]; timestamp: number } | null = null;

@@ -153,6 +153,7 @@ describe("GET /api/payment/status", () => {
     expect(capturedBody!.variables.id).toBe("123");
     expect(capturedBody!.query).toContain("GetInspectionStatus");
     expect(capturedBody!.query).toContain("inspectionDetails");
+    expect(capturedBody!.query).toContain("idType: DATABASE_ID");
     expect(capturedBody!.query).toContain("inspectionStatus");
     expect(capturedBody!.query).toContain("paymentStatus");
   });
