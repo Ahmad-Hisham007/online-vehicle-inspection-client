@@ -1,19 +1,10 @@
-# ============================================================
-# Netlify — zero-cost auto-deploy policy
-#   Auto-deploys (branch deploys / deploy previews) are free.
-#   Production auto-deploys are DISABLED: pushing/merging to
-#   `main` never triggers a build, so credits are never
-#   consumed automatically. Release by running
-#   `netlify deploy --prod` (15 credits, intentional).
-# ============================================================
-
 [build]
-  command = "npm run build"
   publish = ".next"
-  # Skip git-triggered production builds (0 credits spent on main).
-  # Any non-zero exit skips the build; CONTEXT == "production" only
-  # for pushes/merges to the production branch (`main`).
-  ignore = "if [ \"$CONTEXT\" = production ]; then exit 1; fi"
+  command = "npm run build"
+  ignore = "if [ \"$CONTEXT\" = \"production\" ]; then exit 0; fi"
 
 [build.environment]
   NODE_VERSION = "22"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
