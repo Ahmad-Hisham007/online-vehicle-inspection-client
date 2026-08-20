@@ -32,7 +32,9 @@ vi.mock("next/image", () => ({
 }))
 
 vi.mock("@/app/store/inspectionStore", () => ({
-  useInspectionStore: vi.fn(() => mockStore),
+  useInspectionStore: vi.fn((selector: (s: typeof mockStore) => unknown) =>
+    selector(mockStore),
+  ),
 }))
 
 import { StepVehicleSelection, stepSchema } from "@/app/dashboard/customer/inspection/_components/StepVehicleSelection"

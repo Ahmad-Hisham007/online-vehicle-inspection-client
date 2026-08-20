@@ -5,19 +5,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.ucarecdn.com",
+        hostname: "*.b-cdn.net",
       },
       {
         protocol: "https",
-        hostname: "*.ucarecd.net",
-      },
-      {
-        protocol: "https",
-        hostname: "ucarecdn.com",
-      },
-      {
-        protocol: "https",
-        hostname: "*.s3.*.amazonaws.com",
+        hostname: "rideshareinspection.b-cdn.net",
       },
       {
         protocol: "https",

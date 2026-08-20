@@ -105,6 +105,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: data.user.name,
               email: data.user.email,
               accessToken: data.authToken,
+              accessTokenExpiration: data.authTokenExpiration,
               refreshToken: data.refreshToken,
               refreshTokenExpiration: data.refreshTokenExpiration,
               emailVerified: null,
@@ -127,7 +128,71 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.user = user;
+        return token;
       }
+
+      const current = token.user;
+      if (!current?.accessToken || !current.refreshToken) {
+        return token;
+      }
+
+      const accessExp = current.accessTokenExpiration
+        ? current.accessTokenExpiration * 1000
+        : 0;
+
+      if (accessExp && Date.now() < accessExp - 60_000) {
+        return token;
+      }
+
+      try {
+        const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
+            Origin: SITE_ORIGIN,
+          },
+          body: JSON.stringify({
+            query: `
+              mutation RefreshAuthToken($token: String!) {
+                refreshToken(input: { refreshToken: $token }) {
+                  authToken
+                  authTokenExpiration
+                  refreshToken
+                  refreshTokenExpiration
+                  success
+                }
+              }
+            `,
+            variables: { token: current.refreshToken },
+          }),
+        });
+
+        const json = await res.json();
+        const refreshed = json.data?.refreshToken;
+
+        if (!refreshed?.success || !refreshed.authToken) {
+          return token;
+        }
+
+        token.user = {
+          ...current,
+          accessToken: refreshed.authToken,
+          accessTokenExpiration:
+            refreshed.authTokenExpiration ?? current.accessTokenExpiration,
+          ...(refreshed.refreshToken
+            ? {
+                refreshToken: refreshed.refreshToken,
+                refreshTokenExpiration:
+                  refreshed.refreshTokenExpiration ??
+                  current.refreshTokenExpiration,
+              }
+            : {}),
+        };
+      } catch {
+        return token;
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -181,6 +246,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (wpData?.authToken) {
             user.accessToken = wpData.authToken;
+            user.accessTokenExpiration = wpData.authTokenExpiration;
             user.refreshToken = wpData.refreshToken;
             user.refreshTokenExpiration = wpData.refreshTokenExpiration;
             user.wpId = wpData.user.databaseId;

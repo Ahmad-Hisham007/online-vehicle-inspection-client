@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import {
   FiFileText,
@@ -31,8 +31,6 @@ const BRAND_LOGOS: Record<string, { src: string; alt: string }> = {
   "turo-menu": { src: "/turo.svg", alt: "Turo" },
 };
 
-const AUTH_CLASSES = ["login-menu", "dashboard-menu", "logout-menu"];
-
 const ITEM_ICONS: Record<string, IconType> = {
   "login-menu": FiLogIn,
   "dashboard-menu": FiGrid,
@@ -43,15 +41,22 @@ const ITEM_ICONS: Record<string, IconType> = {
 
 interface HeaderProps {
   menuItems?: NavMenuItem[];
+  initialAuthStatus?: "authenticated" | "unauthenticated";
+  isAdmin?: boolean;
 }
 
-const Header = ({ menuItems = [] }: HeaderProps) => {
+const Header = ({
+  menuItems = [],
+  initialAuthStatus = "unauthenticated",
+}: HeaderProps) => {
   const [selectedLang, setSelectedLang] = useState("En");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { status } = useSession();
-  const authenticated = status === "authenticated";
-  const authPending = status === "loading";
   const router = useRouter();
+
+  const effectiveStatus =
+    status === "loading" ? initialAuthStatus : status;
+  const authenticated = effectiveStatus === "authenticated";
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -59,7 +64,7 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
     await signOut({ redirect: false });
     closeMenu();
     toast.success("Logged out successfully");
-    router.push("/");
+    router.push("/login");
   };
 
   const languages = [
@@ -71,29 +76,34 @@ const Header = ({ menuItems = [] }: HeaderProps) => {
   const currentLang =
     languages.find((l) => l.code === selectedLang) || languages[0];
 
-  const visibleItems = menuItems.filter((item) => {
-    const classes = item.cssClasses;
-    if (authPending && classes.some((c) => AUTH_CLASSES.includes(c))) {
-      return false;
-    }
-    if (classes.includes("login-menu")) return !authenticated;
-    if (classes.includes("dashboard-menu") || classes.includes("logout-menu")) {
-      return authenticated;
-    }
-    return true;
-  });
+  const visibleItems = useMemo(
+    () =>
+      menuItems.filter((item) => {
+        const classes = item.cssClasses;
+        if (classes.includes("login-menu")) return !authenticated;
+        if (classes.includes("dashboard-menu") || classes.includes("logout-menu")) {
+          return authenticated;
+        }
+        return true;
+      }),
+    [menuItems, authenticated],
+  );
 
   const isBrand = (item: NavMenuItem) =>
     item.cssClasses.some((c) => c in BRAND_LOGOS);
 
-  const firstBrand = visibleItems.findIndex(isBrand);
-  const before =
-    firstBrand === -1 ? visibleItems : visibleItems.slice(0, firstBrand);
-  const brands = visibleItems.filter(isBrand);
-  const after =
-    firstBrand === -1
-      ? []
-      : visibleItems.slice(firstBrand).filter((i) => !isBrand(i));
+  const { before, brands, after } = useMemo(() => {
+    const firstBrand = visibleItems.findIndex(isBrand);
+    return {
+      before:
+        firstBrand === -1 ? visibleItems : visibleItems.slice(0, firstBrand),
+      brands: visibleItems.filter(isBrand),
+      after:
+        firstBrand === -1
+          ? []
+          : visibleItems.slice(firstBrand).filter((i) => !isBrand(i)),
+    };
+  }, [visibleItems]);
 
   const renderItem = (item: NavMenuItem) => {
     const classes = item.cssClasses.join(" ");

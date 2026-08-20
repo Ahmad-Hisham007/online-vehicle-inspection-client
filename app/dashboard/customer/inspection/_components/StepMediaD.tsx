@@ -23,14 +23,14 @@ const fields = [
 ];
 
 export function StepMediaD({ onNext }: Props) {
-  const store = useInspectionStore();
+  const uploadFields = useInspectionStore((s) => s.uploadFields);
+  const updateUploadField = useInspectionStore((s) => s.updateUploadField);
 
   const form = useForm<StepInputs>({
     resolver: zodResolver(stepSchema),
   });
 
   const onSubmit = () => {
-    const uploadFields = store.uploadFields;
     const allDone = fields.every((f) => uploadFields?.[f.name]?.status === "done");
     if (!allDone) {
       toast.error("Please upload all required files before proceeding");
@@ -51,8 +51,8 @@ export function StepMediaD({ onNext }: Props) {
             <FileUploadField
               key={f.name}
               label={f.label}
-              value={store.uploadFields?.[f.name] ?? undefined}
-              onChange={(meta) => store.updateUploadField(f.name, meta)}
+              value={uploadFields?.[f.name] ?? undefined}
+              onChange={(meta) => updateUploadField(f.name, meta)}
             />
           ))}
         </div>

@@ -4,8 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ToasterProvider } from "./components/ToasterProvider";
 import SessionWrapper from "./components/SessionWrapper";
-import HeaderNav from "./components/Header/HeaderNav";
-import TopLoader from "./components/TopLoader";
+import NavigationLoader from "./components/NavigationLoader";
 import { SITE_ORIGIN } from "./lib/site-origin";
 import { WP_SITE_TOKEN_HEADER } from "./lib/wp-headers";
 
@@ -110,12 +109,9 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", figtree.variable, inter.variable)}
     >
       <body className="min-h-full flex flex-col">
-        <TopLoader />
+        <NavigationLoader />
         <ToasterProvider />
-        <SessionWrapper>
-          <HeaderNav />
-          <main>{children}</main>
-        </SessionWrapper>
+        <SessionWrapper>{children}</SessionWrapper>
       </body>
     </html>
   );

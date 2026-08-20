@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -11,6 +12,7 @@ import {
 import { Button } from "@/app/components/Button";
 import toast from "react-hot-toast";
 import { confirmInspectionPayment } from "@/app/actions/payment";
+import { useDataStore } from "@/app/store/dataStore";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
@@ -37,6 +39,9 @@ function PaymentFormInner({
 }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
+  const router = useRouter();
+  const invalidateDetail = useDataStore((s) => s.invalidateDetail);
+  const invalidateList = useDataStore((s) => s.invalidateList);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +98,9 @@ function PaymentFormInner({
         );
       }
       onSuccess();
+      invalidateDetail(inspectionId);
+      invalidateList();
+      router.refresh();
     }
   };
 

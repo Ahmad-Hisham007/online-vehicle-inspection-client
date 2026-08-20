@@ -6,14 +6,14 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useInspectionStore } from "@/app/store/inspectionStore";
+import { useShallow } from "zustand/react/shallow";
 import { PriceSummary } from "@/app/components/PriceSummary";
 import { Button } from "@/app/components/Button";
 import { PaymentForm } from "@/app/components/PaymentForm";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldGroup } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
-import { createInspectionDraft } from "@/app/actions/inspection";
-import { createPaymentIntent } from "@/app/actions/payment";
+import { createInspectionAndPaymentIntent } from "@/app/actions/payment";
 import toast from "react-hot-toast";
 
 const stepSchema = z.object({
@@ -35,7 +35,29 @@ type PaymentPhase = "review" | "submitting" | "paying" | "redirecting";
 
 export function StepReviewPayment({ onNext: _onNext }: Props) {
   const router = useRouter();
-  const store = useInspectionStore();
+  const {
+    vehicleInfo,
+    vinInfo,
+    inspectionScope,
+    uploadFields,
+    reviewAgreement,
+    inspectionId,
+    setInspectionId,
+    updateReviewAgreement,
+    reset,
+  } = useInspectionStore(
+    useShallow((s) => ({
+      vehicleInfo: s.vehicleInfo,
+      vinInfo: s.vinInfo,
+      inspectionScope: s.inspectionScope,
+      uploadFields: s.uploadFields,
+      reviewAgreement: s.reviewAgreement,
+      inspectionId: s.inspectionId,
+      setInspectionId: s.setInspectionId,
+      updateReviewAgreement: s.updateReviewAgreement,
+      reset: s.reset,
+    })),
+  );
   const [phase, setPhase] = useState<PaymentPhase>("review");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [returnUrl, setReturnUrl] = useState<string | null>(null);
@@ -44,8 +66,8 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
   const form = useForm<StepInputs>({
     resolver: zodResolver(stepSchema),
     defaultValues: {
-      userAgreement: store.reviewAgreement?.userAgreement ?? false,
-      inspectionAgreement: store.reviewAgreement?.inspectionAgreement ?? false,
+      userAgreement: reviewAgreement?.userAgreement ?? false,
+      inspectionAgreement: reviewAgreement?.inspectionAgreement ?? false,
     },
   });
 
@@ -54,20 +76,24 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
 
     try {
       const formData = {
-        vehicleInfo: store.vehicleInfo,
-        vinInfo: store.vinInfo,
-        inspectionScope: store.inspectionScope,
-        uploadFields: store.uploadFields,
-        reviewAgreement: store.reviewAgreement,
+        vehicleInfo,
+        vinInfo,
+        inspectionScope,
+        uploadFields,
+        reviewAgreement,
       };
 
-      const { inspectionId } = await createInspectionDraft(formData);
-      store.setInspectionId(inspectionId);
+      const {
+        inspectionId: createdInspectionId,
+        clientSecret: nextSecret,
+        paymentId: nextPaymentId,
+        returnUrl: nextReturnUrl,
+      } = await createInspectionAndPaymentIntent(formData);
+      setInspectionId(createdInspectionId);
 
-      const result = await createPaymentIntent(inspectionId);
-      setClientSecret(result.clientSecret);
-      setPaymentId(result.paymentId);
-      setReturnUrl(result.returnUrl);
+      setClientSecret(nextSecret);
+      setPaymentId(nextPaymentId);
+      setReturnUrl(nextReturnUrl);
       setPhase("paying");
     } catch (err) {
       toast.error(
@@ -75,20 +101,27 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
       );
       setPhase("review");
     }
-  }, [store]);
+  }, [
+    vehicleInfo,
+    vinInfo,
+    inspectionScope,
+    uploadFields,
+    reviewAgreement,
+    setInspectionId,
+  ]);
 
   const onSubmit = (data: StepInputs) => {
-    store.updateReviewAgreement(data);
+    updateReviewAgreement(data);
     startPayment();
   };
 
   const handlePaymentSuccess = useCallback(() => {
     if (returnUrl) {
-      store.reset();
+      reset();
       setPhase("redirecting");
       router.push(returnUrl);
     }
-  }, [returnUrl, router, store]);
+  }, [returnUrl, router, reset]);
 
   const handleRetry = useCallback(() => {
     setClientSecret(null);
@@ -96,7 +129,7 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
     startPayment();
   }, [startPayment]);
 
-  const companies = store.inspectionScope?.companies ?? [];
+  const companies = inspectionScope?.companies ?? [];
 
   if (phase === "submitting") {
     return (
@@ -119,7 +152,7 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
         <PaymentForm
           clientSecret={clientSecret}
           returnUrl={returnUrl}
-          inspectionId={store.inspectionId!}
+          inspectionId={inspectionId!}
           paymentId={paymentId!}
           onSuccess={handlePaymentSuccess}
           onRetry={handleRetry}
@@ -148,59 +181,55 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
           Order Summary
         </h4>
 
-        {store.vinInfo && (
+        {vinInfo && (
           <div className="grid grid-cols-2 gap-3 text-sm mb-4">
             <div>
               <p className="text-xs text-primary font-medium">Vehicle</p>
               <p className="text-gray-900">
-                {store.vinInfo.make} {store.vinInfo.model} {store.vinInfo.year}
+                {vinInfo.make} {vinInfo.model} {vinInfo.year}
               </p>
             </div>
             <div>
               <p className="text-xs text-primary font-medium">Fuel Type</p>
-              <p className="text-gray-900 capitalize">
-                {store.vinInfo.fuelType}
-              </p>
+              <p className="text-gray-900 capitalize">{vinInfo.fuelType}</p>
             </div>
             <div>
               <p className="text-xs text-primary font-medium">VIN</p>
-              <p className="text-gray-900 font-mono text-xs">
-                {store.vinInfo.vin}
-              </p>
+              <p className="text-gray-900 font-mono text-xs">{vinInfo.vin}</p>
             </div>
-            {store.vehicleInfo?.mileage && (
+            {vehicleInfo?.mileage && (
               <div>
                 <p className="text-xs text-primary font-medium">Mileage</p>
                 <p className="text-gray-900">
-                  {store.vehicleInfo.mileage.toLocaleString()}
+                  {vehicleInfo.mileage.toLocaleString()}
                 </p>
               </div>
             )}
           </div>
         )}
 
-        {store.vehicleInfo && (
+        {vehicleInfo && (
           <div className="grid grid-cols-2 gap-3 text-sm mb-4">
             <div>
               <p className="text-xs text-primary font-medium">License Plate</p>
-              <p className="text-gray-900">{store.vehicleInfo.licensePlate}</p>
+              <p className="text-gray-900">{vehicleInfo.licensePlate}</p>
             </div>
           </div>
         )}
 
-        {store.inspectionScope && (
+        {inspectionScope && (
           <div className="grid grid-cols-2 gap-3 text-sm mb-4">
             <div>
               <p className="text-xs text-primary font-medium">Country</p>
               <p className="text-gray-900 capitalize">
-                {store.inspectionScope.country}
+                {inspectionScope.country}
               </p>
             </div>
             <div>
               <p className="text-xs text-primary font-medium">
-                {store.inspectionScope.country === "usa" ? "State" : "Province"}
+                {inspectionScope.country === "usa" ? "State" : "Province"}
               </p>
-              <p className="text-gray-900">{store.inspectionScope.state}</p>
+              <p className="text-gray-900">{inspectionScope.state}</p>
             </div>
           </div>
         )}

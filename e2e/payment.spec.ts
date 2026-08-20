@@ -4,7 +4,7 @@ const TEST_EMAIL = process.env.TEST_EMAIL || "test@example.com";
 const TEST_PASSWORD = process.env.TEST_PASSWORD || "password";
 
 function makeDoneFileMeta(name: string) {
-  return { name, size: 1024, status: "done" as const, progress: 100, publicUrl: `https://ucarecdn.com/dummy-${name}` };
+  return { name, size: 1024, status: "done" as const, progress: 100, publicUrl: `https://rideshareinspection.b-cdn.net/dummy-${name}` };
 }
 
 async function prefillUploadFields(page: Page) {

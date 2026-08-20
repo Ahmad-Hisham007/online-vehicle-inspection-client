@@ -8,7 +8,7 @@ their dashboard. The WordPress backend is accessed exclusively through WPGraphQL
 
 - **NextAuth v5 authentication** — credentials + Google OAuth (JWT session, WP JWT / Site Token)
 - **7-step inspection form** — React Hook Form + Zod v4, live pricing, background uploads, Zustand state persisted to sessionStorage
-- **Direct-to-cloud uploads** — Uploadcare (dev) / AWS S3 (prod); files never pass through the Next.js server
+- **Direct-to-cloud uploads** — Bunny Storage (S3-compatible presigned PUTs) served via a Bunny Pull Zone; files never pass through the Next.js server
 - **Stripe payments** — PaymentIntent, webhooks, status polling, pay route for existing inspections
 - **Customer dashboard** — owner-scoped inspection listing with server-side filter/pagination, detail view with sticky action bar, Payment Links
 - **Admin dashboard + PDF certificate generation** — planned (Phase 6)
@@ -17,12 +17,12 @@ their dashboard. The WordPress backend is accessed exclusively through WPGraphQL
 
 Next.js 16 (App Router) · React 19 · TypeScript (strict) · Tailwind CSS v4 ·
 shadcn/ui · React Hook Form + Zod v4 · Zustand · NextAuth v5 · WPGraphQL ·
-Stripe · Uploadcare / AWS S3 · Vitest + Playwright
+Stripe · Bunny Storage + Pull Zone CDN · Vitest + Playwright
 
 ## Architecture
 
 - **Headless WordPress via WPGraphQL only** — no REST endpoints for WP data
-- **Direct-to-cloud uploads** — Server Actions issue presigned URLs/triggers only; binary data goes straight to Uploadcare/S3
+- **Direct-to-cloud uploads** — Server Actions issue presigned URLs/triggers only; binary data goes straight to Bunny Storage (S3-compatible presigned PUT)
 - **Auto-refreshing WP tokens** — `app/lib/wp-auth.ts` (refreshToken mutation)
 - **Route protection** — `proxy.ts` middleware guards `/dashboard/*` and role-redirects
 - **Form state** — 7-step form persisted to sessionStorage (survives refresh)
@@ -45,7 +45,7 @@ npm run dev                   # → http://localhost:3000
 | `npm run build`        | Production build + typecheck         |
 | `npm run start`        | Serve the production build           |
 | `npm run lint`         | ESLint (Next.js config)              |
-| `npm run test`         | Vitest unit tests (190 tests / 21 files) |
+| `npm run test`         | Vitest unit tests (208 tests / 22 files) |
 | `npm run test:coverage`| Vitest with v8 coverage              |
 | `npm run e2e`          | Playwright e2e (opens browser)       |
 | `npm run e2e:ui`       | Playwright UI mode                   |
@@ -59,7 +59,7 @@ Copy `.env.example` → `.env.local` and fill in the values. Groups:
 - **Auth** — `AUTH_URL`, `AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 - **Stripe** — `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
 - **WP webhook service account** — `WP_WEBHOOK_USERNAME`, `WP_WEBHOOK_PASSWORD`
-- **Uploads** — Uploadcare (`UPLOADCARE_PUBLIC_KEY`, `NEXT_PUBLIC_UPLOADCARE_PUBLIC_KEY`) or AWS S3 (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_BUCKET`)
+- **Uploads** — Bunny Storage (`BUNNY_STORAGE_ZONE_NAME`, `BUNNY_STORAGE_PASSWORD`, `BUNNY_STORAGE_REGION`, `BUNNY_PULL_ZONE_HOSTNAME`, optional `BUNNY_OPTIMIZER_ENABLED`)
 - **E2E tests** — `TEST_EMAIL`, `TEST_PASSWORD`
 
 Never commit real secrets.

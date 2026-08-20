@@ -24,7 +24,7 @@ export const GET = async (req: Request) => {
       body: JSON.stringify({
         query: `
           query GetInspectionStatus($id: ID!) {
-            inspection(id: $id) {
+            inspection(id: $id, idType: DATABASE_ID) {
               inspectionDetails {
                 inspectionStatus
                 paymentStatus

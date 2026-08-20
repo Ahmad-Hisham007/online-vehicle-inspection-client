@@ -9,6 +9,17 @@ interface TokenUser {
   accessTokenExpiration?: number;
 }
 
+const REFRESH_MEMO_TTL = 60_000;
+
+const refreshMemo = new Map<string, { token: string; at: number }>();
+
+function pruneRefreshMemo() {
+  const cutoff = Date.now() - REFRESH_MEMO_TTL;
+  for (const [key, entry] of refreshMemo) {
+    if (entry.at < cutoff) refreshMemo.delete(key);
+  }
+}
+
 async function getSessionTokens(): Promise<TokenUser> {
   const session = await auth();
   const user = session?.user as TokenUser | undefined;
@@ -30,7 +41,10 @@ export async function getValidAccessToken(): Promise<string> {
     return user.accessToken;
   }
 
-  console.log("[wp-auth] Access token expired, attempting refresh...");
+  const memo = refreshMemo.get(user.refreshToken);
+  if (memo && now - memo.at < REFRESH_MEMO_TTL) {
+    return memo.token;
+  }
 
   const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
     method: "POST",
@@ -55,11 +69,16 @@ export async function getValidAccessToken(): Promise<string> {
 
   const json = await res.json();
 
-  if (!json.data?.refreshToken?.success) {
+  if (!json.data?.refreshToken?.success || !json.data?.refreshToken?.authToken) {
     throw new Error("Token refresh failed: " + (json.errors?.[0]?.message ?? "Unknown error"));
   }
 
-  console.log("[wp-auth] Token refresh successful");
+  refreshMemo.set(user.refreshToken, {
+    token: json.data.refreshToken.authToken,
+    at: Date.now(),
+  });
+  pruneRefreshMemo();
+
   return json.data.refreshToken.authToken;
 }
 

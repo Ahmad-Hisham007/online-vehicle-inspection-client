@@ -47,15 +47,15 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     hostPhoneNumber: "555-0100",
     media: {
       general: [
-        { label: "Odometer", url: "https://ucarecdn.com/odo", type: "image" },
-        { label: "Horn", url: "https://ucarecdn.com/horn", type: "video" },
+        { label: "Odometer", url: "https://rideshareinspection.b-cdn.net/odo", type: "image" },
+        { label: "Horn", url: "https://rideshareinspection.b-cdn.net/horn", type: "video" },
       ],
       interior: [],
       exterior: [],
       tires: [
         {
           label: "Left Front Tire",
-          url: "https://ucarecdn.com/tire-lf",
+          url: "https://rideshareinspection.b-cdn.net/tire-lf",
           type: "image",
         },
       ],
@@ -147,7 +147,7 @@ describe("InspectionDetailView", () => {
       <InspectionDetailView
         inspection={detail({
           inspectionStatus: "approved",
-          certificates: { lyft: "https://ucarecdn.com/cert-lyft" },
+          certificates: { lyft: "https://rideshareinspection.b-cdn.net/cert-lyft" },
         })}
         role="customer"
       />,
@@ -156,7 +156,7 @@ describe("InspectionDetailView", () => {
     const link = screen.getByRole("link", {
       name: /Download Lyft certificate/i,
     });
-    expect(link).toHaveAttribute("href", "https://ucarecdn.com/cert-lyft");
+    expect(link).toHaveAttribute("href", "https://rideshareinspection.b-cdn.net/cert-lyft");
   });
 
   it("shows Pay action for unpaid customer", async () => {
