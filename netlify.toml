@@ -1,7 +1,9 @@
 [build]
   publish = ".next"
   command = "npm run build"
-  ignore = "if [ \"$CONTEXT\" = \"production\" ]; then exit 0; fi"
+  # Netlify ignore semantics: exit 0 = SKIP build, non-zero = build.
+  # Production (main merge) -> skip (0 credits). Previews/branches -> build.
+  ignore = "if [ \"$CONTEXT\" = \"production\" ]; then exit 0; else exit 1; fi"
 
 [build.environment]
   NODE_VERSION = "22"
