@@ -1,9 +1,31 @@
-import { auth } from "@/auth";
-import { getMainMenu } from "@/app/lib/menu";
 import Header from "./Header";
+import HeaderMenuSkeleton from "./HeaderMenuSkeleton";
+import type { NavMenuItem } from "@/app/lib/menu";
 
-export default async function HeaderNav() {
-  const [menuItems, session] = await Promise.all([getMainMenu(), auth()]);
+interface HeaderNavProps {
+  menuItems?: NavMenuItem[];
+  session?: {
+    user?: {
+      accessToken?: string;
+      role?: string;
+    };
+  } | null;
+  isLoading?: boolean;
+}
+
+export default function HeaderNav({ 
+  menuItems = [], 
+  session = null, 
+  isLoading = false 
+}: HeaderNavProps) {
+  if (isLoading) {
+    return (
+      <>
+        <HeaderMenuSkeleton variant="desktop" />
+        <HeaderMenuSkeleton variant="mobile" isOpen={true} />
+      </>
+    );
+  }
 
   const user = session?.user;
 
@@ -13,7 +35,7 @@ export default async function HeaderNav() {
       initialAuthStatus={
         user?.accessToken ? "authenticated" : "unauthenticated"
       }
-      isAdmin={user?.role === "administrator"}
+      session={session}
     />
   );
 }
