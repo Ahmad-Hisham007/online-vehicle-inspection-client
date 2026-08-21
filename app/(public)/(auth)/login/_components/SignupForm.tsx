@@ -108,7 +108,6 @@ const SignupForm = () => {
             }
             form.reset();
             router.push("/dashboard");
-            router.refresh();
             return "Logged in. Redirecting...";
           },
           error: (err) => {

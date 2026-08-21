@@ -47,7 +47,6 @@ const LoginForm = () => {
             }
             form.reset();
             router.push("/dashboard");
-            router.refresh();
             return "Login Successful!";
           },
           error: (err) => {

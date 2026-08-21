@@ -1,17 +1,17 @@
-import { Suspense } from "react";
+import { auth } from "@/auth";
+import { getMainMenu } from "@/app/lib/menu";
 import HeaderNav from "@/app/components/Header/HeaderNav";
-import HeaderSkeleton from "@/app/components/Header/HeaderSkeleton";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [menuItems, session] = await Promise.all([getMainMenu(), auth()]);
+
   return (
     <>
-      <Suspense fallback={<HeaderSkeleton />}>
-        <HeaderNav />
-      </Suspense>
+      <HeaderNav menuItems={menuItems} session={session} />
       <main className="flex-1">{children}</main>
     </>
   );

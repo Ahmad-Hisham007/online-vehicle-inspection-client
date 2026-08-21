@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import {
   FiFileText,
   FiGrid,
@@ -42,21 +42,26 @@ const ITEM_ICONS: Record<string, IconType> = {
 interface HeaderProps {
   menuItems?: NavMenuItem[];
   initialAuthStatus?: "authenticated" | "unauthenticated";
-  isAdmin?: boolean;
+  isLoading?: boolean;
+  session?: {
+    user?: {
+      accessToken?: string;
+      role?: string;
+    };
+  } | null;
 }
 
 const Header = ({
   menuItems = [],
   initialAuthStatus = "unauthenticated",
+  isLoading = false,
+  session = null,
 }: HeaderProps) => {
   const [selectedLang, setSelectedLang] = useState("En");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { status } = useSession();
   const router = useRouter();
 
-  const effectiveStatus =
-    status === "loading" ? initialAuthStatus : status;
-  const authenticated = effectiveStatus === "authenticated";
+  const authenticated = session?.user?.accessToken ? true : (initialAuthStatus === "authenticated");
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -104,6 +109,10 @@ const Header = ({
           : visibleItems.slice(firstBrand).filter((i) => !isBrand(i)),
     };
   }, [visibleItems]);
+
+  if (isLoading) {
+    return null; // HeaderNav handles loading state
+  }
 
   const renderItem = (item: NavMenuItem) => {
     const classes = item.cssClasses.join(" ");
