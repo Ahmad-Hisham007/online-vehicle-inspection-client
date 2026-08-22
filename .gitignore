@@ -31,6 +31,10 @@ test-results/
 .opencode/
 skills-lock.json
 repomix-output.xml
+opencode.jsonc
+AGENTS.md
+CLAUDE.md
+docs/*
 
 # case studies (personal content, never pushed)
 /case-studies/

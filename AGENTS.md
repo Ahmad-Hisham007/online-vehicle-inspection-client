@@ -15,7 +15,7 @@
 | `npm run dev`       | Dev server at `http://localhost:3000` |
 | `npm run lint`      | ESLint (Next.js config)               |
 | `npm run build`     | Build + typecheck via `next build`    |
-| `npm run test`      | Vitest unit tests (112 tests)         |
+| `npm run test`      | Vitest unit tests (208 tests)         |
 | `npm run test:ui`   | Vitest UI mode                        |
 | `npm run test:coverage` | Vitest with v8 coverage           |
 | `npm run e2e`       | Playwright e2e (opens browser)        |
@@ -62,6 +62,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Constants**: `app/lib/constants.ts` — US states, CA provinces, company lists (with `ext` field for mixed image formats), `calculatePrice()`.
 - **Store**: `app/store/inspectionStore.ts` — 6 slices (`currentStep`, `vehicleInfo`, `vinInfo`, `inspectionScope`, `uploadFields`, `reviewAgreement`) with persist middleware.
 - **Payment engine**: Server Actions (`app/actions/payment.ts`, `app/actions/inspection.ts`), webhook handler (`app/api/webhooks/stripe/route.ts`), polling endpoint (`app/api/payment/status/route.ts`). Stripe PaymentIntent + `inspection-payment` CPT via WPGraphQL.
+- **Header session**: `Header.tsx` (client) uses `useSession()` for live auth state; server layouts may pass a `session` prop as first-paint fallback. On static/ISR public pages (`/`, `/login`, `/register`) there is no server prop, so a brief `HeaderMenuSkeleton` renders while the client session resolves. Dashboard layout passes `auth()` server-side — no skeleton there.
 
 ## Code Conventions
 
@@ -69,7 +70,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Styling**: Tailwind v4 (`@theme inline` syntax, `@custom-variant dark`). CSS variables in `app/globals.css`.
 - **Scrollbar**: `.thin-scrollbar` utility class in `globals.css` — thin 4px rounded scrollbar for overflow containers.
 - **Component split**:
-  - `app/components/` — app-specific (Button, FormInput, FormSelect, ImageCheckboxGroup, FileUploadField, PriceSummary, StepIndicator, Header, SessionWrapper, ToasterProvider)
+  - `app/components/` — app-specific (Button, FormInput, FormSelect, ImageCheckboxGroup, FileUploadField, PriceSummary, StepIndicator, Header, HeaderNav, HeaderMenuSkeleton, SessionWrapper, ToasterProvider)
   - `components/ui/` — shadcn primitives (button, card, input, checkbox, field, separator, dropdown-menu, etc.)
 - **Two Button components**: `@/app/components/Button` (app custom with `primary`/`secondary` variants) vs `@/components/ui/button` (shadcn). Use the app one for forms.
 - **Form pattern**: React Hook Form + Zod schema + `zodResolver` + `@/app/components/FormInput` generic `<T extends FieldValues>` + `@/components/ui/field` (Field, FieldLabel, FieldGroup).
@@ -86,7 +87,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Coverage**: v8 provider, excludes `.opencode/**`, `components/ui/**`, `**/index.ts`
 - **Playwright** e2e: `e2e/` directory, Chromium only, `headless: false`
 - E2E credentials loaded from `.env.local` via `dotenv` in `playwright.config.ts`
-- 147 tests across 15 files, all passing
+- **208 tests across 22 files, all passing**
 - Coverage: Statements 100%, Lines 100%, Branches ~98%, Functions ~98%
 
 ## Environment & Backend
@@ -114,8 +115,9 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Stripe payments                                | Done — Phase 4: full E2E flow with WPGraphQL standardization               |
 | **WP Token Auto-Refresh**                      | **Done — `app/lib/wp-auth.ts` (auto-refresh via refreshToken mutation)**   |
 | **WP Debug & Origin Fix**                      | **Done — debug layers + Origin header fix for refreshToken**               |
+| **Header live session (public pages)**         | **Done — `Header.tsx` uses `useSession()`; menu reflects real auth on static/ISR public pages (`/`, `/login`, `/register`)** |
 | PDF certificate generation                     | Not started — Phase 5                                                      |
-| Tests                                          | Done — 147 Vitest tests, 15 files, 100% lines, 2 E2E Playwright specs      |
+| Tests                                          | Done — 208 Vitest tests, 22 files, ~100% lines, 2 E2E Playwright specs     |
 
 ## Phase 2 & 3 — Shared Components
 

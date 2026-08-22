@@ -305,6 +305,21 @@ Added `images.remotePatterns` for:
 | `4000 0000 0000 0002` | Decline |
 | `4000 0025 0000 3155` | Requires 3D Secure |
 
+### 4.14 — Navigation Performance & Header Live Session (Complete)
+
+| Task | Status | Files |
+|------|--------|-------|
+| Remove redundant `router.refresh()` after push | ✅ Done | `LoginForm.tsx`, `SignupForm.tsx` |
+| Move HeaderNav out of Suspense | ✅ Done | `app/dashboard/layout.tsx`, `HeaderNav.tsx`, deleted `HeaderSkeleton.tsx` |
+| Per-menu loading skeleton | ✅ Done | New `HeaderMenuSkeleton.tsx` |
+| Header live session on public pages | ✅ Done | `app/components/Header/Header.tsx` |
+
+**Header live session (00502 follow-up):**
+- **Bug**: Public pages (`/`, `/login`, `/register`) always showed "Login" in the menu because `app/(public)/layout.tsx` hardcoded `initialAuthStatus="unauthenticated"` and passed no session.
+- **Fix**: `Header.tsx` (client) now subscribes to `useSession()` — `effectiveSession = clientSession ?? session`, `authenticated` derived from live session/status, falling back to server prop. While `!session && status === "loading"` it renders `HeaderMenuSkeleton` instead of a wrong "Login" flash.
+- **Why not server-prop**: Passing `auth()` in the public layout would make public pages dynamic (cookies), losing static/ISR caching. Keeping them static (○ / 1h ISR) costs only a ~100-300ms client-session skeleton; page content streams immediately.
+- **Dashboard**: `auth()` passed server-side in `app/dashboard/layout.tsx` → no skeleton, correct first paint.
+
 ---
 
 ## Phase 5: Admin Dashboard & PDF Certificates
