@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   FiFileText,
   FiGrid,
@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card } from "@/components/ui/card";
+import HeaderMenuSkeleton from "./HeaderMenuSkeleton";
 import type { NavMenuItem } from "@/app/lib/menu";
 
 const BRAND_LOGOS: Record<string, { src: string; alt: string }> = {
@@ -61,7 +62,13 @@ const Header = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
 
-  const authenticated = session?.user?.accessToken ? true : (initialAuthStatus === "authenticated");
+  const { data: clientSession, status } = useSession();
+  const effectiveSession = clientSession ?? session;
+  const authLoading = !session && status === "loading";
+
+  const authenticated = effectiveSession?.user?.accessToken
+    ? true
+    : status === "authenticated" || initialAuthStatus === "authenticated";
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -110,8 +117,13 @@ const Header = ({
     };
   }, [visibleItems]);
 
-  if (isLoading) {
-    return null; // HeaderNav handles loading state
+  if (isLoading || authLoading) {
+    return (
+      <>
+        <HeaderMenuSkeleton variant="desktop" />
+        <HeaderMenuSkeleton variant="mobile" isOpen={true} />
+      </>
+    );
   }
 
   const renderItem = (item: NavMenuItem) => {
