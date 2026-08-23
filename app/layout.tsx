@@ -5,6 +5,12 @@ import { cn } from "@/lib/utils";
 import { ToasterProvider } from "./components/ToasterProvider";
 import SessionWrapper from "./components/SessionWrapper";
 import NavigationLoader from "./components/NavigationLoader";
+import Header from "./components/Header/Header";
+import {
+  getMainMenu,
+  getAdminSiteMenu,
+  getAdminPanelMenu,
+} from "./lib/menu";
 import { SITE_ORIGIN } from "./lib/site-origin";
 import { WP_SITE_TOKEN_HEADER } from "./lib/wp-headers";
 
@@ -98,11 +104,17 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [mainMenu, adminSiteMenu, adminPanelMenu] = await Promise.all([
+    getMainMenu(),
+    getAdminSiteMenu(),
+    getAdminPanelMenu(),
+  ]);
+
   return (
     <html
       lang="en"
@@ -111,7 +123,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <NavigationLoader />
         <ToasterProvider />
-        <SessionWrapper>{children}</SessionWrapper>
+        <SessionWrapper>
+          <Header
+            menus={{ mainMenu, adminSiteMenu, adminPanelMenu }}
+          />
+          {children}
+        </SessionWrapper>
       </body>
     </html>
   );

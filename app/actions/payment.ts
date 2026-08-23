@@ -53,7 +53,7 @@ export async function confirmInspectionPayment(
   }
 
   const stripe = new Stripe(stripeKey, {
-    apiVersion: "2026-06-24.dahlia",
+    apiVersion: "2026-07-29.dahlia",
   });
 
   const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -188,7 +188,7 @@ export async function createPaymentIntent(
   }
 
   const stripe = new Stripe(stripeKey, {
-    apiVersion: "2026-06-24.dahlia",
+    apiVersion: "2026-07-29.dahlia",
   });
 
   const paymentIntent = await stripe.paymentIntents.create({

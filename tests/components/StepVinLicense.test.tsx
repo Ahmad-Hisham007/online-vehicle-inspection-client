@@ -37,7 +37,7 @@ vi.mock("@/app/store/inspectionStore", () => ({
   ),
 }))
 
-import { StepVinLicense } from "@/app/dashboard/customer/inspection/_components/StepVinLicense"
+import { StepVinLicense } from "@/app/dashboard/(site)/customer/inspection/_components/StepVinLicense"
 
 const mockOnNext = vi.fn()
 
