@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { WP_SITE_TOKEN_HEADER } from "./wp-headers";
 import { SITE_ORIGIN } from "./site-origin";
 
@@ -38,8 +39,8 @@ interface MenuResponse {
 }
 
 const MENU_QUERY = `
-  query GetMainMenu {
-    menu(id: "Main Menu", idType: NAME) {
+  query GetMenu($slug: ID!) {
+    menu(id: $slug, idType: NAME) {
       name
       locations
       menuItems {
@@ -72,10 +73,7 @@ const MENU_QUERY = `
   }
 `;
 
-const MENU_CACHE_REVALIDATE = 86400; // seconds (24h — menu is static content)
-const MENU_MEMO_TTL_MS = MENU_CACHE_REVALIDATE * 1000;
-
-let menuMemo: { items: NavMenuItem[]; timestamp: number } | null = null;
+const MENU_CACHE_REVALIDATE = 300; // seconds (5 min — admin edits menu in WP)
 
 function mapNode(node: MenuItemNode): NavMenuItem {
   return {
@@ -92,11 +90,7 @@ function mapNode(node: MenuItemNode): NavMenuItem {
   };
 }
 
-export async function getMainMenu(): Promise<NavMenuItem[]> {
-  if (menuMemo && Date.now() - menuMemo.timestamp < MENU_MEMO_TTL_MS) {
-    return menuMemo.items;
-  }
-
+async function fetchMenu(slug: string): Promise<NavMenuItem[]> {
   const url = process.env.WORDPRESS_GRAPHQL_URL;
   if (!url) return [];
 
@@ -108,21 +102,39 @@ export async function getMainMenu(): Promise<NavMenuItem[]> {
         [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
         Origin: SITE_ORIGIN,
       },
-      body: JSON.stringify({ query: MENU_QUERY }),
-      next: { revalidate: MENU_CACHE_REVALIDATE },
+      body: JSON.stringify({
+        query: MENU_QUERY,
+        variables: { slug },
+      }),
     });
 
-    if (!res.ok) return menuMemo?.items ?? [];
+    if (!res.ok) return [];
 
     const json = (await res.json()) as MenuResponse;
     const nodes = json.data?.menu?.menuItems?.nodes;
 
-    if (!nodes) return menuMemo?.items ?? [];
+    if (!nodes) return [];
 
-    const items = nodes.map(mapNode);
-    menuMemo = { items, timestamp: Date.now() };
-    return items;
+    return nodes.map(mapNode);
   } catch {
-    return menuMemo?.items ?? [];
+    return [];
   }
+}
+
+export const getMenu = unstable_cache(
+  async (slug: string) => fetchMenu(slug),
+  ["menu", "slug"],
+  { revalidate: MENU_CACHE_REVALIDATE },
+);
+
+export async function getMainMenu(): Promise<NavMenuItem[]> {
+  return getMenu("Main Menu");
+}
+
+export async function getAdminSiteMenu(): Promise<NavMenuItem[]> {
+  return getMenu("Admin Site Menu");
+}
+
+export async function getAdminPanelMenu(): Promise<NavMenuItem[]> {
+  return getMenu("Admin Panel Menu");
 }

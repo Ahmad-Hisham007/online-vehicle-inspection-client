@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 // import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
 import authConfig from "./auth.config";
 import { SITE_ORIGIN } from "@/app/lib/site-origin";
 import { WP_SITE_TOKEN_HEADER } from "@/app/lib/wp-headers";
@@ -20,7 +21,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // [DEBUG-LAYER-1 START] Remove these logs once SiteGround captcha issue is resolved
         console.log("[DEBUG] authorize() called for email:", credentials.email);
         console.log("[DEBUG] WP URL:", process.env.WORDPRESS_GRAPHQL_URL);
-        console.log("[DEBUG] WP_SITE_TOKEN_HEADER:", WP_SITE_TOKEN_HEADER, "| secret set:", Boolean(process.env.WP_SITE_TOKEN_SECRET));
+        console.log(
+          "[DEBUG] WP_SITE_TOKEN_HEADER:",
+          WP_SITE_TOKEN_HEADER,
+          "| secret set:",
+          Boolean(process.env.WP_SITE_TOKEN_SECRET),
+        );
         console.log("[DEBUG] SITE_ORIGIN:", SITE_ORIGIN);
         // [DEBUG-LAYER-1 END]
 
@@ -69,12 +75,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // [DEBUG-LAYER-1 START] Remove these logs once SiteGround captcha issue is resolved
           console.log("[DEBUG] Response status:", res.status);
           console.log("[DEBUG] Response statusText:", res.statusText);
-          console.log("[DEBUG] Response content-type:", res.headers.get("content-type"));
-          console.log("[DEBUG] Response sg-captcha header:", res.headers.get("sg-captcha"));
+          console.log(
+            "[DEBUG] Response content-type:",
+            res.headers.get("content-type"),
+          );
+          console.log(
+            "[DEBUG] Response sg-captcha header:",
+            res.headers.get("sg-captcha"),
+          );
           console.log("[DEBUG] Response ok:", res.ok);
 
           const rawText = await res.text();
-          console.log("[DEBUG] Response body (first 200 chars):", rawText.slice(0, 200));
+          console.log(
+            "[DEBUG] Response body (first 200 chars):",
+            rawText.slice(0, 200),
+          );
           // [DEBUG-LAYER-1 END]
 
           const isJson = res.headers
@@ -84,7 +99,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (!isJson) {
             // [DEBUG-LAYER-1 START] Remove once issue resolved
-            console.log("[DEBUG] NON-JSON RESPONSE (likely SiteGround captcha / 202 HTML). Aborting login.");
+            console.log(
+              "[DEBUG] NON-JSON RESPONSE (likely SiteGround captcha / 202 HTML). Aborting login.",
+            );
             // [DEBUG-LAYER-1 END]
             return null;
           }
@@ -98,7 +115,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const data = json.data?.login;
           if (data?.authToken) {
-            const roles = data.user.roles?.nodes?.map((r: { name: string }) => r.name) || [];
+            const roles =
+              data.user.roles?.nodes?.map((r: { name: string }) => r.name) ||
+              [];
+            console.log(`[DEBUG] Current user role is ${roles}`);
             return {
               id: data.user.id,
               wpId: data.user.databaseId,
@@ -109,7 +129,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               refreshToken: data.refreshToken,
               refreshTokenExpiration: data.refreshTokenExpiration,
               emailVerified: null,
-              role: roles[0] || "subscriber",
+              role: roles[0],
             };
           }
 
@@ -117,7 +137,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch (error) {
           console.error("WPGraphQL login fetch failed:", error);
           // [DEBUG-LAYER-1 START] Remove once issue resolved
-          console.error("[DEBUG] Fetch error message:", error instanceof Error ? error.message : String(error));
+          console.error(
+            "[DEBUG] Fetch error message:",
+            error instanceof Error ? error.message : String(error),
+          );
           // [DEBUG-LAYER-1 END]
           return null;
         }
@@ -250,6 +273,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.refreshToken = wpData.refreshToken;
             user.refreshTokenExpiration = wpData.refreshTokenExpiration;
             user.wpId = wpData.user.databaseId;
+            console.log(user.role);
             return true; // লগিন ১০০% সাকসেসফুল!
           }
 
@@ -266,5 +290,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
+  },
+  events: {
+    async signIn() {
+      revalidatePath("/", "layout");
+    },
+    async signOut() {
+      revalidatePath("/", "layout");
+    },
   },
 });

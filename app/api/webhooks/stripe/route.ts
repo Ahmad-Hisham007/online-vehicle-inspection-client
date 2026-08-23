@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { SITE_ORIGIN } from "@/app/lib/site-origin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-06-24.dahlia",
+  apiVersion: "2026-07-29.dahlia",
 });
 
 let authToken: string | null = null;

@@ -37,7 +37,7 @@ vi.mock("@/app/store/inspectionStore", () => ({
   ),
 }))
 
-import { StepVehicleSelection, stepSchema } from "@/app/dashboard/customer/inspection/_components/StepVehicleSelection"
+import { StepVehicleSelection, stepSchema } from "@/app/dashboard/(site)/customer/inspection/_components/StepVehicleSelection"
 
 const mockOnNext = vi.fn()
 

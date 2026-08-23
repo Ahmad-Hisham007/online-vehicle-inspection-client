@@ -1,18 +1,18 @@
 import { Suspense } from "react";
 import CustomerPageShell from "@/app/components/customer/CustomerPageShell";
-import InspectionToolbar from "./_components/InspectionToolbar";
-import CustomerInspectionList from "./_components/CustomerInspectionList";
-import InspectionListSkeleton from "./_components/InspectionListSkeleton";
+import InspectionToolbar from "@/app/dashboard/(site)/customer/_components/InspectionToolbar";
+import CustomerInspectionList from "@/app/dashboard/(site)/customer/_components/CustomerInspectionList";
+import InspectionListSkeleton from "@/app/dashboard/(site)/customer/_components/InspectionListSkeleton";
 import { INSPECTION_STATUSES } from "@/app/lib/types";
 import type { InspectionStatus, SortDir } from "@/app/lib/types";
 
-interface PageProps {
+interface InspectionListingProps {
   searchParams: Promise<{ page?: string; status?: string; sort?: string }>;
 }
 
-export default async function CustomerDashboardPage({
+export default async function InspectionListing({
   searchParams,
-}: PageProps) {
+}: InspectionListingProps) {
   const sp = await searchParams;
 
   const page = Math.max(1, Number(sp.page) || 1);
@@ -34,7 +34,11 @@ export default async function CustomerDashboardPage({
         </div>
 
         <Suspense key={listKey} fallback={<InspectionListSkeleton />}>
-          <CustomerInspectionList page={page} status={status} sortDir={sortDir} />
+          <CustomerInspectionList
+            page={page}
+            status={status}
+            sortDir={sortDir}
+          />
         </Suspense>
       </div>
     </CustomerPageShell>

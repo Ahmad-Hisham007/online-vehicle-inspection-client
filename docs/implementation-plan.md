@@ -322,26 +322,129 @@ Added `images.remotePatterns` for:
 
 ---
 
-## Phase 5: Admin Dashboard & PDF Certificates
+## Phase 5: Customer Inspections Listing & InspectionDetailView ✅ DONE
 
-### 5.1 — Admin Dashboard
+> Specs: `.opencode/spec/005-customer-inspections-listing/` (incl. `005.*` Bunny CDN, `005.opt` UX/cost sub-tasks) and `.opencode/spec/00502-navigation-performance-fix/`.
 
-**File**: `app/dashboard/admin/page.tsx`
+### 5.1 — Status Enums & Shared Utilities
 
-- List all inspections with status filters (pending, paid, approved, rejected)
-- Click to view full inspection detail
-- Approve / Reject buttons
-- Link to generated PDF certificate
+| Task | Status | Files |
+|------|--------|-------|
+| Status enums, styles, types, utility CSS | ✅ Done | `app/lib/types.ts`, `app/lib/status.ts`, `app/globals.css` (`.scrollbar-none`) |
+| Date formatter | ✅ Done | `app/lib/format.ts` |
 
-### 5.2 — Customer Dashboard
+- `INSPECTION_STATUSES`: `pending`, `paid`, `payment_failed`, `in_progress`, `approved`, `rejected`, `cancelled` — replaces all hard-coded status string literals (actions, webhooks, cards, badges).
+- `PAYMENT_STATUSES`: `pending`, `succeeded`, `failed`, `refunded`, `requires_action`, `processing`.
+- `getStatusStyle()` → `{ label, dot, text }`; `getPaymentStatusLabel()`; `isPaid = paymentStatus === "succeeded" || inspectionStatus === "paid"`.
+- Tests: `tests/lib/status.test.ts` (5 tests).
 
-**File**: `app/dashboard/customer/page.tsx`
+### 5.2 — Server Actions (`app/actions/inspections.ts`)
 
-- List user's inspections
-- "New Inspection" button -> starts multistep form
-- View past inspection reports / PDF downloads
+- `listInspections()` — owner-scoped (JWT author filter) listing via custom WP connection args (`limit`/`offset`/`inspectionStatus` from a WP PHP snippet); single-call `unstable_cache` (revalidate 300s, tags `["inspections"]`); clamps page to `totalPages` (`pageInfo.total` from `graphql_connection_page_info`).
+- `fetchInspection(id)` — full detail incl. all media URL fields, `inspectionCompanies`, `orderSubtotal`.
+- ACF single-select fields return **arrays** from WPGraphQL → normalized with `asString()`.
+- `app/lib/listing-url.ts` — shared listing-state URL builder.
+- Registration `displayName` fix — `app/api/register/route.ts`.
+- Tests: `tests/actions/inspections.test.ts` (10 tests).
 
-### 5.3 — PDF Certificate Generation
+### 5.3 — Listing UI Components
+
+| Component | File | Tests |
+|-----------|------|-------|
+| `StatusBadge` | `app/components/StatusBadge.tsx` | — |
+| `FilterInspectionsModal` (dialog primitive) | `components/ui/dialog.tsx`, `app/components/FilterInspectionsModal.tsx` | 5 |
+| `InspectionCard` | `app/components/InspectionCard.tsx` (chevron unfold, Payment Link + Car details) | 7 |
+
+### 5.4 — Pages & Routes
+
+- `app/dashboard/customer/page.tsx` — server-side filtered/paginated listing in `CustomerPageShell` (white-canvas `overflow-clip` card, uncapped heights); keyed `<Suspense>` skeleton on every filter/pagination change.
+- `app/dashboard/customer/inspection/[id]/page.tsx` — read-only detail, streamed via `<Suspense fallback={<InspectionDetailSkeleton/>}>`.
+- `app/dashboard/customer/pay/[id]/page.tsx` — Payment Link route (owner-only).
+- `app/dashboard/admin/inspection/[id]/page.tsx` — admin detail route (same shared component).
+- `proxy.ts` — `/inspection` → redirect `/dashboard/customer/`.
+- `app/components/InspectionDetailView/` — presentation-only shared component (data via props): `InspectionHeader`, `SpecificationsBlock`, `SelectedCompanies`, `MediaGallery` (Tabs: General/Interior/Exterior/Tires), `CertificatesPanel` (sticky bottom bar; cert links only when `approved`). Primitives: `components/ui/tabs.tsx`, `components/ui/skeleton.tsx`.
+- Tests: detail-view modules (12) + `InspectionPagination.test.tsx` (5).
+
+### 5.5 — Navigation Performance Fix (00502)
+
+| Task | Files | Status |
+|------|-------|--------|
+| Remove redundant `router.refresh()` after `router.push()` | `LoginForm.tsx`, `SignupForm.tsx` | ✅ Done |
+| Per-menu loading skeleton | `app/components/Header/HeaderMenuSkeleton.tsx` (new); `HeaderSkeleton.tsx` deleted | ✅ Done |
+| Move `HeaderNav` out of Suspense (menu/auth passed as props) | `app/dashboard/layout.tsx`, `app/components/Header/HeaderNav.tsx` | ✅ Done |
+| Header live session on public pages (`useSession()`, skeleton while loading) | `app/components/Header/Header.tsx` | ✅ Done |
+
+Login→Dashboard perceived time: ~300ms (was 700–1800ms).
+
+### 5.6 — Payment Hardening (Webhook + Server-side Trust)
+
+- `confirmInspectionPayment(inspectionId, paymentId, paymentIntentId)` — server-side `stripe.paymentIntents.retrieve()`; marks `succeeded`/`paid` only when Stripe reports success AND PI metadata matches; else `failed`/`payment_failed` + real Stripe error. `PaymentForm` awaits, logs + toasts (no silent swallow).
+- `createPaymentIntent(inspectionId)` — client amount removed; server charges stored `orderSubtotal` (set at draft creation via `calculatePrice`); rejects when `author` ≠ `session.user.wpId`.
+- Stripe webhook = reconciliation layer for events the browser never sees (3DS, async declines, refunds). Dashboard endpoint live on Netlify.
+
+### 5.7 — Netlify Deployment & Routing Performance
+
+- Live at `https://rideshareinspector.netlify.app` (dev/testing running in a production environment — not final prod).
+- `AUTH_TRUST_HOST=true` (NextAuth `UntrustedHost` fix, locally proven with prod build + spoofed Host header). `NEXTAUTH_URL` scoped to **Production context only**; `NEXT_PUBLIC_SITE_URL` stays production in all contexts (server-side WP Origin).
+- WP origin allowlist updated for the Netlify origin. `app/lib/site-origin.ts` (scheme normalization); `app/lib/menu.ts` + `getSiteSettings` per-instance TTL memo (86400s).
+- `netlify.toml`: fixed inverted `ignore` semantics (exit 0 = skip build → `main` deploys skipped, previews always build), pinned `@netlify/plugin-nextjs`, `publish = ".next"`, `NODE_VERSION = "22"`.
+- Upload provider hardening in prod (all-or-nothing per provider — see 5.8).
+
+### 5.8 — Bunny CDN Upload Integration (005.\* sub-task)
+
+- Replaced Uploadcare/AWS with **Bunny Storage + Pull Zone** as the sole direct-to-cloud provider.
+- `app/actions/upload.ts` — presigned PUT via `@aws-sdk/client-s3` against the S3-compatible Bunny endpoint (`forcePathStyle`, creds = zone name/password, region `ny`); sign only `Content-Type`; returns `{ uploadUrl, publicUrl, fileKey, contentType }`; throws unless all 4 `BUNNY_*` vars present. Uploadcare/AWS branches removed.
+- `app/hooks/useFileUpload.ts` — XHR sends `response.contentType`; `@uploadcare/upload-client` uninstalled. Retry/cancel/progress unchanged.
+- `MediaGallery.tsx` — `<Image unoptimized>` (Bunny does edge optimization; Netlify does not).
+- `next.config.ts` — `*.b-cdn.net` remotePatterns; ucarecdn/S3 patterns removed.
+- Tests: `upload-action.test.ts` (4), `useFileUpload.test.ts` (6, mocked `XMLHttpRequest`).
+
+### 5.9 — UX & Netlify Cost Optimization (005.opt sub-task)
+
+- `NavigationLoader` (non-blocking dots pill) replaces `nextjs-toploader` (uninstalled); driven by `uiStore.navPending` from the `useTransition` in `NavLink.tsx`.
+- `LoadingIndicator` animated primitives blended into all 4 `loading.tsx` above the zero-CLS skeletons.
+- Route-group split: `app/(public)/layout.tsx` (static header, `revalidate: 3600`, **no `auth()`**) → `/`, `/login`, `/register` stay **`○` static** (zero per-visit compute); `app/dashboard/layout.tsx` renders the authed header under `Suspense<HeaderSkeleton>`.
+- Zustand selector hygiene (`useShallow`) across the 7 step components.
+- `app/store/dataStore.ts` — sessionStorage inspection-detail cache (5 min TTL) + `listVersion`; `PaymentForm` invalidates on success.
+- Revalidation: list cache 300s, detail 86400s, menu TTL 86400s; payment-status API stays `no-store`.
+- Batched server actions: `getPaymentSetup(id)` (detail + PI in one round trip), `createInspectionAndPaymentIntent(formData)` (draft + PI in one round trip).
+- Logout → `/login`; login banner via Next `<Image fill>` (gated `USE_NEXT_IMAGE_BANNER`).
+
+### 5.10 — Testing & QA
+
+| Layer | Count | Status |
+|-------|-------|--------|
+| Vitest unit tests | 208 tests, 22 files | ✅ |
+| Coverage | Statements 100%, Lines 100% | ✅ |
+| E2E specs | `inspection-form`, `payment`, `customer-dashboard` (3) | ✅ |
+| Lint / Build | 0 errors, 8 pre-existing warnings / passes | ✅ |
+
+**Deferred to Phase 6**: admin management table + approve/reject action bar wiring, `expiryDate` population (ACF field exists), PDF certificate generation + visible cert links (only render when approved).
+
+---
+
+## Phase 6: Admin Dashboard & PDF Certificates
+
+### 6.1 — Admin Dashboard (Stage A ✅ DONE — UI/Design)
+
+**Route groups**: `app/dashboard/layout.tsx` thin → `(site)/layout.tsx` (standard header) + `(panel)/layout.tsx` (AdminPanelShell, role-guarded to `administrator` | `inspector`).
+
+- `/dashboard` — mirrors `/dashboard/customer` for admins/inspectors via shared `app/components/customer/InspectionListing.tsx` (standard header).
+- `/dashboard/admin` → redirect → `/dashboard/admin/requests`.
+- `/dashboard/admin/{requests,users,archive,proposals,settings}` — table/form pages with search (left) + filter (right), pagination footer "Showing X–Y of Z", and a page-title-in-center header with mobile-only hamburger + desktop sidebar.
+- Admin panel menu comes from a **separate WP menu** (`getAdminPanelMenu()`) incl. logout; frontend site header uses `getAdminSiteMenu()` for admin/inspector (conditional `admin`/`dashboard`/`logout` items) vs `getMainMenu()` for customers.
+- Stage A renders static sample data — data wiring (Stage B) deferred.
+- Stage B (deferred): list inspections with status filters, approve/reject wired to WP, PDF links.
+
+### 6.2 — Customer Dashboard
+
+**File**: `app/dashboard/(site)/customer/page.tsx`
+
+- ✅ **Done in Phase 5** — owner-scoped listing, Add ("New Inspection") button → multistep form, status filter + pagination, shared `InspectionDetailView`, Payment Link route (`pay/[id]`)
+- ✅ **Phase 6**: listing extracted to shared `InspectionListing` (mirrors to `/dashboard`)
+- Remaining (Phase 6 Stage B): past inspection report / PDF download links (tied to certificate generation)
+
+### 6.3 — PDF Certificate Generation (Stage B — deferred)
 
 **File**: `app/actions/pdf.ts`
 
@@ -350,7 +453,7 @@ Added `images.remotePatterns` for:
 - 68 templates — template selection based on `inspectionType` + `vehicleMake` + `year`
 - Stores PDF URL in WP via GraphQL (never in Media Library)
 
-### 5.4 — Admin Approval Action
+### 6.4 — Admin Approval Action (Stage B — deferred)
 
 **File**: `app/actions/admin.ts`
 
@@ -360,14 +463,14 @@ Added `images.remotePatterns` for:
 
 ---
 
-## Phase 6: Notifications & QA
+## Phase 7: Notifications & QA
 
-### 6.1 — Email / In-App Notifications
+### 7.1 — Email / In-App Notifications
 
 - WP email for status changes (can be handled by WP plugins, triggered via GraphQL)
 - Toast notifications for in-app events
 
-### 6.2 — QA Checklist
+### 7.2 — QA Checklist
 
 - [ ] Auth: login, signup, Google OAuth, logout, session persistence
 - [ ] Multistep form: each step validates, stores, advances; back navigation works
@@ -377,11 +480,10 @@ Added `images.remotePatterns` for:
 - [ ] Mobile responsive: form works on mobile viewports
 - [ ] Lint & build pass with zero warnings
 
-### 6.3 — Deployment Prep
+### 7.3 — Deployment Prep
 
-- `next.config.ts` — add image domains, S3/Uploadcare domains
-- Environment variable audit (all secrets documented but never committed)
-- Build test on Vercel preview deployment
+- ✅ **Resolved in Phase 5** — deployment target is **Netlify** (`rideshareinspector.netlify.app`): `netlify.toml` (ignore rule, pinned `@netlify/plugin-nextjs`, Node 22), `AUTH_TRUST_HOST`, context-scoped `NEXTAUTH_URL`, WP origin allowlist, preview/branch deploy workflow.
+- Remaining: environment variable audit (all secrets documented but never committed); verify live-mode Stripe keys + webhook endpoint when going to final prod; final build test on Netlify deploy preview.
 
 ---
 
@@ -389,14 +491,16 @@ Added `images.remotePatterns` for:
 
 ```
 app/
-  login/
-    page.tsx
-  register/
-    route.ts
+  (public)/
+    layout.tsx                       # static header, revalidate 3600, no auth() — Phase 5.9
+    page.tsx                         # landing page (static ○)
+    (auth)/
+      login/page.tsx                 # flip-card login/signup
+      register/page.tsx
   dashboard/
-    page.tsx
+    layout.tsx                       # authed header under Suspense<HeaderSkeleton>
     customer/
-      page.tsx
+      page.tsx                       # Phase 5 — owner-scoped listing + filter/pagination
       inspection/
         page.tsx
         _components/
@@ -407,25 +511,47 @@ app/
           StepMediaC.tsx
           StepMediaD.tsx
           StepReviewPayment.tsx
+      inspection/[id]/page.tsx       # Phase 5 — read-only detail (streamed)
+      pay/[id]/page.tsx              # Phase 5 — Payment Link route (owner-only)
     admin/
-      page.tsx
+      page.tsx                       # Phase 6 — management table
+      inspection/[id]/page.tsx       # Phase 5 — admin detail route
   components/
     Button.tsx
-    FileUploadField.tsx           # Phase 3 — upgraded with drag-drop, progress, icon preview
+    FileUploadField.tsx              # Phase 3 — upgraded with drag-drop, progress, icon preview
     FormInput.tsx
     FormSelect.tsx
     Header/
       Header.tsx
+      HeaderNav.tsx
+      HeaderMenuSkeleton.tsx         # Phase 5 — per-menu loading skeleton
     ImageCheckboxGroup.tsx
-    PaymentForm.tsx               # Phase 4
+    InspectionCard.tsx               # Phase 5
+    InspectionDetailView/            # Phase 5 — shared customer/admin detail
+    StatusBadge.tsx                  # Phase 5
+    FilterInspectionsModal.tsx       # Phase 5
+    NavLink.tsx                      # Phase 5 — transition-based navigation
+    NavigationLoader.tsx             # Phase 5.9 — non-blocking loader
+    LoadingIndicator.tsx             # Phase 5.9 — animated primitives
+    PaymentForm.tsx                  # Phase 4
     PriceSummary.tsx
     SessionWrapper.tsx
     StepIndicator.tsx
     ToasterProvider.tsx
+  components/ui/
+    dialog.tsx                       # Phase 5
+    tabs.tsx                         # Phase 5
+    skeleton.tsx                     # Phase 5
+    button.tsx, card.tsx, input.tsx, checkbox.tsx, field.tsx, separator.tsx, dropdown-menu.tsx ...
   hooks/
-    useFileUpload.ts              # Phase 3 — upload lifecycle hook
+    useFileUpload.ts                 # Phase 3/5.8 — upload lifecycle hook (XHR)
   actions/
-    upload.ts                     # Phase 3 — generateUploadUrl Server Action
+    upload.ts                        # Phase 3/5.8 — Bunny presigned PUT
+    inspections.ts                   # Phase 5 — list/fetch server actions
+    payment.ts                       # Phase 4/5 — getPaymentSetup, confirmInspectionPayment
+    inspection.ts                    # Phase 4
+    pdf.ts                           # Phase 6 — generateCertificate
+    admin.ts                         # Phase 6 — approve/reject
   lib/
     constants.ts
     schemas/
@@ -435,16 +561,22 @@ app/
       uploadFields.ts
       reviewAgreement.ts
       index.ts
+    status.ts                        # Phase 5 — status enums + style mapping
+    format.ts                        # Phase 5 — date formatter
+    listing-url.ts                   # Phase 5 — listing URL builder
+    site-origin.ts                   # Phase 5 — scheme normalization
+    menu.ts                          # Phase 5.7 — TTL-memoized WP menu
     utils.ts
   store/
     inspectionStore.ts
+    uiStore.ts                       # Phase 5.9 — navPending
+    dataStore.ts                     # Phase 5.9 — inspection detail cache
   api/
     auth/[...nextauth]/route.ts
     register/route.ts
-    webhooks/stripe/route.ts      # Phase 4
+    webhooks/stripe/route.ts         # Phase 4
   globals.css
   layout.tsx
-  page.tsx
 auth.ts
 auth.config.ts
 next-auth.d.ts

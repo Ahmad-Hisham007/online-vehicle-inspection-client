@@ -9,6 +9,11 @@ export interface StatusStyle {
   text: string;
 }
 
+export interface StatusPillStyle {
+  label: string;
+  className: string;
+}
+
 const INSPECTION_STATUS_META: Record<InspectionStatus, StatusStyle> = {
   pending: { label: "Pending", dot: "bg-sky-400", text: "text-sky-500" },
   paid: { label: "Paid", dot: "bg-emerald-500", text: "text-emerald-600" },
@@ -38,4 +43,18 @@ const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
 
 export function getPaymentStatusLabel(status: PaymentStatus): string {
   return PAYMENT_STATUS_LABELS[status];
+}
+
+const INSPECTION_STATUS_PILL_META: Record<InspectionStatus, StatusPillStyle> = {
+  pending: { label: "Pending", className: "bg-sky-50 text-sky-700 border-sky-200" },
+  paid: { label: "Paid", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  payment_failed: { label: "Payment Failed", className: "bg-red-50 text-red-700 border-red-200" },
+  in_progress: { label: "In Progress", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+  approved: { label: "Approved", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  rejected: { label: "Rejected", className: "bg-red-50 text-red-700 border-red-200" },
+  cancelled: { label: "Cancelled", className: "bg-gray-50 text-gray-600 border-gray-200" },
+};
+
+export function getStatusPillStyle(status: InspectionStatus): StatusPillStyle {
+  return INSPECTION_STATUS_PILL_META[status];
 }

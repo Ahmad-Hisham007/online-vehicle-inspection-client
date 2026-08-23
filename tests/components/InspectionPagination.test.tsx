@@ -7,7 +7,7 @@ vi.mock("next/link", () => ({
     React.createElement("a", { href: href as string, ...props }, children),
 }));
 
-import InspectionPagination from "@/app/dashboard/customer/_components/InspectionPagination";
+import InspectionPagination from "@/app/dashboard/(site)/customer/_components/InspectionPagination";
 
 describe("InspectionPagination", () => {
   it("returns null when there is a single page", () => {

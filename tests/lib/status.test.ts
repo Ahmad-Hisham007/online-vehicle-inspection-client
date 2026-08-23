@@ -3,6 +3,7 @@ import {
   getStatusStyle,
   getStatusLabel,
   getPaymentStatusLabel,
+  getStatusPillStyle,
 } from "@/app/lib/status";
 import { INSPECTION_STATUSES, PAYMENT_STATUSES } from "@/app/lib/types";
 
@@ -44,5 +45,26 @@ describe("getPaymentStatusLabel", () => {
   it("returns standard labels", () => {
     expect(getPaymentStatusLabel("succeeded")).toBe("Succeeded");
     expect(getPaymentStatusLabel("requires_action")).toBe("Requires Action");
+  });
+});
+
+describe("getStatusPillStyle", () => {
+  it("returns a pill class for every inspection status", () => {
+    const expected: Record<string, string> = {
+      pending: "bg-sky-50",
+      paid: "bg-emerald-50",
+      payment_failed: "bg-red-50",
+      in_progress: "bg-yellow-50",
+      approved: "bg-emerald-50",
+      rejected: "bg-red-50",
+      cancelled: "bg-gray-50",
+    };
+
+    for (const status of INSPECTION_STATUSES) {
+      const pill = getStatusPillStyle(status);
+      expect(pill.className).toContain(expected[status]);
+      expect(pill.className).toContain("border-");
+      expect(pill.label).toBeTruthy();
+    }
   });
 });
