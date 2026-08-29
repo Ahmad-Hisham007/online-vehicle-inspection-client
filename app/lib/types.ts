@@ -69,3 +69,14 @@ export interface InspectionDetail extends InspectionSummary {
   certificates: { lyft?: string; uber?: string; turo?: string };
   orderSubtotal: string;
 }
+
+// Admin Requests Types
+
+export interface AdminRequestSummary {
+  id: string;
+  title: string;
+  dateCreated: string;
+  inspectionStatus: InspectionStatus;
+  location: string | null;
+  author: string;
+}

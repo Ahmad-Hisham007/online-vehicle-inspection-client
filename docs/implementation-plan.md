@@ -427,12 +427,18 @@ Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 
 ### 6.1 — Admin Dashboard (Stage A ✅ DONE — UI/Design)
 
-**Route groups**: `app/dashboard/layout.tsx` thin → `(site)/layout.tsx` (standard header) + `(panel)/layout.tsx` (AdminPanelShell, role-guarded to `administrator` | `inspector`).
+**Single route-aware Header (root layout)**: `app/layout.tsx` fetches all 3 WP menus (cached) → `<Header menus={…}>`. No nested layout renders a header. `Header.tsx` uses `usePathname()` + `useSession()`:
+- Admin panel routes (`/dashboard/admin/*` excluding `/dashboard/admin/inspection`) → AdminHeader variant (language left, page title center from the admin panel menu item label, hamburger `md:hidden` only; mobile drawer = admin panel menu).
+- All other routes → standard header (language left, logo center, hamburger right) with role-based menu.
+- `app/lib/header-config.ts` — unified `ITEM_ICONS` / `BRAND_LOGOS` / `getMenuIcon` / `isLogoutItem` / `isBrandItem`.
+
+**Route groups**: `app/dashboard/layout.tsx` thin → `(site)/layout.tsx` + `(public)/layout.tsx` are passthrough `<main>` (no header); `(panel)/layout.tsx` renders `AdminSidebar` (desktop) + content, role-guarded to `administrator` | `inspector`.
 
 - `/dashboard` — mirrors `/dashboard/customer` for admins/inspectors via shared `app/components/customer/InspectionListing.tsx` (standard header).
 - `/dashboard/admin` → redirect → `/dashboard/admin/requests`.
 - `/dashboard/admin/{requests,users,archive,proposals,settings}` — table/form pages with search (left) + filter (right), pagination footer "Showing X–Y of Z", and a page-title-in-center header with mobile-only hamburger + desktop sidebar.
 - Admin panel menu comes from a **separate WP menu** (`getAdminPanelMenu()`) incl. logout; frontend site header uses `getAdminSiteMenu()` for admin/inspector (conditional `admin`/`dashboard`/`logout` items) vs `getMainMenu()` for customers.
+- **Menu caching**: `app/lib/menu.ts` `getMenu(slug)` via `unstable_cache(["menu","slug"], revalidate: 300)`; `auth.ts` `events.signIn/signOut` → `revalidatePath("/", "layout")`.
 - Stage A renders static sample data — data wiring (Stage B) deferred.
 - Stage B (deferred): list inspections with status filters, approve/reject wired to WP, PDF links.
 
@@ -492,39 +498,49 @@ Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 ```
 app/
   (public)/
-    layout.tsx                       # static header, revalidate 3600, no auth() — Phase 5.9
+    layout.tsx                       # passthrough <main> (no header — root layout renders it)
     page.tsx                         # landing page (static ○)
     (auth)/
       login/page.tsx                 # flip-card login/signup
       register/page.tsx
   dashboard/
-    layout.tsx                       # authed header under Suspense<HeaderSkeleton>
-    customer/
-      page.tsx                       # Phase 5 — owner-scoped listing + filter/pagination
-      inspection/
-        page.tsx
-        _components/
-          StepVehicleSelection.tsx
-          StepVinLicense.tsx
-          StepMediaA.tsx
-          StepMediaB.tsx
-          StepMediaC.tsx
-          StepMediaD.tsx
-          StepReviewPayment.tsx
-      inspection/[id]/page.tsx       # Phase 5 — read-only detail (streamed)
-      pay/[id]/page.tsx              # Phase 5 — Payment Link route (owner-only)
-    admin/
-      page.tsx                       # Phase 6 — management table
-      inspection/[id]/page.tsx       # Phase 5 — admin detail route
+    layout.tsx                       # thin: <main>{children}</main>
+    (site)/
+      layout.tsx                     # passthrough <main> (header from root layout)
+      page.tsx                       # Phase 6 — /dashboard admin/inspector mirror of customer
+      customer/
+        page.tsx                     # Phase 5 — owner-scoped listing + filter/pagination
+        inspection/
+          page.tsx
+          _components/
+            StepVehicleSelection.tsx
+            StepVinLicense.tsx
+            StepMediaA.tsx
+            StepMediaB.tsx
+            StepMediaC.tsx
+            StepMediaD.tsx
+            StepReviewPayment.tsx
+        inspection/[id]/page.tsx     # Phase 5 — read-only detail (streamed)
+        pay/[id]/page.tsx            # Phase 5 — Payment Link route (owner-only)
+      admin/inspection/[id]/page.tsx # Phase 5 — admin detail route (standard header, no sidebar)
+    (panel)/
+      layout.tsx                     # Phase 6 — AdminSidebar + content + role guard
+      admin/
+        page.tsx                     # Phase 6 — /dashboard/admin → redirect → requests
+        requests/page.tsx            # Phase 6 — Requests table (default All, filters)
+        users/page.tsx               # Phase 6 — Users table
+        archive/page.tsx             # Phase 6 — Archive table
+        proposals/page.tsx           # Phase 6 — Proposals table
+        settings/page.tsx            # Phase 6 — Settings form
   components/
     Button.tsx
     FileUploadField.tsx              # Phase 3 — upgraded with drag-drop, progress, icon preview
     FormInput.tsx
     FormSelect.tsx
     Header/
-      Header.tsx
-      HeaderNav.tsx
+      Header.tsx                     # Phase 6 — single route-aware master header (root layout)
       HeaderMenuSkeleton.tsx         # Phase 5 — per-menu loading skeleton
+      LanguageSelector.tsx           # Phase 6 — shared language dropdown
     ImageCheckboxGroup.tsx
     InspectionCard.tsx               # Phase 5
     InspectionDetailView/            # Phase 5 — shared customer/admin detail
@@ -538,6 +554,14 @@ app/
     SessionWrapper.tsx
     StepIndicator.tsx
     ToasterProvider.tsx
+    admin/
+      AdminSidebar.tsx               # Phase 6 — dark desktop sidebar (WP admin panel menu + logout)
+      DataTable.tsx                  # Phase 6 — generic table
+      PaginationFooter.tsx           # Phase 6 — "Showing X–Y of Z" + page buttons
+      AdminPageShell.tsx             # Phase 6 — page wrapper
+      StatusPill.tsx                 # Phase 6 — compact pill
+    customer/
+      InspectionListing.tsx          # Phase 6 — shared listing (customer + /dashboard mirror)
   components/ui/
     dialog.tsx                       # Phase 5
     tabs.tsx                         # Phase 5
@@ -550,8 +574,8 @@ app/
     inspections.ts                   # Phase 5 — list/fetch server actions
     payment.ts                       # Phase 4/5 — getPaymentSetup, confirmInspectionPayment
     inspection.ts                    # Phase 4
-    pdf.ts                           # Phase 6 — generateCertificate
-    admin.ts                         # Phase 6 — approve/reject
+    pdf.ts                           # Phase 6 — generateCertificate (Stage B)
+    admin.ts                         # Phase 6 — approve/reject (Stage B)
   lib/
     constants.ts
     schemas/
@@ -561,11 +585,12 @@ app/
       uploadFields.ts
       reviewAgreement.ts
       index.ts
-    status.ts                        # Phase 5 — status enums + style mapping
+    status.ts                        # Phase 5 — status enums + style mapping (+ getStatusPillStyle)
     format.ts                        # Phase 5 — date formatter
     listing-url.ts                   # Phase 5 — listing URL builder
     site-origin.ts                   # Phase 5 — scheme normalization
-    menu.ts                          # Phase 5.7 — TTL-memoized WP menu
+    menu.ts                          # Phase 6 — getMenu(slug) via unstable_cache(["menu","slug"], 300s)
+    header-config.ts                 # Phase 6 — unified ITEM_ICONS / BRAND_LOGOS / getMenuIcon / isLogoutItem / isBrandItem
     utils.ts
   store/
     inspectionStore.ts
@@ -576,8 +601,8 @@ app/
     register/route.ts
     webhooks/stripe/route.ts         # Phase 4
   globals.css
-  layout.tsx
-auth.ts
+  layout.tsx                         # Phase 6 — root layout renders the single Header
+auth.ts                              # Phase 6 — events.signIn/signOut → revalidatePath("/")
 auth.config.ts
 next-auth.d.ts
 proxy.ts

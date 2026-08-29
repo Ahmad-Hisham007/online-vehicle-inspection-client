@@ -29,6 +29,8 @@ function pageNumbers(current: number, total: number): (number | "…")[] {
   }
   return result;
 }
+// [1, "...", 9, 10, 11, "...", 20]
+// prev = 11
 
 export default function InspectionPagination({
   page,
@@ -49,7 +51,9 @@ export default function InspectionPagination({
       <Link
         aria-disabled={page <= 1}
         tabIndex={page <= 1 ? -1 : undefined}
-        href={page > 1 ? buildListHref({ page: page - 1, status, sortDir }) : "#"}
+        href={
+          page > 1 ? buildListHref({ page: page - 1, status, sortDir }) : "#"
+        }
         className={cn(
           navClass,
           "text-foreground hover:bg-muted",
@@ -61,7 +65,10 @@ export default function InspectionPagination({
 
       {pageNumbers(page, totalPages).map((p, i) =>
         p === "…" ? (
-          <span key={`gap-${i}`} className={cn(navClass, "text-muted-foreground")}>
+          <span
+            key={`gap-${i}`}
+            className={cn(navClass, "text-muted-foreground")}
+          >
             …
           </span>
         ) : (

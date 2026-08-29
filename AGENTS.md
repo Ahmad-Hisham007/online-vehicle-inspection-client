@@ -15,7 +15,7 @@
 | `npm run dev`       | Dev server at `http://localhost:3000` |
 | `npm run lint`      | ESLint (Next.js config)               |
 | `npm run build`     | Build + typecheck via `next build`    |
-| `npm run test`      | Vitest unit tests (242 tests)         |
+| `npm run test`      | Vitest unit tests (244 tests)         |
 | `npm run test:ui`   | Vitest UI mode                        |
 | `npm run test:coverage` | Vitest with v8 coverage           |
 | `npm run e2e`       | Playwright e2e (opens browser)        |
@@ -55,7 +55,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Middleware**: `proxy.ts` (NOT `middleware.ts`). Protects `/dashboard/:path*`. Redirects unauthenticated to `/login`.
 - **Auth**: `auth.ts` + `auth.config.ts`. JWT session strategy. Custom `User` type in `next-auth.d.ts` extends with `wpId`, `accessToken`. Route handler at `app/api/auth/[...nextauth]/route.ts`.
 - **Registration**: Route handler `app/api/register/route.ts` — creates WP user via GraphQL mutation.
-- **Layout**: `app/layout.tsx` — wraps with `SessionWrapper` (SessionProvider), `ToasterProvider` (react-hot-toast), and `Header` (client component).
+- **Layout**: `app/layout.tsx` — wraps with `SessionWrapper` (SessionProvider), `ToasterProvider` (react-hot-toast), and the single route-aware `Header` (client component). Root layout fetches all 3 WP menus (cached) and passes them to `<Header menus={…}>`.
 - **Multistep form**: 7-step inspection form at `/dashboard/customer/inspection` with Zustand store persisting to `sessionStorage`.
 - **Upload engine**: `useFileUpload` hook + `generateUploadUrl` Server Action. Direct-to-cloud via **Bunny Storage + Pull Zone** (S3-compatible presigned PUT). No server relays binary data.
 - **Schemas**: 5 Zod schema files in `app/lib/schemas/` — `vehicleInfo`, `vinInfo`, `inspectionScope`, `uploadFields`, `reviewAgreement`.
@@ -63,8 +63,10 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Store**: `app/store/inspectionStore.ts` — 6 slices (`currentStep`, `vehicleInfo`, `vinInfo`, `inspectionScope`, `uploadFields`, `reviewAgreement`) with persist middleware.
 - **Payment engine**: Server Actions (`app/actions/payment.ts`, `app/actions/inspection.ts`), webhook handler (`app/api/webhooks/stripe/route.ts`), polling endpoint (`app/api/payment/status/route.ts`). Stripe PaymentIntent + `inspection-payment` CPT via WPGraphQL. `confirmInspectionPayment` verifies server-side; `createPaymentIntent` charges stored `orderSubtotal` and rejects cross-owner pay.
 - **Inspections listing/detail (Phase 5)**: `app/actions/inspections.ts` (`listInspections` owner-scoped via custom WP connection args + `unstable_cache` 300s; `fetchInspection` full detail). Shared presentation-only `InspectionDetailView` serves customer (`/dashboard/customer/inspection/[id]`), pay (`/dashboard/customer/pay/[id]`, owner-only), and admin (`/dashboard/admin/inspection/[id]`) routes. Status enums in `app/lib/status.ts` (`INSPECTION_STATUSES` / `PAYMENT_STATUSES`).
-- **Header session**: `Header.tsx` (client) uses `useSession()` for live auth state; server layouts may pass a `session` prop as first-paint fallback. On static/ISR public pages (`/`, `/login`, `/register`) there is no server prop, so a brief `HeaderMenuSkeleton` renders while the client session resolves. Dashboard layout passes `auth()` server-side — no skeleton there.
-- **Dashboard route groups (Phase 6)**: `app/dashboard/layout.tsx` is thin; `app/dashboard/(site)/layout.tsx` renders the standard site header (role-aware WP menu: customer site menu vs `getAdminSiteMenu()`), `app/dashboard/(panel)/layout.tsx` renders `AdminPanelShell` (admin header + sidebar) for `/dashboard/admin/*` (role-guarded to `administrator` | `inspector`). `/dashboard` mirrors the customer dashboard for admin/inspector via shared `app/components/customer/InspectionListing.tsx`.
+- **Header (single, route-aware)**: `Header.tsx` (client) is rendered **once** in the root layout — no nested layout renders a header. It uses `usePathname()` + `useSession()` (single auth source). `usePathname` → admin panel routes (`/dashboard/admin/*` excluding `/dashboard/admin/inspection`) render the **AdminHeader variant** (language left, current page title center from the admin panel menu item label, hamburger `md:hidden` only — mobile drawer = admin panel menu). All other routes render the **standard header** (language left, logo center, hamburger right) with a role-based menu. `app/lib/header-config.ts` holds the unified `ITEM_ICONS` map, `BRAND_LOGOS`, `getMenuIcon`, `isLogoutItem`, `isBrandItem`.
+- **Menu fetching/caching**: `app/lib/menu.ts` — `getMenu(slug)` wrapped in `unstable_cache(["menu","slug"], revalidate: 300)`; helpers `getMainMenu`, `getAdminSiteMenu`, `getAdminPanelMenu`. Revalidated on login/logout via `auth.ts` `events.signIn/signOut` → `revalidatePath("/", "layout")`.
+- **Header session**: `Header.tsx` uses `useSession()` for live auth state. On static/ISR public pages (`/`, `/login`, `/register`) a brief `HeaderMenuSkeleton` renders while the client session resolves (no server auth call in root layout — keeps public pages static).
+- **Dashboard route groups (Phase 6)**: `app/dashboard/layout.tsx` is thin; `app/dashboard/(site)/layout.tsx` and `app/dashboard/(public)/layout.tsx` are passthrough `<main>` wrappers (no header — the root layout renders it). `app/dashboard/(panel)/layout.tsx` renders `AdminSidebar` (desktop) + content for `/dashboard/admin/{requests,users,archive,proposals,settings}` (role-guarded to `administrator` | `inspector`; admin inspection detail lives under `(site)` with the standard header). `/dashboard` mirrors the customer dashboard for admin/inspector via shared `app/components/customer/InspectionListing.tsx`.
 
 ## Code Conventions
 
@@ -72,8 +74,8 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Styling**: Tailwind v4 (`@theme inline` syntax, `@custom-variant dark`). CSS variables in `app/globals.css`.
 - **Scrollbar**: `.thin-scrollbar` utility class in `globals.css` — thin 4px rounded scrollbar for overflow containers.
 - **Component split**:
-  - `app/components/` — app-specific (Button, FormInput, FormSelect, ImageCheckboxGroup, FileUploadField, PriceSummary, StepIndicator, StatusBadge, InspectionCard, FilterInspectionsModal, InspectionDetailView, NavLink, NavigationLoader, LoadingIndicator, Header, HeaderNav, HeaderMenuSkeleton, LanguageSelector, SessionWrapper, ToasterProvider)
-  - `app/components/admin/` — AdminPanelShell, AdminHeader, AdminSidebar, DataTable, PaginationFooter, AdminPageShell, StatusPill
+  - `app/components/` — app-specific (Button, FormInput, FormSelect, ImageCheckboxGroup, FileUploadField, PriceSummary, StepIndicator, StatusBadge, InspectionCard, FilterInspectionsModal, InspectionDetailView, NavLink, NavigationLoader, LoadingIndicator, Header, HeaderMenuSkeleton, LanguageSelector, SessionWrapper, ToasterProvider)
+  - `app/components/admin/` — AdminSidebar, DataTable, PaginationFooter, AdminPageShell, StatusPill
   - `components/ui/` — shadcn primitives (button, card, input, checkbox, field, separator, dropdown-menu, dialog, tabs, skeleton, etc.)
 - **Two Button components**: `@/app/components/Button` (app custom with `primary`/`secondary` variants) vs `@/components/ui/button` (shadcn). Use the app one for forms.
 - **Form pattern**: React Hook Form + Zod schema + `zodResolver` + `@/app/components/FormInput` generic `<T extends FieldValues>` + `@/components/ui/field` (Field, FieldLabel, FieldGroup).
@@ -90,7 +92,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Coverage**: v8 provider, excludes `.opencode/**`, `components/ui/**`, `**/index.ts`
 - **Playwright** e2e: `e2e/` directory, Chromium only, `headless: false`
 - E2E credentials loaded from `.env.local` via `dotenv` in `playwright.config.ts`
-- **242 tests across 29 files, all passing**
+- **244 tests across 29 files, all passing**
 - Coverage: Statements 100%, Lines 100%, Branches ~98%, Functions ~98%
 
 ## Environment & Backend
@@ -112,19 +114,19 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Root layout + Header + shadcn primitives       | Done                                                                       |
 | Landing page (`/`)                             | Default Next.js boilerplate                                                |
 | Customer dashboard (`/dashboard/customer`)     | Done — Phase 5: owner-scoped listing, status filter + pagination, card layout with Add/Filter, empty state |
-| Admin dashboard (Phase 6 Stage A)              | Done — `/dashboard/admin` admin panel (Requests/Users/Archive/Proposals tables + Settings form), desktop sidebar + mobile drawer, page-title header, `/dashboard` mirrors customer dashboard; functional wiring (approve/reject, PDF) deferred to Stage B |
+| Admin dashboard (Phase 6 Stage A)              | Done — `/dashboard/admin` admin panel (Requests/Users/Archive/Proposals tables + Settings form), desktop sidebar, single route-aware Header in root layout, `/dashboard` mirrors customer dashboard; functional wiring (approve/reject, PDF) deferred to Stage B |
 | Multistep inspection form (7 steps)            | Done — Phase 2 complete                                                    |
 | Zustand store                                  | Done — `inspectionStore.ts` with sessionStorage persist                    |
 | Upload engine (Bunny CDN)                      | Done — Phase 3/5.8: `app/actions/upload.ts`, `app/hooks/useFileUpload.ts` (S3-compatible presigned PUT) |
 | Stripe payments                                | Done — Phase 4: full E2E flow with WPGraphQL standardization + Phase 5.6 server-side hardening |
 | **WP Token Auto-Refresh**                      | **Done — `app/lib/wp-auth.ts` (auto-refresh via refreshToken mutation)**   |
 | **WP Debug & Origin Fix**                      | **Done — debug layers + Origin header fix for refreshToken**               |
-| **Header live session (public pages)**         | **Done — `Header.tsx` uses `useSession()`; menu reflects real auth on static/ISR public pages (`/`, `/login`, `/register`)** |
+| **Single route-aware Header (root layout)**    | **Done — `Header.tsx` uses `useSession()` + `usePathname()`; AdminHeader variant for admin panel routes (page title center, mobile-only hamburger); standard header for all other routes; 3 menus fetched server-side in root layout with `unstable_cache`; `events.signIn/signOut` → `revalidatePath`** |
 | Inspections listing + detail (Phase 5)         | Done — owner-scoped listing, filters/pagination, shared `InspectionDetailView`, customer detail + pay routes, admin detail route |
 | Navigation performance (00502)                 | Done — no `router.refresh()`, `HeaderMenuSkeleton`, HeaderNav out of Suspense, top loader |
 | Netlify deployment (Phase 5.7)                 | Done — `rideshareinspector.netlify.app`, `AUTH_TRUST_HOST`, context-scoped `NEXTAUTH_URL`, preview/branch deploys |
 | PDF certificate generation                     | Not started — Phase 6 Stage B (approve/reject + `expiryDate` population + PDF) |
-| Tests                                          | Done — 242 Vitest tests, 29 files, ~100% lines, 3 E2E Playwright specs     |
+| Tests                                          | Done — 244 Vitest tests, 29 files, ~100% lines, 3 E2E Playwright specs     |
 
 ## Phase 2 & 3 — Shared Components
 
@@ -198,25 +200,25 @@ tests/components/FilterInspectionsModal.test.tsx / InspectionCard.test.tsx / Ins
 ## Phase 6 — Admin Dashboard (Stage A: UI/Design done)
 
 ```
-app/dashboard/layout.tsx                   # thin: <main>{children}</main> (no HeaderNav)
-app/dashboard/(site)/layout.tsx            # standard site header (role-aware menu: customer vs admin site menu)
-app/dashboard/(panel)/layout.tsx           # AdminPanelShell + role guard (administrator | inspector)
+app/dashboard/layout.tsx                   # thin: <main>{children}</main>
+app/dashboard/(site)/layout.tsx            # passthrough <main> (header comes from root layout)
+app/dashboard/(panel)/layout.tsx           # AdminSidebar + content + role guard (administrator | inspector)
 app/dashboard/(panel)/admin/page.tsx       # /dashboard/admin → redirect → requests
 app/dashboard/(panel)/admin/{requests,users,archive,proposals,settings}/page.tsx  # table/form pages (Stage A: static sample data)
 app/dashboard/(site)/page.tsx              # /dashboard mirror of customer dashboard (admin/inspector)
-app/components/admin/AdminPanelShell.tsx   # panel shell: AdminHeader + AdminSidebar + content
-app/components/admin/AdminHeader.tsx       # language left + page title center + hamburger md:hidden
-app/components/admin/AdminSidebar.tsx      # dark desktop sidebar (WP admin panel menu + logout) + mobile drawer
+app/components/admin/AdminSidebar.tsx      # dark desktop sidebar (WP admin panel menu + logout), self-contained
 app/components/admin/DataTable.tsx         # generic table (columns, search, filter, pagination)
 app/components/admin/PaginationFooter.tsx  # "Showing X–Y of Z" + page buttons
 app/components/admin/AdminPageShell.tsx    # page wrapper (title + content)
 app/components/admin/StatusPill.tsx        # compact pill (existing getStatusStyle colors)
+app/components/Header/Header.tsx           # single route-aware master header (root layout)
 app/components/Header/LanguageSelector.tsx # shared language dropdown (extracted from Header.tsx)
-app/lib/admin-menu.ts                      # admin cssClass → icon/href + getAdminPageTitle
-app/lib/menu.ts                            # getMenu(slug) / getMainMenu / getAdminSiteMenu / getAdminPanelMenu
+app/lib/header-config.ts                   # unified ITEM_ICONS / BRAND_LOGOS / getMenuIcon / isLogoutItem / isBrandItem
+app/lib/menu.ts                            # getMenu(slug) via unstable_cache(["menu","slug"], 300s)
+auth.ts                                    # events.signIn/signOut → revalidatePath("/", "layout")
 proxy.ts                                   # administrator + inspector → /dashboard/admin/requests; others → /dashboard/customer
-tests/components/StatusPill.test.tsx / PaginationFooter.test.tsx / DataTable.test.tsx / AdminSidebar.test.tsx / AdminHeader.test.tsx / admin-pages.test.tsx
-tests/lib/admin-menu.test.ts               # + 34 new tests (242 total, 29 files)
+tests/components/StatusPill.test.tsx / PaginationFooter.test.tsx / DataTable.test.tsx / AdminSidebar.test.tsx / Header.test.tsx / admin-pages.test.tsx
+tests/lib/header-config.test.ts            # + 36 new tests (244 total, 29 files)
 ```
 
 ## Skills
