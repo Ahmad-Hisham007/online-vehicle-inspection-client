@@ -21,7 +21,9 @@ export default function AdminInspectionDetailPage() {
     fetchInspection(id)
       .then(setInspection)
       .catch((err) =>
-        setError(err instanceof Error ? err.message : "Failed to load inspection"),
+        setError(
+          err instanceof Error ? err.message : "Failed to load inspection",
+        ),
       )
       .finally(() => setLoading(false));
   }, [id]);
@@ -49,26 +51,34 @@ export default function AdminInspectionDetailPage() {
 
   return (
     <section className="flex min-h-screen flex-col bg-gray-900">
-      {loading ? (
-        <div className="flex flex-1 items-center justify-center">
-          <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
+        <div
+          className={
+            "flex min-h-0 flex-1 flex-col overflow-clip rounded-2xl bg-card text-card-foreground ring-1 ring-foreground/10 shadow-sm"
+          }
+        >
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center">
+              <div className="size-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+              <p className="text-sm text-gray-400">{error}</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="!w-auto !px-6"
+                type="button"
+                onClick={load}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : inspection ? (
+            <InspectionDetailView inspection={inspection} role="admin" />
+          ) : null}
         </div>
-      ) : error ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <p className="text-sm text-gray-400">{error}</p>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="!w-auto !px-6"
-            type="button"
-            onClick={load}
-          >
-            Retry
-          </Button>
-        </div>
-      ) : inspection ? (
-        <InspectionDetailView inspection={inspection} role="admin" />
-      ) : null}
+      </div>
     </section>
   );
 }
