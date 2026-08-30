@@ -69,6 +69,7 @@ export const RequestsListing = async ({ searchParams }: RequestsProps) => {
         search={search}
         page={page}
         status={status}
+        totalPages={data.totalPages}
 
         // ------------------------------------------
         // onSearchChange={(v) => {

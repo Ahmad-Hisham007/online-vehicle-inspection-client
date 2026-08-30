@@ -38,7 +38,7 @@ export function buildListAdminHref({
   if (status && INSPECTION_STATUSES.includes(status))
     params.set("status", status);
   if (search) params.set("search", search);
-  if (page > 1) params.set("page", String(page));
+  if (page) params.set("page", String(page));
   const qs = params.toString();
   return `?${qs}`;
 }
