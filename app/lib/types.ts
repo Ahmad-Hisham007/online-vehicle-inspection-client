@@ -10,6 +10,8 @@ export const INSPECTION_STATUSES = [
 
 export type InspectionStatus = (typeof INSPECTION_STATUSES)[number];
 
+export type extendedInspectionStatus = InspectionStatus | null;
+
 export const PAYMENT_STATUSES = [
   "pending",
   "succeeded",

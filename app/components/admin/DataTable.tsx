@@ -20,21 +20,21 @@ export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   rows: T[];
   rowKey: (row: T) => string | number;
-  searchPlaceholder?: string;
   search?: string;
   page?: number;
   status?: InspectionStatus | null;
   emptyState?: ReactNode;
+  totalPages?: number;
 }
 
 export default function DataTable<T>({
   columns,
   rows,
   rowKey,
-  searchPlaceholder = "Search...",
   search = "",
   page = 1,
   status,
+  totalPages = 1,
   emptyState,
 }: DataTableProps<T>) {
   return (
@@ -91,15 +91,16 @@ export default function DataTable<T>({
         </table>
       </div>
 
-      {/* {onPageChange && (
+      {totalPages > 1 && (
         <PaginationFooter
           page={page}
           totalPages={totalPages}
-          totalItems={totalItems}
-          pageSize={pageSize}
-          onPageChange={onPageChange}
+          search={search}
+          status={status}
+          totalItems={rows.length}
+          pageSize={10}
         />
-      )} */}
+      )}
     </div>
   );
 }

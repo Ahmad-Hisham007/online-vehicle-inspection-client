@@ -1,8 +1,9 @@
 "use client";
+import useDebounce from "@/app/hooks/useDebounce";
 import { buildListAdminHref } from "@/app/lib/listing-url";
 import { InspectionStatus } from "@/app/lib/types";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import { FiSearch } from "react-icons/fi";
 
 const filterOptions = [
@@ -30,19 +31,29 @@ const DataToolbar = ({
   );
   const [pending, startTransition] = useTransition();
 
+  const debouncedSearch = useDebounce(searchValue, 500);
+
+  useEffect(() => {
+    if (searchValue === initialSearchValue) return;
+    startTransition(() => {
+      const status =
+        statusFilter === "all" ? null : (statusFilter as InspectionStatus);
+
+      const href = buildListAdminHref({
+        page: 1,
+        status,
+        search: debouncedSearch,
+      });
+
+      // console.log("🔍 Debounced search:", { debouncedSearch, status, href });
+      router.push(`${path}${href}`);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchValue(value);
-    startTransition(() => {
-      const href = buildListAdminHref({
-        page: 1,
-        status:
-          statusFilter === "all" ? null : (statusFilter as InspectionStatus),
-        search: value,
-      });
-
-      router.push(`${path}${href}`);
-    });
   };
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
