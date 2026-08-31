@@ -6,6 +6,7 @@ import StatusPill from "./StatusPill";
 import { formatInspectionDate } from "@/app/lib/format";
 import Link from "next/link";
 import { useTransition } from "react";
+import { formatLocation } from "@/app/lib/formatLocation";
 
 interface RequestContentProps {
   rows: AdminRequestSummary[];
@@ -40,7 +41,11 @@ const columns: DataTableColumn<AdminRequestSummary>[] = [
     cell: (r) => formatInspectionDate(r.dateCreated),
   },
   { key: "user", header: "User", cell: (r) => r.author },
-  { key: "location", header: "Location", cell: (r) => r.location },
+  {
+    key: "location",
+    header: "Location",
+    cell: (r) => formatLocation(r.country, r.location),
+  },
   {
     key: "actions",
     header: "Actions",

@@ -43,17 +43,6 @@ export const RequestsListing = async ({ searchParams }: RequestsProps) => {
           total={data.total}
         />
       </Suspense>
-      {/* <DataToolbar initialSearchValue={search} initialStatusFilter={status} />
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        search={search}
-        page={page}
-        status={status}
-        totalPages={data.totalPages}
-        total={data.total}
-      /> */}
     </AdminPageShell>
   );
 };

@@ -80,5 +80,6 @@ export interface AdminRequestSummary {
   dateCreated: string;
   inspectionStatus: InspectionStatus;
   location: string | null;
+  country: string | null;
   author: string;
 }
