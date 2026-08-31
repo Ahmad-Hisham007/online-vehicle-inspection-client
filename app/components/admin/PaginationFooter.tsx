@@ -14,7 +14,6 @@ interface PaginationFooterProps {
   search?: string;
   total?: number;
   pageSize?: number;
-  // onPageChange: (page: number) => void;
 }
 
 function pageNumbers(current: number, totalPages: number): (number | "…")[] {

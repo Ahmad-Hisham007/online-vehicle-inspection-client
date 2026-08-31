@@ -1,18 +1,13 @@
-import React from "react";
+import React, { Suspense } from "react";
 import AdminPageShell from "./AdminPageShell";
-import DataTable, { DataTableColumn } from "./DataTable";
-import Link from "next/link";
-import { AdminRequestSummary, InspectionStatus } from "@/app/lib/types";
+import { InspectionStatus } from "@/app/lib/types";
+import DataTableSkeleton from "./DataTableSkeleton";
+import RequestsContent from "./RequestsContent";
 import { listRequests } from "@/app/actions/requests";
-import StatusPill from "./StatusPill";
-import { formatInspectionDate } from "@/app/lib/format";
-import DataToolbar from "./DataToolbar";
 
 interface RequestsProps {
   searchParams: Promise<{ page?: string; status?: string; search?: string }>;
 }
-const ACTION_CLASS =
-  "inline-flex items-center gap-1 rounded border border-primary/20 bg-primary/10 px-2.5 py-1 text-[12px] font-medium text-primary transition-colors hover:bg-primary/20";
 
 export const RequestsListing = async ({ searchParams }: RequestsProps) => {
   const sp = await searchParams;
@@ -22,46 +17,33 @@ export const RequestsListing = async ({ searchParams }: RequestsProps) => {
   const data = await listRequests({ page, perPage: 8, status, search });
   console.log(data);
   const rows = data.items;
-  const columns: DataTableColumn<AdminRequestSummary>[] = [
-    {
-      key: "id",
-      header: "ID",
-      cell: (r) => <span className="font-medium">{r.id}</span>,
-    },
-    {
-      key: "title",
-      header: "Title",
-      cell: (r) => <h2 className="font-bold">{r.title}</h2>,
-    },
-    {
-      key: "status",
-      header: "Status",
-      cell: (r) => <StatusPill status={r.inspectionStatus} />,
-    },
-    {
-      key: "date",
-      header: "Date",
-      cell: (r) => formatInspectionDate(r.dateCreated),
-    },
-    { key: "user", header: "User", cell: (r) => r.author },
-    { key: "location", header: "Location", cell: (r) => r.location },
-    {
-      key: "actions",
-      header: "Actions",
-      cell: (r) => (
-        <Link
-          prefetch
-          href={`/dashboard/admin/inspection/${r.id}`}
-          className={ACTION_CLASS}
-        >
-          View Inspecion
-        </Link>
-      ),
-    },
-  ];
   return (
     <AdminPageShell title="Requests">
-      <DataToolbar initialSearchValue={search} initialStatusFilter={status} />
+      <Suspense
+        fallback={
+          <>
+            {/* Toolbar skeleton */}
+            <div className="mb-4 flex w-full items-center justify-between gap-2">
+              <div className="relative">
+                <div className="h-[34px] w-56 animate-pulse rounded border border-border bg-muted" />
+              </div>
+              <div className="h-[34px] w-32 animate-pulse rounded border border-border bg-muted" />
+            </div>
+            {/* Table skeleton */}
+            <DataTableSkeleton columns={6} rows={8} />
+          </>
+        }
+      >
+        <RequestsContent
+          rows={rows}
+          search={search}
+          page={page}
+          status={status}
+          totalPages={data.totalPages}
+          total={data.total}
+        />
+      </Suspense>
+      {/* <DataToolbar initialSearchValue={search} initialStatusFilter={status} />
       <DataTable
         columns={columns}
         rows={rows}
@@ -71,21 +53,7 @@ export const RequestsListing = async ({ searchParams }: RequestsProps) => {
         status={status}
         totalPages={data.totalPages}
         total={data.total}
-
-        // ------------------------------------------
-        // onSearchChange={(v) => {
-        //   setSearch(v);
-        //   setPage(1);
-        // }}
-
-        // filterValue={filter}
-        // onFilterChange={(v) => {
-        //   setFilter(v);
-        //   setPage(1);
-        // }}
-        // page={page}
-        // totalItems={filtered.length}
-      />
+      /> */}
     </AdminPageShell>
   );
 };

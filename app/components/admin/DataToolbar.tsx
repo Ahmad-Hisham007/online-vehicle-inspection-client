@@ -16,11 +16,15 @@ const filterOptions = [
 type DataToolBarProps = {
   initialSearchValue: string;
   initialStatusFilter: InspectionStatus | null | undefined;
+  startTransition: React.TransitionStartFunction;
+  isPending: boolean;
 };
 
 const DataToolbar = ({
   initialSearchValue,
   initialStatusFilter,
+  isPending,
+  startTransition
 }: DataToolBarProps) => {
   const router = useRouter();
   const path = usePathname().split("?")[0];
@@ -29,7 +33,6 @@ const DataToolbar = ({
   const [statusFilter, setStatusFilter] = useState(
     initialStatusFilter ?? "all",
   );
-  const [pending, startTransition] = useTransition();
 
   const debouncedSearch = useDebounce(searchValue, 500);
 
@@ -78,7 +81,7 @@ const DataToolbar = ({
           placeholder="Search..."
           value={searchValue}
           onChange={handleSearch}
-          disabled={pending}
+          disabled={isPending}
           aria-label="Inspection Requests Search"
           className={
             "w-56 pl-7 h-[34px] border border-border rounded bg-white px-2 py-1 text-[13px] leading-none text-slate-700 focus:outline-none focus:border-primary"
@@ -91,7 +94,7 @@ const DataToolbar = ({
           value={statusFilter}
           onChange={handleStatusChange}
           aria-label="Filter"
-          disabled={pending}
+          disabled={isPending}
           className={
             "w-auto h-[34px] border border-border rounded bg-white px-2 py-1 text-[13px] leading-none text-slate-700 focus:outline-none focus:border-primary"
           }
