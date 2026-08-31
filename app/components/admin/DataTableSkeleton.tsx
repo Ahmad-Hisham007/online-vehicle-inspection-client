@@ -14,11 +14,11 @@ export default function DataTableSkeleton({
   return (
     <div
       className={cn(
-        "w-full overflow-x-auto rounded-lg border border-border bg-card shadow-sm",
+        "w-full rounded-lg border border-border bg-card shadow-sm",
         className,
       )}
     >
-      <table className="w-full min-w-[700px] border-collapse text-left">
+      <table className="w-full min-w-175 border-collapse text-left">
         <thead>
           <tr className="bg-primary text-primary-foreground text-[13px] font-semibold tracking-wide">
             {Array.from({ length: columns }).map((_, i) => (
@@ -47,10 +47,10 @@ export default function DataTableSkeleton({
                       "h-9 animate-pulse rounded bg-muted",
                       // Random width for realism
                       colIndex === 0 && "w-12",
-                      colIndex === 1 && "w-32",
+                      colIndex === 1 && "w-24",
                       colIndex === 2 && "w-20",
-                      colIndex === 3 && "w-28",
-                      colIndex === 4 && "w-24",
+                      colIndex === 3 && "w-24",
+                      colIndex === 4 && "w-20",
                       colIndex === 5 && "w-16",
                     )}
                   />
