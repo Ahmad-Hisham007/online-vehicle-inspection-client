@@ -25,6 +25,7 @@ export interface DataTableProps<T> {
   status?: InspectionStatus | null;
   emptyState?: ReactNode;
   totalPages?: number;
+  total?: number;
 }
 
 export default function DataTable<T>({
@@ -36,6 +37,7 @@ export default function DataTable<T>({
   status,
   totalPages = 1,
   emptyState,
+  total,
 }: DataTableProps<T>) {
   return (
     <div className="w-full">
@@ -97,7 +99,7 @@ export default function DataTable<T>({
           totalPages={totalPages}
           search={search}
           status={status}
-          totalItems={rows.length}
+          total={total}
           pageSize={10}
         />
       )}

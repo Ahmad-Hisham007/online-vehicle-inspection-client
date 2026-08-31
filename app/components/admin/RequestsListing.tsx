@@ -19,7 +19,7 @@ export const RequestsListing = async ({ searchParams }: RequestsProps) => {
   const page = Math.max(1, Number(sp.page) || 1);
   const status = sp.status as InspectionStatus | null | undefined;
   const search = sp.search?.trim() || "";
-  const data = await listRequests({ page, perPage: 10, status, search });
+  const data = await listRequests({ page, perPage: 8, status, search });
   console.log(data);
   const rows = data.items;
   const columns: DataTableColumn<AdminRequestSummary>[] = [
@@ -70,6 +70,7 @@ export const RequestsListing = async ({ searchParams }: RequestsProps) => {
         page={page}
         status={status}
         totalPages={data.totalPages}
+        total={data.total}
 
         // ------------------------------------------
         // onSearchChange={(v) => {
