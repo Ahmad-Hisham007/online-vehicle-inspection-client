@@ -1,7 +1,7 @@
 import { FiSearch } from "react-icons/fi";
 import PaginationFooter from "./PaginationFooter";
 import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import { startTransition, type ReactNode } from "react";
 import { InspectionStatus } from "@/app/lib/types";
 import DataTableSkeleton from "./DataTableSkeleton";
 
@@ -42,6 +42,7 @@ export default function DataTable<T>({
   emptyState,
   total,
   isLoading = false,
+  startTransition,
 }: DataTableProps<T>) {
   return (
     <div className="w-full">
@@ -107,6 +108,8 @@ export default function DataTable<T>({
             status={status}
             total={total}
             pageSize={8}
+            isPending={isLoading}
+            startTransition={startTransition}
           />
         )}
       </div>
