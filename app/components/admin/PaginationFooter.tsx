@@ -12,20 +12,25 @@ interface PaginationFooterProps {
   totalPages: number;
   status?: InspectionStatus | null;
   search?: string;
-
-  totalItems: number;
+  total?: number;
   pageSize?: number;
   // onPageChange: (page: number) => void;
 }
 
-function pageNumbers(current: number, total: number): (number | "…")[] {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
+function pageNumbers(current: number, totalPages: number): (number | "…")[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
 
-  const pages = new Set<number>([1, total, current - 1, current, current + 1]);
+  const pages = new Set<number>([
+    1,
+    totalPages,
+    current - 1,
+    current,
+    current + 1,
+  ]);
   const sorted = Array.from(pages)
-    .filter((p) => p >= 1 && p <= total)
+    .filter((p) => p >= 1 && p <= totalPages)
     .sort((a, b) => a - b);
 
   const result: (number | "…")[] = [];
@@ -38,44 +43,16 @@ function pageNumbers(current: number, total: number): (number | "…")[] {
   return result;
 }
 
-function pageWindow(page: number, totalPages: number): (number | "ellipsis")[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  const pages = new Set<number>([
-    1,
-    2,
-    page - 1,
-    page,
-    page + 1,
-    totalPages - 1,
-    totalPages,
-  ]);
-  const sorted = Array.from(pages)
-    .filter((p) => p >= 1 && p <= totalPages)
-    .sort((a, b) => a - b);
-
-  const out: (number | "ellipsis")[] = [];
-  let prev = 0;
-  for (const p of sorted) {
-    if (p - prev > 1) out.push("ellipsis");
-    out.push(p);
-    prev = p;
-  }
-  return out;
-}
-
 export default function PaginationFooter({
   page,
   totalPages,
   search,
   status,
-  totalItems,
+  total = 0,
   pageSize = 10,
 }: PaginationFooterProps) {
   const path = usePathname().split("?")[0];
-  if (totalItems < 1) {
+  if (total < 1) {
     return (
       <div className="flex items-center justify-between border-t border-border bg-card px-4 py-3">
         <span className="text-[13px] text-muted-foreground">
@@ -86,13 +63,12 @@ export default function PaginationFooter({
   }
 
   const from = (page - 1) * pageSize + 1;
-  const to = Math.min(page * pageSize, totalItems);
-  const pages = pageWindow(page, totalPages);
+  const to = Math.min(page * pageSize, total);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-4 py-3">
       <span className="text-[13px] text-muted-foreground">
-        Showing {from}–{to} of {totalItems} items
+        Showing {from}–{to} of {total} items
       </span>
 
       <div className="inline-flex items-center gap-1">

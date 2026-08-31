@@ -76,6 +76,7 @@ const REQUESTS_LIST_QUERY = `
     $offset: Int
     $inspectionStatus: String
     $search: String
+    $inspectionStatusNotIn: [String]
   ) {
     inspections(
       where: {
@@ -83,6 +84,7 @@ const REQUESTS_LIST_QUERY = `
         limit: $limit
         offset: $offset
         inspectionStatus: $inspectionStatus
+        inspectionStatusNotIn: $inspectionStatusNotIn
       }
     ) {
       nodes {
@@ -126,6 +128,7 @@ const getRequestsPageCached = unstable_cache(
         limit: perPage,
         offset: (page - 1) * perPage,
         search: search,
+        inspectionStatusNotIn: ["approved", "rejected", "cancelled"],
       },
       { accessToken: token },
     );
