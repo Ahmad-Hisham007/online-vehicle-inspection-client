@@ -25,6 +25,7 @@ interface InspectionDetailsNode {
   inspectionStatus: string;
   inspectionStateUsa: string | null;
   inspectionStateCanada: string | null;
+  inspectionCountry: string | null;
 }
 interface InspectionNode {
   databaseId: number;
@@ -66,7 +67,9 @@ function mapSummary(node: InspectionNode): AdminRequestSummary {
     location:
       node.inspectionDetails.inspectionStateUsa ??
       node.inspectionDetails.inspectionStateCanada,
+      country: node.inspectionDetails.inspectionCountry,
     author: node.author.node.displayName,
+
   };
 }
 
@@ -95,6 +98,7 @@ const REQUESTS_LIST_QUERY = `
           inspectionStatus
           inspectionStateUsa
           inspectionStateCanada
+          inspectionCountry
         }
         author {
          node {

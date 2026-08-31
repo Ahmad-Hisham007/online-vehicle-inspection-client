@@ -24,7 +24,7 @@ const DataToolbar = ({
   initialSearchValue,
   initialStatusFilter,
   isPending,
-  startTransition
+  startTransition,
 }: DataToolBarProps) => {
   const router = useRouter();
   const path = usePathname().split("?")[0];
@@ -73,8 +73,8 @@ const DataToolbar = ({
   };
 
   return (
-    <div className="mb-4 flex w-full items-center justify-between gap-2">
-      <div className="relative">
+    <div className="md:mb-4 mb-0 flex w-full items-center justify-between flex-col md:flex-row gap-2 ">
+      <div className="relative w-full">
         <FiSearch className="pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
@@ -84,7 +84,7 @@ const DataToolbar = ({
           disabled={isPending}
           aria-label="Inspection Requests Search"
           className={
-            "w-56 pl-7 h-[34px] border border-border rounded bg-white px-2 py-1 text-[13px] leading-none text-slate-700 focus:outline-none focus:border-primary"
+            "md:w-56 w-full pl-7 h-8.5 border border-border rounded bg-white px-2 py-1 text-[13px] leading-none text-slate-700 focus:outline-none focus:border-primary"
           }
         />
       </div>
@@ -96,7 +96,7 @@ const DataToolbar = ({
           aria-label="Filter"
           disabled={isPending}
           className={
-            "w-auto h-[34px] border border-border rounded bg-white px-2 py-1 text-[13px] leading-none text-slate-700 focus:outline-none focus:border-primary"
+            "w-full md:w-auto h-[34px] border border-border rounded bg-white px-2 py-1 text-[13px] leading-none text-slate-700 focus:outline-none focus:border-primary"
           }
         >
           {filterOptions.map((opt) => (
