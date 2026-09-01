@@ -10,7 +10,7 @@ import { usePathname, useRouter } from "next/navigation";
 interface PaginationFooterProps {
   page: number;
   totalPages: number;
-  status?: InspectionStatus | null;
+  status?: string | null;
   search?: string;
   total?: number;
   pageSize?: number;

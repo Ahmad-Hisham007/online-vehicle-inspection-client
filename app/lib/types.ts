@@ -83,3 +83,11 @@ export interface AdminRequestSummary {
   country: string | null;
   author: string;
 }
+
+export interface AdminUserRow {
+  id: string;
+  email: string;
+  phone?: number | null;
+  firstName?: string | null;
+  lastName?: string | null;
+}
