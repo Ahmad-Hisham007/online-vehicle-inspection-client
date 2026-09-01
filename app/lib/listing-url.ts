@@ -11,7 +11,7 @@ export interface ListHrefOptions {
 }
 export interface ListAdminHrefOptions {
   page?: number;
-  status?: InspectionStatus | null;
+  status?: string | null;
   search?: string;
 }
 
@@ -35,8 +35,7 @@ export function buildListAdminHref({
   search = "",
 }: ListAdminHrefOptions = {}): string {
   const params = new URLSearchParams();
-  if (status && INSPECTION_STATUSES.includes(status))
-    params.set("status", status);
+  if (status) params.set("status", status);
   if (search) params.set("search", search);
   if (page) params.set("page", String(page));
   const qs = params.toString();

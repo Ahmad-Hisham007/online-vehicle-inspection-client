@@ -14,8 +14,8 @@ const filterOptions = [
 ];
 
 type DataToolBarProps = {
-  initialSearchValue: string;
-  initialStatusFilter: InspectionStatus | null | undefined;
+  initialSearchValue?: string;
+  initialStatusFilter?: InspectionStatus | null | undefined;
   startTransition: React.TransitionStartFunction;
   isPending: boolean;
 };
@@ -89,7 +89,7 @@ const DataToolbar = ({
         />
       </div>
 
-      {filterOptions && filterOptions.length > 0 && (
+      {initialStatusFilter && filterOptions && filterOptions.length > 0 && (
         <select
           value={statusFilter}
           onChange={handleStatusChange}

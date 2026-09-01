@@ -23,7 +23,7 @@ export interface DataTableProps<T> {
   rowKey: (row: T) => string | number;
   search?: string;
   page?: number;
-  status?: InspectionStatus | null;
+  status?: string | null;
   emptyState?: ReactNode;
   totalPages?: number;
   total?: number;
