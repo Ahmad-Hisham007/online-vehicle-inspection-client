@@ -21,12 +21,6 @@ const SAMPLE_PROPOSALS: ProposalRow[] = [
   { id: 1712, fullName: "Miguel Pena", email: "miguelpena2024@gmail.com", dateCreated: "2026-08-19T22:45:00", resolved: false },
 ];
 
-const FILTER_OPTIONS = [
-  { label: "All", value: "all" },
-  { label: "Resolved", value: "resolved" },
-  { label: "Unresolved", value: "unresolved" },
-];
-
 const ACTION_CLASS =
   "inline-flex items-center gap-1 rounded border border-primary/20 bg-primary/10 px-2.5 py-1 text-[12px] font-medium text-primary transition-colors hover:bg-primary/20";
 
@@ -93,27 +87,20 @@ export default function ProposalsPage() {
     },
   ];
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
   return (
     <AdminPageShell title="Proposals">
       <DataTable
         columns={columns}
         rows={pageRows}
         rowKey={(p) => p.id}
-        searchValue={search}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setPage(1);
-        }}
-        filterOptions={FILTER_OPTIONS}
-        filterValue={filter}
-        onFilterChange={(v) => {
-          setFilter(v);
-          setPage(1);
-        }}
+        search={search}
         page={page}
-        totalItems={filtered.length}
-        pageSize={pageSize}
-        onPageChange={setPage}
+        total={filtered.length}
+        totalPages={totalPages}
+        isLoading={false}
+        startTransition={() => {}}
       />
     </AdminPageShell>
   );

@@ -91,3 +91,14 @@ export interface AdminUserRow {
   firstName?: string | null;
   lastName?: string | null;
 }
+
+export interface AdminArchiveRow {
+  id: string;
+  title: string;
+  dateCreated: string;
+  inspectionStatus: InspectionStatus;
+  location: string | null;
+  country: string | null;
+  author: string;
+  companies: string[];
+}

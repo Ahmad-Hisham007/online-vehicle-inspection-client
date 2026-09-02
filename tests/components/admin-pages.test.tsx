@@ -4,31 +4,58 @@ import React from "react";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/dashboard/admin/archive",
 }));
 
-import RequestsPage from "@/app/dashboard/(panel)/admin/requests/page";
-import UsersPage from "@/app/dashboard/(panel)/admin/users/page";
-import ArchivePage from "@/app/dashboard/(panel)/admin/archive/page";
+import ArchiveContent from "@/app/components/admin/ArchiveContent";
 import ProposalsPage from "@/app/dashboard/(panel)/admin/proposals/page";
 import SettingsPage from "@/app/dashboard/(panel)/admin/settings/page";
 
 describe("Admin panel pages", () => {
-  it("renders the Requests page with table chrome", () => {
-    render(<RequestsPage />);
-    expect(screen.getByText("Requests")).toBeInTheDocument();
-    expect(screen.getAllByText("View Inspection").length).toBeGreaterThan(0);
+  it("renders the ArchiveContent with empty state", () => {
+    render(
+      <ArchiveContent
+        rows={[]}
+        search=""
+        page={1}
+        status={null}
+        totalPages={1}
+        total={0}
+      />,
+    );
+    expect(screen.getByText("No items found.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Search")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter")).toBeInTheDocument();
   });
 
-  it("renders the Users page", () => {
-    render(<UsersPage />);
-    expect(screen.getByText("Users")).toBeInTheDocument();
-    expect(screen.getAllByText("Edit").length).toBeGreaterThan(0);
-  });
-
-  it("renders the Archive page", () => {
-    render(<ArchivePage />);
-    expect(screen.getByText("Archive")).toBeInTheDocument();
-    expect(screen.getAllByText("Details").length).toBeGreaterThan(0);
+  it("renders the ArchiveContent with rows", () => {
+    render(
+      <ArchiveContent
+        rows={[
+          {
+            id: "1",
+            title: "Inspection #1",
+            dateCreated: "2026-08-22T19:02:00",
+            inspectionStatus: "approved",
+            location: "MI",
+            country: "USA",
+            author: "John Doe",
+            companies: ["uber", "lyft"],
+          },
+        ]}
+        search=""
+        page={1}
+        status={null}
+        totalPages={1}
+        total={1}
+      />,
+    );
+    expect(screen.getAllByText("Approved").length).toBeGreaterThan(0);
+    expect(screen.getByText("Uber")).toBeInTheDocument();
+    expect(screen.getByText("Lyft")).toBeInTheDocument();
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.getByText("USA, Michigan")).toBeInTheDocument();
+    expect(screen.getByText("Details")).toBeInTheDocument();
   });
 
   it("renders the Proposals page", () => {
