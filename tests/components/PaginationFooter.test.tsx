@@ -4,14 +4,23 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import PaginationFooter from "@/app/components/admin/PaginationFooter";
 
+const pushMock = vi.hoisted(() => vi.fn());
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: pushMock }),
+  usePathname: () => "/dashboard/admin/archive",
+}));
+
 describe("PaginationFooter", () => {
   it("renders the showing summary", () => {
     render(
       <PaginationFooter
         page={1}
         totalPages={5}
-        totalItems={42}
-        onPageChange={() => {}}
+        total={42}
+        pageSize={10}
+        isPending={false}
+        startTransition={() => {}}
       />,
     );
     expect(screen.getByText("Showing 1–10 of 42 items")).toBeInTheDocument();
@@ -22,8 +31,10 @@ describe("PaginationFooter", () => {
       <PaginationFooter
         page={4}
         totalPages={5}
-        totalItems={42}
-        onPageChange={() => {}}
+        total={42}
+        pageSize={10}
+        isPending={false}
+        startTransition={() => {}}
       />,
     );
     expect(screen.getByText("Showing 31–40 of 42 items")).toBeInTheDocument();
@@ -34,8 +45,10 @@ describe("PaginationFooter", () => {
       <PaginationFooter
         page={5}
         totalPages={5}
-        totalItems={42}
-        onPageChange={() => {}}
+        total={42}
+        pageSize={10}
+        isPending={false}
+        startTransition={() => {}}
       />,
     );
     expect(screen.getByText("Showing 41–42 of 42 items")).toBeInTheDocument();
@@ -46,8 +59,10 @@ describe("PaginationFooter", () => {
       <PaginationFooter
         page={1}
         totalPages={1}
-        totalItems={0}
-        onPageChange={() => {}}
+        total={0}
+        pageSize={10}
+        isPending={false}
+        startTransition={() => {}}
       />,
     );
     expect(screen.getByText("Showing 0 items")).toBeInTheDocument();
@@ -58,8 +73,10 @@ describe("PaginationFooter", () => {
       <PaginationFooter
         page={2}
         totalPages={3}
-        totalItems={30}
-        onPageChange={() => {}}
+        total={30}
+        pageSize={10}
+        isPending={false}
+        startTransition={() => {}}
       />,
     );
     const page2 = screen.getByRole("button", { name: "2" });
@@ -68,19 +85,21 @@ describe("PaginationFooter", () => {
     expect(screen.getByRole("button", { name: "3" })).toBeInTheDocument();
   });
 
-  it("calls onPageChange on next", async () => {
+  it("navigates on next", async () => {
+    pushMock.mockClear();
     const user = userEvent.setup();
-    const onPageChange = vi.fn();
     render(
       <PaginationFooter
         page={1}
         totalPages={3}
-        totalItems={30}
-        onPageChange={onPageChange}
+        total={30}
+        pageSize={10}
+        isPending={false}
+        startTransition={(fn) => fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Next page" }));
-    expect(onPageChange).toHaveBeenCalledWith(2);
+    expect(pushMock).toHaveBeenCalledWith("/dashboard/admin/archive?page=2");
   });
 
   it("disables previous on the first page", () => {
@@ -88,8 +107,10 @@ describe("PaginationFooter", () => {
       <PaginationFooter
         page={1}
         totalPages={3}
-        totalItems={30}
-        onPageChange={() => {}}
+        total={30}
+        pageSize={10}
+        isPending={false}
+        startTransition={() => {}}
       />,
     );
     expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
@@ -100,8 +121,10 @@ describe("PaginationFooter", () => {
       <PaginationFooter
         page={3}
         totalPages={3}
-        totalItems={30}
-        onPageChange={() => {}}
+        total={30}
+        pageSize={10}
+        isPending={false}
+        startTransition={() => {}}
       />,
     );
     expect(screen.getByRole("button", { name: "Next page" })).toBeDisabled();

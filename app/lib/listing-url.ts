@@ -1,8 +1,4 @@
-import {
-  INSPECTION_STATUSES,
-  type InspectionStatus,
-  type SortDir,
-} from "@/app/lib/types";
+import { type InspectionStatus, type SortDir } from "@/app/lib/types";
 
 export interface ListHrefOptions {
   page?: number;

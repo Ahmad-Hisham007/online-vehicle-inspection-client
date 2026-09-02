@@ -1,9 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import React from "react";
 import DataTable from "@/app/components/admin/DataTable";
 import type { DataTableColumn } from "@/app/components/admin/DataTable";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/test",
+}));
 
 interface Row {
   id: number;
@@ -21,100 +25,71 @@ const rows: Row[] = [
   { id: 3, name: "Charlie" },
 ];
 
+const baseProps = {
+  page: 1,
+  totalPages: 1,
+  total: rows.length,
+  isLoading: false,
+  startTransition: (() => {}) as React.TransitionStartFunction,
+};
+
 describe("DataTable", () => {
   it("renders column headers", () => {
-    render(
-      <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} />,
-    );
+    render(<DataTable columns={columns} rows={rows} rowKey={(r) => r.id} {...baseProps} />);
     expect(screen.getByText("ID")).toBeInTheDocument();
     expect(screen.getByText("Name")).toBeInTheDocument();
   });
 
   it("renders row data", () => {
-    render(
-      <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} />,
-    );
+    render(<DataTable columns={columns} rows={rows} rowKey={(r) => r.id} {...baseProps} />);
     expect(screen.getByText("Alice")).toBeInTheDocument();
     expect(screen.getByText("Bob")).toBeInTheDocument();
   });
 
   it("shows empty state when no rows", () => {
     render(
-      <DataTable columns={columns} rows={[]} rowKey={(r) => r.id} />,
+      <DataTable columns={columns} rows={[]} rowKey={(r) => r.id} {...baseProps} />,
     );
     expect(screen.getByText("No items found.")).toBeInTheDocument();
   });
 
-  it("renders search input with placeholder", () => {
-    render(
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        searchPlaceholder="Search users..."
-        searchValue=""
-        onSearchChange={() => {}}
-      />,
-    );
-    expect(screen.getByPlaceholderText("Search users...")).toBeInTheDocument();
-  });
-
-  it("calls onSearchChange when typing", async () => {
-    const user = userEvent.setup();
-    const onSearchChange = vi.fn();
-    render(
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        searchValue=""
-        onSearchChange={onSearchChange}
-      />,
-    );
-    await user.type(screen.getByRole("textbox"), "A");
-    expect(onSearchChange).toHaveBeenCalled();
-  });
-
-  it("renders filter options", () => {
-    render(
-      <DataTable
-        columns={columns}
-        rows={rows}
-        rowKey={(r) => r.id}
-        filterOptions={[
-          { label: "All", value: "all" },
-          { label: "Active", value: "active" },
-        ]}
-        filterValue="all"
-        onFilterChange={() => {}}
-      />,
-    );
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
-  });
-
-  it("renders loading state", () => {
+  it("shows a custom empty state when provided", () => {
     render(
       <DataTable
         columns={columns}
         rows={[]}
         rowKey={(r) => r.id}
-        loading
+        emptyState={<div>Custom empty</div>}
+        {...baseProps}
       />,
     );
-    expect(screen.getByText("Loading…")).toBeInTheDocument();
+    expect(screen.getByText("Custom empty")).toBeInTheDocument();
   });
 
-  it("renders pagination when onPageChange is provided", () => {
+  it("renders loading skeleton state", () => {
+    render(
+      <DataTable
+        columns={columns}
+        rows={[]}
+        rowKey={(r) => r.id}
+        {...baseProps}
+        isLoading
+      />,
+    );
+    expect(screen.queryByText("No items found.")).not.toBeInTheDocument();
+  });
+
+  it("renders pagination when totalPages > 1", () => {
     render(
       <DataTable
         columns={columns}
         rows={rows}
         rowKey={(r) => r.id}
-        totalItems={30}
-        page={1}
-        onPageChange={() => {}}
+        {...baseProps}
+        totalPages={2}
+        total={30}
       />,
     );
-    expect(screen.getByText("Showing 1–10 of 30 items")).toBeInTheDocument();
+    expect(screen.getByText(/Showing 1–8 of 30 items/)).toBeInTheDocument();
   });
 });

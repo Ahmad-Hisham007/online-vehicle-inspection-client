@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState, useTransition } from "react";
 import { FiSearch } from "react-icons/fi";
 
-const filterOptions = [
+const DEFAULT_FILTER_OPTIONS = [
   { label: "All", value: "all" },
   { label: "Paid", value: "paid" },
   { label: "Pending", value: "pending" },
@@ -16,6 +16,7 @@ const filterOptions = [
 type DataToolBarProps = {
   initialSearchValue?: string;
   initialStatusFilter?: InspectionStatus | null | undefined;
+  filterOptions?: { label: string; value: string }[];
   startTransition: React.TransitionStartFunction;
   isPending: boolean;
 };
@@ -23,12 +24,12 @@ type DataToolBarProps = {
 const DataToolbar = ({
   initialSearchValue,
   initialStatusFilter,
+  filterOptions = DEFAULT_FILTER_OPTIONS,
   isPending,
   startTransition,
 }: DataToolBarProps) => {
   const router = useRouter();
   const path = usePathname().split("?")[0];
-  console.log(router, path);
   const [searchValue, setSearchValue] = useState(initialSearchValue);
   const [statusFilter, setStatusFilter] = useState(
     initialStatusFilter ?? "all",
@@ -48,7 +49,6 @@ const DataToolbar = ({
         search: debouncedSearch,
       });
 
-      // console.log("🔍 Debounced search:", { debouncedSearch, status, href });
       router.push(`${path}${href}`);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,7 +67,6 @@ const DataToolbar = ({
         status: value === "all" ? null : (value as InspectionStatus),
         search: searchValue,
       });
-      console.log(value, href);
       router.push(`${path}${href}`);
     });
   };
@@ -82,14 +81,14 @@ const DataToolbar = ({
           value={searchValue}
           onChange={handleSearch}
           disabled={isPending}
-          aria-label="Inspection Requests Search"
+          aria-label="Search"
           className={
             "md:w-56 w-full pl-7 h-8.5 border border-border rounded bg-white px-2 py-1 text-[13px] leading-none text-slate-700 focus:outline-none focus:border-primary"
           }
         />
       </div>
 
-      {initialStatusFilter && filterOptions && filterOptions.length > 0 && (
+      {filterOptions.length > 0 && (
         <select
           value={statusFilter}
           onChange={handleStatusChange}
