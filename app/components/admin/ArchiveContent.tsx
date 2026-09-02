@@ -40,6 +40,12 @@ const columns: DataTableColumn<AdminArchiveRow>[] = [
     cell: (r) => <StatusPill status={r.inspectionStatus} />,
   },
   {
+    key: "title",
+    header: "Title",
+    className: "max-w-30",
+    cell: (r) => <h2 className="font-bold">{r.title}</h2>,
+  },
+  {
     key: "date",
     header: "Date",
     cell: (r) => formatInspectionDate(r.dateCreated),
@@ -63,8 +69,7 @@ const columns: DataTableColumn<AdminArchiveRow>[] = [
               key={c}
               className="inline-flex items-center gap-1 text-[12px] text-slate-600"
             >
-              <span className="text-primary">✓</span>{" "}
-              {COMPANY_LABELS[c] ?? c}
+              <span className="text-primary">✓</span> {COMPANY_LABELS[c] ?? c}
             </span>
           ))
         )}
