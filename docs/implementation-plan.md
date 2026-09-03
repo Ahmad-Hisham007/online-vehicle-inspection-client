@@ -425,7 +425,7 @@ Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 
 ## Phase 6: Admin Dashboard & PDF Certificates
 
-### 6.1 — Admin Dashboard (Stage A ✅ DONE — UI/Design)
+### 6.1 — Admin Dashboard (Stage A ✅ DONE — UI/Design; Stage B 🚧 In Progress — Dynamic Data)
 
 **Single route-aware Header (root layout)**: `app/layout.tsx` fetches all 3 WP menus (cached) → `<Header menus={…}>`. No nested layout renders a header. `Header.tsx` uses `usePathname()` + `useSession()`:
 - Admin panel routes (`/dashboard/admin/*` excluding `/dashboard/admin/inspection`) → AdminHeader variant (language left, page title center from the admin panel menu item label, hamburger `md:hidden` only; mobile drawer = admin panel menu).
@@ -439,8 +439,28 @@ Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 - `/dashboard/admin/{requests,users,archive,proposals,settings}` — table/form pages with search (left) + filter (right), pagination footer "Showing X–Y of Z", and a page-title-in-center header with mobile-only hamburger + desktop sidebar.
 - Admin panel menu comes from a **separate WP menu** (`getAdminPanelMenu()`) incl. logout; frontend site header uses `getAdminSiteMenu()` for admin/inspector (conditional `admin`/`dashboard`/`logout` items) vs `getMainMenu()` for customers.
 - **Menu caching**: `app/lib/menu.ts` `getMenu(slug)` via `unstable_cache(["menu","slug"], revalidate: 300)`; `auth.ts` `events.signIn/signOut` → `revalidatePath("/", "layout")`.
-- Stage A renders static sample data — data wiring (Stage B) deferred.
-- Stage B (deferred): list inspections with status filters, approve/reject wired to WP, PDF links.
+
+#### Stage B — Dynamic Data (Server-First + URL State)
+
+Pattern mirrors the customer listing: **Server Components + Server Actions + `unstable_cache` (300s, tag-based) + URL searchParams (`?page&status&search`) + `useTransition` non-blocking nav + Suspense skeletons**.
+
+| Page | Status | Action | Cache tag | Filter |
+|------|--------|--------|-----------|--------|
+| Requests | ✅ Done | `listRequests` (`app/actions/requests.ts`) — `inspectionStatusNotIn: [approved,rejected,cancelled]` | `requests` | status: paid / pending / payment_failed |
+| Users | ✅ Done | `listUsers` (`app/actions/users.ts`) — `roleNotIn: [ADMINISTRATOR]` | `users` | search only |
+| Archive | ✅ Done (Task #1) | `listArchivedInspections` (`app/actions/archive.ts`) — `inspectionStatusIn: [approved,rejected,cancelled]` | `archive` | status: approved / rejected / cancelled |
+| Proposals | ⏳ Deferred (external WP dep) | — | — | — |
+| Settings | ⏳ Not started (Task #2) | `getSettings`/`updateSettings` (`app/actions/settings.ts`) | `users` | — |
+
+**Stage B components**:
+- `RequestsListing`/`RequestsContent`, `users/AdminUsersList`/`AdminUsersContent`, `ArchiveListing`/`ArchiveContent` — server listing (Suspense + skeleton) → client table + toolbar.
+- `DataToolbar` — reusable search (debounced 500ms) + status filter via configurable `filterOptions` prop (Requests passes paid/pending/payment_failed; Archive passes approved/rejected/cancelled).
+- `DataTable` (generic), `DataTableSkeleton`, `PaginationFooter` ("Showing X–Y of Z"), `AdminPageShell`, `StatusPill`.
+- `app/lib/types.ts` — `AdminRequestSummary`, `AdminUserRow`, `AdminArchiveRow`.
+- `app/lib/companyLabels.ts` — company value → label map (from `USA_COMPANIES`/`CA_COMPANIES`).
+- `app/lib/listing-url.ts` — `buildListAdminHref()` for admin URL building.
+
+**Acceptance**: SSR pages (no "use client" on `page.tsx`), URL-shareable filters, cache tags invalidated on mutations, role guard (administrator|inspector), lint/build/241 tests pass.
 
 ### 6.2 — Customer Dashboard
 
@@ -527,11 +547,11 @@ app/
       layout.tsx                     # Phase 6 — AdminSidebar + content + role guard
       admin/
         page.tsx                     # Phase 6 — /dashboard/admin → redirect → requests
-        requests/page.tsx            # Phase 6 — Requests table (default All, filters)
-        users/page.tsx               # Phase 6 — Users table
-        archive/page.tsx             # Phase 6 — Archive table
-        proposals/page.tsx           # Phase 6 — Proposals table
-        settings/page.tsx            # Phase 6 — Settings form
+        requests/page.tsx            # Phase 6/6B — server component → RequestsListing (search/filter/pagination)
+        users/page.tsx               # Phase 6/6B — server component → AdminUsersList
+        archive/page.tsx             # Phase 6/6B — server component → ArchiveListing (Task #1 done)
+        proposals/page.tsx           # Phase 6 — Proposals table (DEFERRED external dep)
+        settings/page.tsx            # Phase 6 — Settings form (Task #2 not started)
   components/
     Button.tsx
     FileUploadField.tsx              # Phase 3 — upgraded with drag-drop, progress, icon preview
@@ -556,10 +576,19 @@ app/
     ToasterProvider.tsx
     admin/
       AdminSidebar.tsx               # Phase 6 — dark desktop sidebar (WP admin panel menu + logout)
-      DataTable.tsx                  # Phase 6 — generic table
-      PaginationFooter.tsx           # Phase 6 — "Showing X–Y of Z" + page buttons
+      DataToolbar.tsx                # Phase 6B — reusable search + status filter (configurable filterOptions)
+      DataTable.tsx                  # Phase 6/6B — generic table (loading state, pagination)
+      DataTableSkeleton.tsx          # Phase 6B — skeleton loader
+      PaginationFooter.tsx           # Phase 6/6B — "Showing X–Y of Z" + page buttons
       AdminPageShell.tsx             # Phase 6 — page wrapper
       StatusPill.tsx                 # Phase 6 — compact pill
+      RequestsListing.tsx            # Phase 6B — server listing (Suspense)
+      RequestsContent.tsx            # Phase 6B — client table + toolbar
+      ArchiveListing.tsx             # Phase 6B — server listing (Suspense)
+      ArchiveContent.tsx             # Phase 6B — client table + toolbar
+      users/
+        AdminUsersList.tsx           # Phase 6B — server listing (Suspense)
+        AdminUsersContent.tsx        # Phase 6B — client table + toolbar
     customer/
       InspectionListing.tsx          # Phase 6 — shared listing (customer + /dashboard mirror)
   components/ui/
@@ -574,6 +603,9 @@ app/
     inspections.ts                   # Phase 5 — list/fetch server actions
     payment.ts                       # Phase 4/5 — getPaymentSetup, confirmInspectionPayment
     inspection.ts                    # Phase 4
+    requests.ts                      # Phase 6B — listRequests
+    users.ts                         # Phase 6B — listUsers
+    archive.ts                       # Phase 6B — listArchivedInspections
     pdf.ts                           # Phase 6 — generateCertificate (Stage B)
     admin.ts                         # Phase 6 — approve/reject (Stage B)
   lib/
@@ -587,7 +619,8 @@ app/
       index.ts
     status.ts                        # Phase 5 — status enums + style mapping (+ getStatusPillStyle)
     format.ts                        # Phase 5 — date formatter
-    listing-url.ts                   # Phase 5 — listing URL builder
+    listing-url.ts                   # Phase 5/6B — listing URL builder (+ buildListAdminHref)
+    companyLabels.ts                 # Phase 6B — company value → label map
     site-origin.ts                   # Phase 5 — scheme normalization
     menu.ts                          # Phase 6 — getMenu(slug) via unstable_cache(["menu","slug"], 300s)
     header-config.ts                 # Phase 6 — unified ITEM_ICONS / BRAND_LOGOS / getMenuIcon / isLogoutItem / isBrandItem

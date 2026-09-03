@@ -15,7 +15,7 @@
 | `npm run dev`       | Dev server at `http://localhost:3000` |
 | `npm run lint`      | ESLint (Next.js config)               |
 | `npm run build`     | Build + typecheck via `next build`    |
-| `npm run test`      | Vitest unit tests (244 tests)         |
+| `npm run test`      | Vitest unit tests (241 tests)         |
 | `npm run test:ui`   | Vitest UI mode                        |
 | `npm run test:coverage` | Vitest with v8 coverage           |
 | `npm run e2e`       | Playwright e2e (opens browser)        |
@@ -92,7 +92,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Coverage**: v8 provider, excludes `.opencode/**`, `components/ui/**`, `**/index.ts`
 - **Playwright** e2e: `e2e/` directory, Chromium only, `headless: false`
 - E2E credentials loaded from `.env.local` via `dotenv` in `playwright.config.ts`
-- **244 tests across 29 files, all passing**
+- **241 tests across 29 files, all passing**
 - Coverage: Statements 100%, Lines 100%, Branches ~98%, Functions ~98%
 
 ## Environment & Backend
@@ -115,6 +115,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Landing page (`/`)                             | Default Next.js boilerplate                                                |
 | Customer dashboard (`/dashboard/customer`)     | Done — Phase 5: owner-scoped listing, status filter + pagination, card layout with Add/Filter, empty state |
 | Admin dashboard (Phase 6 Stage A)              | Done — `/dashboard/admin` admin panel (Requests/Users/Archive/Proposals tables + Settings form), desktop sidebar, single route-aware Header in root layout, `/dashboard` mirrors customer dashboard; functional wiring (approve/reject, PDF) deferred to Stage B |
+| Admin dashboard dynamic (Phase 6 Stage B)      | In progress — Task #1 Archive page dynamic (SSR + `listArchivedInspections` + status filter + search + pagination); Requests + Users pages dynamic; Proposals deferred (external dep); Settings + approve/reject + PDF not started |
 | Multistep inspection form (7 steps)            | Done — Phase 2 complete                                                    |
 | Zustand store                                  | Done — `inspectionStore.ts` with sessionStorage persist                    |
 | Upload engine (Bunny CDN)                      | Done — Phase 3/5.8: `app/actions/upload.ts`, `app/hooks/useFileUpload.ts` (S3-compatible presigned PUT) |
@@ -126,7 +127,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Navigation performance (00502)                 | Done — no `router.refresh()`, `HeaderMenuSkeleton`, HeaderNav out of Suspense, top loader |
 | Netlify deployment (Phase 5.7)                 | Done — `rideshareinspector.netlify.app`, `AUTH_TRUST_HOST`, context-scoped `NEXTAUTH_URL`, preview/branch deploys |
 | PDF certificate generation                     | Not started — Phase 6 Stage B (approve/reject + `expiryDate` population + PDF) |
-| Tests                                          | Done — 244 Vitest tests, 29 files, ~100% lines, 3 E2E Playwright specs     |
+| Tests                                          | Done — 241 Vitest tests, 29 files, ~100% lines, 3 E2E Playwright specs     |
 
 ## Phase 2 & 3 — Shared Components
 
@@ -197,17 +198,30 @@ tests/lib/status.test.ts                   # 6 tests
 tests/components/FilterInspectionsModal.test.tsx / InspectionCard.test.tsx / InspectionDetailView.test.tsx / InspectionPagination.test.tsx
 ```
 
-## Phase 6 — Admin Dashboard (Stage A: UI/Design done)
+## Phase 6 — Admin Dashboard (Stage A: UI/design done; Stage B: dynamic data in progress)
 
 ```
 app/dashboard/layout.tsx                   # thin: <main>{children}</main>
 app/dashboard/(site)/layout.tsx            # passthrough <main> (header comes from root layout)
 app/dashboard/(panel)/layout.tsx           # AdminSidebar + content + role guard (administrator | inspector)
 app/dashboard/(panel)/admin/page.tsx       # /dashboard/admin → redirect → requests
-app/dashboard/(panel)/admin/{requests,users,archive,proposals,settings}/page.tsx  # table/form pages (Stage A: static sample data)
+app/dashboard/(panel)/admin/requests/page.tsx  # Stage B: server component → RequestsListing
+app/dashboard/(panel)/admin/users/page.tsx     # Stage B: server component → AdminUsersList
+app/dashboard/(panel)/admin/archive/page.tsx   # Stage B: server component → ArchiveListing (Task #1 done)
+app/dashboard/(panel)/admin/proposals/page.tsx # Stage A: static sample data (DEFERRED external dep)
+app/dashboard/(panel)/admin/settings/page.tsx  # Stage A: client-only form (Task #2 — not started)
 app/dashboard/(site)/page.tsx              # /dashboard mirror of customer dashboard (admin/inspector)
-app/components/admin/AdminSidebar.tsx      # dark desktop sidebar (WP admin panel menu + logout), self-contained
+app/actions/requests.ts                    # Stage B: listRequests (unstable_cache 300s, tag "requests", excludes archived)
+app/actions/users.ts                       # Stage B: listUsers (unstable_cache 300s, tag "users", roleNotIn ADMINISTRATOR)
+app/actions/archive.ts                     # Stage B: listArchivedInspections (unstable_cache 300s, tag "archive", inspectionStatusIn approved/rejected/cancelled)
+app/components/admin/RequestsListing.tsx   # Stage B: server listing (Suspense + skeleton)
+app/components/admin/RequestsContent.tsx   # Stage B: client table + toolbar
+app/components/admin/users/AdminUsersList.tsx / AdminUsersContent.tsx  # Stage B: server + client
+app/components/admin/ArchiveListing.tsx    # Stage B: server listing (Suspense + skeleton)
+app/components/admin/ArchiveContent.tsx    # Stage B: client table + toolbar (status filter Approved/Rejected/Cancelled)
+app/components/admin/DataToolbar.tsx       # reusable search + status filter (configurable filterOptions prop)
 app/components/admin/DataTable.tsx         # generic table (columns, search, filter, pagination)
+app/components/admin/DataTableSkeleton.tsx # skeleton loader
 app/components/admin/PaginationFooter.tsx  # "Showing X–Y of Z" + page buttons
 app/components/admin/AdminPageShell.tsx    # page wrapper (title + content)
 app/components/admin/StatusPill.tsx        # compact pill (existing getStatusStyle colors)
@@ -215,10 +229,11 @@ app/components/Header/Header.tsx           # single route-aware master header (r
 app/components/Header/LanguageSelector.tsx # shared language dropdown (extracted from Header.tsx)
 app/lib/header-config.ts                   # unified ITEM_ICONS / BRAND_LOGOS / getMenuIcon / isLogoutItem / isBrandItem
 app/lib/menu.ts                            # getMenu(slug) via unstable_cache(["menu","slug"], 300s)
+app/lib/companyLabels.ts                   # company value → label map (from USA/CA_COMPANIES)
 auth.ts                                    # events.signIn/signOut → revalidatePath("/", "layout")
 proxy.ts                                   # administrator + inspector → /dashboard/admin/requests; others → /dashboard/customer
 tests/components/StatusPill.test.tsx / PaginationFooter.test.tsx / DataTable.test.tsx / AdminSidebar.test.tsx / Header.test.tsx / admin-pages.test.tsx
-tests/lib/header-config.test.ts            # + 36 new tests (244 total, 29 files)
+tests/lib/header-config.test.ts            # + 36 new tests (241 total, 29 files)
 ```
 
 ## Skills

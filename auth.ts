@@ -239,6 +239,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   databaseId
                   email
                   name
+                  roles {
+                        nodes {
+                          name
+                        }
+                      }
                 }
               }
             }
@@ -266,13 +271,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log(JSON.stringify(json, null, 2));
           const wpData = json.data?.login;
           console.log(wpData);
-
+          const roles =
+            wpData.user.roles?.nodes?.map((r: { name: string }) => r.name) ||
+            [];
+          console.log(roles);
           if (wpData?.authToken) {
             user.accessToken = wpData.authToken;
             user.accessTokenExpiration = wpData.authTokenExpiration;
             user.refreshToken = wpData.refreshToken;
             user.refreshTokenExpiration = wpData.refreshTokenExpiration;
             user.wpId = wpData.user.databaseId;
+            user.role = roles[0];
             console.log(user.role);
             return true; // লগিন ১০০% সাকসেসফুল!
           }
