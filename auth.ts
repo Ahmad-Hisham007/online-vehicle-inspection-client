@@ -272,7 +272,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const wpData = json.data?.login;
           console.log(wpData);
           const roles =
-            wpData.user.roles?.nodes?.map((r: { name: string }) => r.name) ||
+            wpData?.user?.roles?.nodes?.map((r: { name: string }) => r.name) ||
             [];
           console.log(roles);
           if (wpData?.authToken) {
