@@ -13,6 +13,8 @@
 | Login/signup flip-card UI | Done |
 | Middleware (`proxy.ts`) | Done |
 
+**Registration details**: `/api/register` forwards `phoneNumber` (persisted to the ACF "User fields" group `phone_number`) and sends an auto-generated WP `username` (`{first+last|email-local}` → `[a-z0-9]` + `_` + 8-char UUID) rather than the raw email. Depends on a WP-side `RegisterUserInput` extension (WPCode snippet #277 on the live CMS): the input field is added via the `graphql_input_fields` filter — direct `register_graphql_field` on `RegisterUserInput` does not apply on WPGraphQL 2.21 — and persisted via `graphql_user_object_mutation_update_additional_data` scoped to `registerUser`.
+
 ---
 
 ## Phase 2: Multistep Form & Zustand Store ✅ DONE

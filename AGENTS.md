@@ -54,7 +54,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 
 - **Middleware**: `proxy.ts` (NOT `middleware.ts`). Protects `/dashboard/:path*`. Redirects unauthenticated to `/login`.
 - **Auth**: `auth.ts` + `auth.config.ts`. JWT session strategy. Custom `User` type in `next-auth.d.ts` extends with `wpId`, `accessToken`. Route handler at `app/api/auth/[...nextauth]/route.ts`.
-- **Registration**: Route handler `app/api/register/route.ts` — creates WP user via GraphQL mutation.
+- **Registration**: Route handler `app/api/register/route.ts` — creates WP user via GraphQL `registerUser`. Sends `firstName`/`lastName`/`displayName`/`email`/`password`/`phoneNumber`; the WP `username` is auto-generated (`{first+last|email-local}` sanitized to `[a-z0-9]` + `_` + 8-char UUID) rather than using the raw email. `phoneNumber` persists to the ACF "User fields" group (`phone_number`) via a WP-side `RegisterUserInput` extension (WPCode snippet #277 on the live CMS) that adds the input through the `graphql_input_fields` filter — direct `register_graphql_field` on `RegisterUserInput` silently fails on WPGraphQL 2.21+ — and saves via `graphql_user_object_mutation_update_additional_data` scoped to `registerUser` (`update_field('phone_number', …, 'user_' . $user_id)`).
 - **Layout**: `app/layout.tsx` — wraps with `SessionWrapper` (SessionProvider), `ToasterProvider` (react-hot-toast), and the single route-aware `Header` (client component). Root layout fetches all 3 WP menus (cached) and passes them to `<Header menus={…}>`.
 - **Multistep form**: 7-step inspection form at `/dashboard/customer/inspection` with Zustand store persisting to `sessionStorage`.
 - **Upload engine**: `useFileUpload` hook + `generateUploadUrl` Server Action. Direct-to-cloud via **Bunny Storage + Pull Zone** (S3-compatible presigned PUT). No server relays binary data.
@@ -127,6 +127,10 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Navigation performance (00502)                 | Done — no `router.refresh()`, `HeaderMenuSkeleton`, HeaderNav out of Suspense, top loader |
 | Netlify deployment (Phase 5.7)                 | Done — `rideshareinspector.netlify.app`, `AUTH_TRUST_HOST`, context-scoped `NEXTAUTH_URL`, preview/branch deploys |
 | PDF certificate generation                     | Not started — Phase 6 Stage B (approve/reject + `expiryDate` population + PDF) |
+| Google login — admin role returns null user   | Open — 006-B backlog Task A (only `hishamthed@gmail.com` works; WP-side SITETOKEN/role block suspected, snippet #124 draft) |
+| Google sign-in — unregistered users UX        | Open — 006-B backlog Task B (branded "register first" screen replaces NextAuth AccessDenied; `pages.error` unset) |
+| Branded error boundaries                       | Open — 006-B backlog Task C (no root `app/error.tsx`/`global-error.tsx`/`not-found.tsx`; Next default error page can surface) |
+| Admin inspection creation flow + role isolation | Open — 006-B backlog Task D (own `/dashboard/admin/inspection` flow + assign-user dropdown; block admins from `/dashboard/customer/*`) |
 | Tests                                          | Done — 241 Vitest tests, 29 files, ~100% lines, 3 E2E Playwright specs     |
 
 ## Phase 2 & 3 — Shared Components
