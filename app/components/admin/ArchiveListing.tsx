@@ -32,9 +32,9 @@ export const ArchiveListing = async ({ searchParams }: ArchiveProps) => {
           <>
             <div className="mb-4 flex w-full items-center justify-between gap-2">
               <div className="relative">
-                <div className="h-[34px] w-56 animate-pulse rounded border border-border bg-muted" />
+                <div className="h-8.5 w-56 animate-pulse rounded border border-border bg-muted" />
               </div>
-              <div className="h-[34px] w-32 animate-pulse rounded border border-border bg-muted" />
+              <div className="h-8.5 w-32 animate-pulse rounded border border-border bg-muted" />
             </div>
             <DataTableSkeleton columns={7} rows={8} />
           </>

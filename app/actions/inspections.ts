@@ -3,6 +3,7 @@
 import { unstable_cache } from "next/cache";
 import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
+import { canAccessInspection } from "@/app/lib/access";
 import type {
   InspectionDetail,
   InspectionStatus,
@@ -81,6 +82,10 @@ interface InspectionNode {
       name?: string;
       email?: string;
     };
+  } | null;
+  assignedInspector: {
+    databaseId: number;
+    name?: string;
   } | null;
   inspectionDetails: InspectionDetailsNode;
 }
@@ -195,6 +200,12 @@ function mapDetail(node: InspectionNode): InspectionDetail {
       turo: details.turoCertificate || undefined,
     },
     orderSubtotal: details.orderSubtotal,
+    assignedInspector: node.assignedInspector
+      ? {
+          databaseId: node.assignedInspector.databaseId,
+          name: node.assignedInspector.name ?? "",
+        }
+      : null,
   };
 }
 
@@ -246,6 +257,10 @@ const DETAIL_QUERY = `
           name
           email
         }
+      }
+      assignedInspector {
+        databaseId
+        name
       }
       inspectionDetails {
         licensePlateNumber
@@ -331,8 +346,8 @@ interface InspectionDetailParams {
   id: string;
 }
 
-const getInspectionDetailCached = unstable_cache(
-  async (params: InspectionDetailParams) => {
+const getInspectionDetailNodeCached = unstable_cache(
+  async (params: InspectionDetailParams): Promise<InspectionNode> => {
     const data = await wpFetch<GetInspectionResponse>(
       DETAIL_QUERY,
       { id: params.id },
@@ -343,7 +358,7 @@ const getInspectionDetailCached = unstable_cache(
       throw new Error("Inspection not found");
     }
 
-    return mapDetail(data.inspection);
+    return data.inspection;
   },
   ["inspection", "detail"],
   { revalidate: DETAIL_CACHE_REVALIDATE, tags: ["inspection"] },
@@ -381,8 +396,22 @@ export async function fetchInspection(id: string): Promise<InspectionDetail> {
     throw new Error("Unauthorized");
   }
 
-  return getInspectionDetailCached({
+  const node = await getInspectionDetailNodeCached({
     token: session.user.accessToken,
     id,
   });
+
+  const allowed = canAccessInspection(
+    { wpId: session.user.wpId, role: session.user.role },
+    {
+      authorDatabaseId: node.author?.node?.databaseId ?? null,
+      assignedInspectorDatabaseId: node.assignedInspector?.databaseId ?? null,
+    },
+  );
+
+  if (!allowed) {
+    throw new Error("Inspection not found");
+  }
+
+  return mapDetail(node);
 }

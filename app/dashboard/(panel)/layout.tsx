@@ -21,7 +21,7 @@ export default async function PanelLayout({
       <div className="flex flex-1">
         <AdminSidebar menuItems={menuItems} />
         <main className="flex-1 overflow-x-auto">
-          <div className="mx-auto flex w-full max-w-[1024px] flex-col justify-start px-4 py-6">
+          <div className="mx-auto flex w-full max-w-6xl flex-col justify-start px-4 py-6">
             {children}
           </div>
         </main>

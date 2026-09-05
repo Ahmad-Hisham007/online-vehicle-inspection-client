@@ -1,8 +1,6 @@
-import { FiSearch } from "react-icons/fi";
 import PaginationFooter from "./PaginationFooter";
 import { cn } from "@/lib/utils";
-import { startTransition, type ReactNode } from "react";
-import { InspectionStatus } from "@/app/lib/types";
+import { type ReactNode } from "react";
 import DataTableSkeleton from "./DataTableSkeleton";
 
 export interface DataTableColumn<T> {
@@ -50,7 +48,7 @@ export default function DataTable<T>({
         {isLoading ? (
           <DataTableSkeleton columns={columns.length} />
         ) : (
-          <table className="w-full min-w-[700px] border-collapse text-left">
+          <table className="w-full min-w-175 border-collapse text-left">
             <thead>
               <tr className="bg-primary text-primary-foreground text-[13px] font-semibold tracking-wide">
                 {columns.map((col) => (

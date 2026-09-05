@@ -4,8 +4,7 @@ import { unstable_cache } from "next/cache";
 import { AdminRequestSummary, InspectionStatus } from "../lib/types";
 import { wpFetch } from "../lib/wp-auth";
 import { auth } from "@/auth";
-
-const ADMIN_ROLES = ["administrator", "inspector"];
+import { isAdministrator, isInspector } from "../lib/access";
 
 interface AdminRequestsParams {
   page?: number;
@@ -36,6 +35,10 @@ interface InspectionNode {
       displayName: string;
     };
   };
+  assignedInspector: {
+    databaseId: number;
+    name?: string;
+  } | null;
   inspectionDetails: InspectionDetailsNode;
 }
 
@@ -69,7 +72,12 @@ function mapSummary(node: InspectionNode): AdminRequestSummary {
       node.inspectionDetails.inspectionStateCanada,
       country: node.inspectionDetails.inspectionCountry,
     author: node.author.node.displayName,
-
+    assignedInspector: node.assignedInspector
+      ? {
+          databaseId: node.assignedInspector.databaseId,
+          name: node.assignedInspector.name ?? "",
+        }
+      : null,
   };
 }
 
@@ -80,6 +88,7 @@ const REQUESTS_LIST_QUERY = `
     $inspectionStatus: String
     $search: String
     $inspectionStatusNotIn: [String]
+    $assignedInspector: Int
   ) {
     inspections(
       where: {
@@ -88,6 +97,7 @@ const REQUESTS_LIST_QUERY = `
         offset: $offset
         inspectionStatus: $inspectionStatus
         inspectionStatusNotIn: $inspectionStatusNotIn
+        assignedInspector: $assignedInspector
       }
     ) {
       nodes {
@@ -105,6 +115,10 @@ const REQUESTS_LIST_QUERY = `
            displayName
          }
       }
+        assignedInspector {
+          databaseId
+          name
+        }
       }
       pageInfo {
         total
@@ -119,11 +133,12 @@ interface RequestsPageParams {
   perPage: number;
   status: InspectionStatus | null;
   search?: string;
+  assignedInspector: number | null;
 }
 
 const getRequestsPageCached = unstable_cache(
   async (params: RequestsPageParams) => {
-    const { token, page, perPage, status, search } = params;
+    const { token, page, perPage, status, search, assignedInspector } = params;
 
     const data = await wpFetch<ListRequestsResponse>(
       REQUESTS_LIST_QUERY,
@@ -133,6 +148,7 @@ const getRequestsPageCached = unstable_cache(
         offset: (page - 1) * perPage,
         search: search,
         inspectionStatusNotIn: ["approved", "rejected", "cancelled"],
+        assignedInspector,
       },
       { accessToken: token },
     );
@@ -151,16 +167,20 @@ export async function listRequests(
 ): Promise<AdminRequestsPage> {
   const session = await auth();
   const userRole = session?.user?.role;
-  const isAdmin = userRole ? ADMIN_ROLES.includes(userRole) : false;
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
-  if (!isAdmin) {
+  if (!isAdministrator(userRole) && !isInspector(userRole)) {
     throw new Error("Unauthorized");
   }
 
   const page = Math.max(1, params.page ?? 1);
   const perPage = Math.max(1, params.perPage ?? DEFAULT_PER_PAGE);
+
+  // Inspectors only ever see inspections assigned to them.
+  const assignedInspector = isInspector(userRole)
+    ? session.user.wpId
+    : null;
 
   const { items, total } = await getRequestsPageCached({
     token: session.user.accessToken,
@@ -168,6 +188,7 @@ export async function listRequests(
     perPage,
     status: params.status ?? null,
     search: params.search,
+    assignedInspector,
   });
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
