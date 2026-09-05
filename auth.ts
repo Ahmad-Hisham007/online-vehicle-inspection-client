@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import authConfig from "./auth.config";
 import { SITE_ORIGIN } from "@/app/lib/site-origin";
 import { WP_SITE_TOKEN_HEADER } from "@/app/lib/wp-headers";
+import { refreshAccessToken } from "@/app/lib/refresh-token";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -168,51 +169,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       try {
-        const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
-            Origin: SITE_ORIGIN,
-          },
-          body: JSON.stringify({
-            query: `
-              mutation RefreshAuthToken($token: String!) {
-                refreshToken(input: { refreshToken: $token }) {
-                  authToken
-                  authTokenExpiration
-                  refreshToken
-                  refreshTokenExpiration
-                  success
-                }
-              }
-            `,
-            variables: { token: current.refreshToken },
-          }),
-        });
+        const refreshed = await refreshAccessToken(current.refreshToken);
 
-        const json = await res.json();
-        const refreshed = json.data?.refreshToken;
-
-        if (!refreshed?.success || !refreshed.authToken) {
+        if (!refreshed.success) {
+          console.error(
+            "[AUTH-JWT-REFRESH-FAILED]",
+            JSON.stringify({
+              reason:
+                refreshed.reason ??
+                "refreshToken mutation returned success=false (refresh token expired/revoked/mismatched)",
+            }),
+          );
           return token;
         }
 
         token.user = {
           ...current,
-          accessToken: refreshed.authToken,
+          accessToken: refreshed.authToken!,
           accessTokenExpiration:
-            refreshed.authTokenExpiration ?? current.accessTokenExpiration,
-          ...(refreshed.refreshToken
-            ? {
-                refreshToken: refreshed.refreshToken,
-                refreshTokenExpiration:
-                  refreshed.refreshTokenExpiration ??
-                  current.refreshTokenExpiration,
-              }
-            : {}),
+            refreshed.authTokenExpiration != null
+              ? Number(refreshed.authTokenExpiration)
+              : current.accessTokenExpiration,
         };
-      } catch {
+      } catch (error) {
+        console.error(
+          "[AUTH-JWT-REFRESH-ERROR]",
+          error instanceof Error ? error.message : String(error),
+        );
         return token;
       }
 
@@ -296,7 +279,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   secret: process.env.AUTH_SECRET,
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days persistent login
+    updateAge: 24 * 60 * 60, // refresh session once/day
+  },
   pages: {
     signIn: "/login",
     error: "/error",

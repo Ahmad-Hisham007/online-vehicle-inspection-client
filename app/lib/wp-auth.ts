@@ -1,6 +1,11 @@
 import { auth } from "@/auth";
-import { WP_SITE_TOKEN_HEADER } from "./wp-headers";
 import { SITE_ORIGIN } from "./site-origin";
+import {
+  refreshAccessToken,
+  SessionExpiredError,
+} from "./refresh-token";
+
+export { SessionExpiredError, isSessionExpiredError } from "./refresh-token";
 
 interface TokenUser {
   accessToken: string;
@@ -46,40 +51,26 @@ export async function getValidAccessToken(): Promise<string> {
     return memo.token;
   }
 
-  const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
-      Origin: SITE_ORIGIN,
-    },
-    body: JSON.stringify({
-      query: `
-        mutation RefreshAuthToken($token: String!) {
-          refreshToken(input: { refreshToken: $token }) {
-            authToken
-            authTokenExpiration
-            success
-          }
-        }
-      `,
-      variables: { token: user.refreshToken },
-    }),
-  });
+  const result = await refreshAccessToken(user.refreshToken);
 
-  const json = await res.json();
-
-  if (!json.data?.refreshToken?.success || !json.data?.refreshToken?.authToken) {
-    throw new Error("Token refresh failed: " + (json.errors?.[0]?.message ?? "Unknown error"));
+  if (!result.success) {
+    if (result.serverReached) {
+      throw new SessionExpiredError(
+        result.reason ?? "Token refresh failed",
+      );
+    }
+    throw new Error(
+      `Token refresh failed: ${result.reason ?? "Network error"}`,
+    );
   }
 
   refreshMemo.set(user.refreshToken, {
-    token: json.data.refreshToken.authToken,
+    token: result.authToken!,
     at: Date.now(),
   });
   pruneRefreshMemo();
 
-  return json.data.refreshToken.authToken;
+  return result.authToken!;
 }
 
 export async function wpFetch<T = Record<string, unknown>>(
