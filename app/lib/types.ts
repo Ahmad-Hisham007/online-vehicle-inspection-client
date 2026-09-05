@@ -25,6 +25,11 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 export type SortDir = "newest" | "oldest";
 
+export interface AssignedInspectorRef {
+  databaseId: number;
+  name: string;
+}
+
 export interface PaymentIntentResponse {
   clientSecret: string;
   paymentId: string;
@@ -70,6 +75,7 @@ export interface InspectionDetail extends InspectionSummary {
   media: Record<MediaTab, MediaItem[]>;
   certificates: { lyft?: string; uber?: string; turo?: string };
   orderSubtotal: string;
+  assignedInspector?: AssignedInspectorRef | null;
 }
 
 // Admin Requests Types
@@ -82,6 +88,7 @@ export interface AdminRequestSummary {
   location: string | null;
   country: string | null;
   author: string;
+  assignedInspector?: AssignedInspectorRef | null;
 }
 
 export interface AdminUserRow {
@@ -101,4 +108,5 @@ export interface AdminArchiveRow {
   country: string | null;
   author: string;
   companies: string[];
+  assignedInspector?: AssignedInspectorRef | null;
 }

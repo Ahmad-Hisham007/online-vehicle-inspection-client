@@ -4,8 +4,7 @@ import { unstable_cache } from "next/cache";
 import { AdminArchiveRow, InspectionStatus } from "../lib/types";
 import { wpFetch } from "../lib/wp-auth";
 import { auth } from "@/auth";
-
-const ADMIN_ROLES = ["administrator", "inspector"];
+import { isAdministrator, isInspector } from "../lib/access";
 
 interface AdminArchiveParams {
   page?: number;
@@ -39,6 +38,10 @@ interface InspectionNode {
       displayName: string;
     };
   };
+  assignedInspector: {
+    databaseId: number;
+    name?: string;
+  } | null;
   inspectionDetails: InspectionDetailsNode;
 }
 
@@ -76,6 +79,12 @@ function mapArchiveRow(node: InspectionNode): AdminArchiveRow {
       .split(",")
       .map((c) => c.trim())
       .filter(Boolean),
+    assignedInspector: node.assignedInspector
+      ? {
+          databaseId: node.assignedInspector.databaseId,
+          name: node.assignedInspector.name ?? "",
+        }
+      : null,
   };
 }
 
@@ -86,6 +95,7 @@ const ARCHIVE_LIST_QUERY = `
     $inspectionStatus: String
     $search: String
     $inspectionStatusIn: [String]
+    $assignedInspector: Int
   ) {
     inspections(
       where: {
@@ -94,6 +104,7 @@ const ARCHIVE_LIST_QUERY = `
         offset: $offset
         inspectionStatus: $inspectionStatus
         inspectionStatusIn: $inspectionStatusIn
+        assignedInspector: $assignedInspector
       }
     ) {
       nodes {
@@ -112,6 +123,10 @@ const ARCHIVE_LIST_QUERY = `
             displayName
           }
         }
+        assignedInspector {
+          databaseId
+          name
+        }
       }
       pageInfo {
         total
@@ -126,11 +141,12 @@ interface ArchivePageParams {
   perPage: number;
   status: InspectionStatus | null;
   search?: string;
+  assignedInspector: number | null;
 }
 
 const getArchivePageCached = unstable_cache(
   async (params: ArchivePageParams) => {
-    const { token, page, perPage, status, search } = params;
+    const { token, page, perPage, status, search, assignedInspector } = params;
 
     const data = await wpFetch<ListArchiveResponse>(
       ARCHIVE_LIST_QUERY,
@@ -140,6 +156,7 @@ const getArchivePageCached = unstable_cache(
         limit: perPage,
         offset: (page - 1) * perPage,
         search: search,
+        assignedInspector,
       },
       { accessToken: token },
     );
@@ -158,16 +175,20 @@ export async function listArchivedInspections(
 ): Promise<AdminArchivePage> {
   const session = await auth();
   const userRole = session?.user?.role;
-  const isAdmin = userRole ? ADMIN_ROLES.includes(userRole) : false;
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
-  if (!isAdmin) {
+  if (!isAdministrator(userRole) && !isInspector(userRole)) {
     throw new Error("Unauthorized");
   }
 
   const page = Math.max(1, params.page ?? 1);
   const perPage = Math.max(1, params.perPage ?? DEFAULT_PER_PAGE);
+
+  // Inspectors only ever see inspections assigned to them.
+  const assignedInspector = isInspector(userRole)
+    ? session.user.wpId
+    : null;
 
   const { items, total } = await getArchivePageCached({
     token: session.user.accessToken,
@@ -175,6 +196,7 @@ export async function listArchivedInspections(
     perPage,
     status: params.status ?? null,
     search: params.search,
+    assignedInspector,
   });
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
