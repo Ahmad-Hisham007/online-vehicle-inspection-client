@@ -1,12 +1,13 @@
 "use client";
 import { FaGoogle } from "react-icons/fa";
 import LoginForm from "./LoginForm";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import SignupForm from "./SignupForm";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/app/components/Button";
+import SessionExpiredNotice from "./SessionExpiredNotice";
 
 const USE_NEXT_IMAGE_BANNER = true;
 
@@ -54,6 +55,9 @@ const Container = () => {
             Sign in to your account
           </h2>
           <div className="h-0.5 bg-linear-to-br from-primary to-secondary mb-5 w-18 mx-auto" />
+          <Suspense fallback={null}>
+            <SessionExpiredNotice />
+          </Suspense>
           <LoginForm />
           <div className="flex items-center justify-center gap-2">
             <span className="h-px bg-gray-300 w-full grow shrink"></span>

@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { AdminUserRow } from "../lib/types";
 import { wpFetch } from "../lib/wp-auth";
 import { auth } from "@/auth";
+import { assertSessionActive } from "../lib/refresh-token";
 
 const ADMIN_ROLES = ["administrator", "inspector"];
 interface userField {
@@ -125,6 +126,7 @@ export async function listUsers(
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
+  assertSessionActive(session.error);
   if (!isAdmin) {
     throw new Error("Unauthorized");
   }

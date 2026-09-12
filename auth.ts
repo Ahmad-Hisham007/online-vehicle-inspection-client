@@ -6,6 +6,10 @@ import authConfig from "./auth.config";
 import { SITE_ORIGIN } from "@/app/lib/site-origin";
 import { WP_SITE_TOKEN_HEADER } from "@/app/lib/wp-headers";
 import { refreshAccessToken } from "@/app/lib/refresh-token";
+import {
+  REFRESH_ACCESS_TOKEN_ERROR,
+  shouldMarkSessionExpired,
+} from "@/app/lib/session-error";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -152,6 +156,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.user = user;
+        token.error = undefined;
         return token;
       }
 
@@ -165,6 +170,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         : 0;
 
       if (accessExp && Date.now() < accessExp - 60_000) {
+        token.error = undefined;
         return token;
       }
 
@@ -180,6 +186,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 "refreshToken mutation returned success=false (refresh token expired/revoked/mismatched)",
             }),
           );
+          token.error = shouldMarkSessionExpired(refreshed)
+            ? REFRESH_ACCESS_TOKEN_ERROR
+            : undefined;
           return token;
         }
 
@@ -191,6 +200,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               ? Number(refreshed.authTokenExpiration)
               : current.accessTokenExpiration,
         };
+        token.error = undefined;
       } catch (error) {
         console.error(
           "[AUTH-JWT-REFRESH-ERROR]",
@@ -203,6 +213,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       session.user = token.user as typeof session.user;
+      session.error = token.error;
       return session;
     },
     async signIn({ user, account }) {

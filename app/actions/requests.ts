@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import { AdminRequestSummary, InspectionStatus } from "../lib/types";
 import { wpFetch } from "../lib/wp-auth";
 import { auth } from "@/auth";
+import { assertSessionActive } from "../lib/refresh-token";
 import { isAdministrator, isInspector } from "../lib/access";
 
 interface AdminRequestsParams {
@@ -170,6 +171,7 @@ export async function listRequests(
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
+  assertSessionActive(session.error);
   if (!isAdministrator(userRole) && !isInspector(userRole)) {
     throw new Error("Unauthorized");
   }

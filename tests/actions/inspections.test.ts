@@ -16,6 +16,7 @@ vi.mock("next/cache", () => ({
 }));
 
 import { listInspections, fetchInspection } from "@/app/actions/inspections";
+import { SessionExpiredError } from "@/app/lib/refresh-token";
 
 const SESSION = {
   user: {
@@ -108,6 +109,16 @@ describe("listInspections", () => {
     mockAuth.mockResolvedValue(null);
 
     await expect(listInspections()).rejects.toThrow("Unauthorized");
+  });
+
+  it("fails fast with SessionExpiredError when the session is expired", async () => {
+    mockAuth.mockResolvedValue({
+      ...SESSION,
+      error: "RefreshAccessTokenError",
+    });
+
+    await expect(listInspections()).rejects.toBeInstanceOf(SessionExpiredError);
+    expect(mockWpFetch).not.toHaveBeenCalled();
   });
 
   it("fetches a single page and returns the mapped summaries and total", async () => {
@@ -236,6 +247,18 @@ describe("fetchInspection", () => {
     mockAuth.mockResolvedValue(null);
 
     await expect(fetchInspection("1")).rejects.toThrow("Unauthorized");
+  });
+
+  it("fails fast with SessionExpiredError when the session is expired", async () => {
+    mockAuth.mockResolvedValue({
+      ...SESSION,
+      error: "RefreshAccessTokenError",
+    });
+
+    await expect(fetchInspection("1")).rejects.toBeInstanceOf(
+      SessionExpiredError,
+    );
+    expect(mockWpFetch).not.toHaveBeenCalled();
   });
 
   it("throws when inspection is not found", async () => {

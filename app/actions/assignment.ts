@@ -3,6 +3,7 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
+import { assertSessionActive } from "@/app/lib/refresh-token";
 import { isAdministrator } from "@/app/lib/access";
 
 export interface InspectorOption {
@@ -58,6 +59,7 @@ export async function listInspectors(): Promise<InspectorOption[]> {
   if (!session?.user?.accessToken || !isAdministrator(session.user.role)) {
     return [];
   }
+  assertSessionActive(session.error);
 
   return getInspectorsCached({ token: session.user.accessToken });
 }
@@ -86,6 +88,7 @@ export async function assignInspector(
   if (!session?.user?.accessToken || !isAdministrator(session.user.role)) {
     throw new Error("Unauthorized");
   }
+  assertSessionActive(session.error);
 
   const data = await wpFetch<UpdateInspectionResponse>(
     ASSIGN_MUTATION,

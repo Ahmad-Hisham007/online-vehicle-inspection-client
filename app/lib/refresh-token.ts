@@ -1,5 +1,6 @@
 import { WP_SITE_TOKEN_HEADER } from "./wp-headers";
 import { SITE_ORIGIN } from "./site-origin";
+import { isRefreshAccessTokenError } from "./session-error";
 
 /**
  * Raised when the stored refresh token is definitively rejected by WordPress
@@ -17,6 +18,17 @@ export class SessionExpiredError extends Error {
 
 export function isSessionExpiredError(error: unknown): boolean {
   return error instanceof SessionExpiredError;
+}
+
+/**
+ * Throws `SessionExpiredError` when the session already carries the
+ * refresh-access-token error, so server actions fail fast instead of sending a
+ * dead token to WordPress.
+ */
+export function assertSessionActive(error: unknown): void {
+  if (isRefreshAccessTokenError(error)) {
+    throw new SessionExpiredError("Session expired. Please sign in again.");
+  }
 }
 
 interface RefreshTokenPayload {
