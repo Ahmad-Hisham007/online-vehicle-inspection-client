@@ -24,6 +24,8 @@ declare module "next-auth" {
    */
   interface Session {
     user: User;
+    /** Set to "RefreshAccessTokenError" when WordPress definitively rejects the refresh token. */
+    error?: string;
   }
 }
 
@@ -41,5 +43,7 @@ declare module "next-auth/jwt" {
       emailVerified: Date | null;
       role: string;
     };
+    /** Set to "RefreshAccessTokenError" when WordPress definitively rejects the refresh token. */
+    error?: string;
   }
 }

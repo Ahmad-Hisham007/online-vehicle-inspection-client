@@ -3,6 +3,7 @@
 import { unstable_cache } from "next/cache";
 import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
+import { assertSessionActive } from "@/app/lib/refresh-token";
 import { canAccessInspection } from "@/app/lib/access";
 import type {
   InspectionDetail,
@@ -371,6 +372,7 @@ export async function listInspections(
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
+  assertSessionActive(session.error);
 
   const page = Math.max(1, params.page ?? 1);
   const perPage = Math.max(1, params.perPage ?? DEFAULT_PER_PAGE);
@@ -395,6 +397,7 @@ export async function fetchInspection(id: string): Promise<InspectionDetail> {
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
+  assertSessionActive(session.error);
 
   const node = await getInspectionDetailNodeCached({
     token: session.user.accessToken,
