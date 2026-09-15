@@ -99,6 +99,16 @@ export interface AdminUserRow {
   lastName?: string | null;
 }
 
+export interface AdminUserDetail {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: string;
+  registeredDate: string;
+}
+
 export interface AdminArchiveRow {
   id: string;
   title: string;
