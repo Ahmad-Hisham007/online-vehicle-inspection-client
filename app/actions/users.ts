@@ -1,10 +1,11 @@
 "use server";
 
-import { unstable_cache } from "next/cache";
-import { AdminUserRow } from "../lib/types";
+import { revalidateTag, unstable_cache } from "next/cache";
+import { AdminUserDetail, AdminUserRow } from "../lib/types";
 import { wpFetch } from "../lib/wp-auth";
 import { auth } from "@/auth";
 import { assertSessionActive } from "../lib/refresh-token";
+import { isAdministrator } from "../lib/access";
 
 const ADMIN_ROLES = ["administrator", "inspector"];
 interface userField {
@@ -46,11 +47,6 @@ export interface AdminUsersPageRender {
 }
 const DEFAULT_PER_PAGE = 10;
 const LIST_CACHE_REVALIDATE = 300;
-
-function asString(value: string | string[] | undefined): string {
-  if (Array.isArray(value)) return value[0] ?? "";
-  return value ?? "";
-}
 
 const USERS_LIST_QUERY = `
   query ListUsers(
@@ -145,4 +141,140 @@ export async function listUsers(
   const safePage = Math.min(page, totalPages);
 
   return { items, page: safePage, perPage, total, totalPages };
+}
+
+// ---------------------------------------------------------------------------
+// Single user (admin-only) — edit page
+// ---------------------------------------------------------------------------
+
+interface UserDetailNode {
+  databaseId: number;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  registeredDate?: string | null;
+  roles?: { nodes: { name: string }[] } | null;
+  userFields?: userField;
+}
+
+interface GetUserResponse {
+  user: UserDetailNode | null;
+}
+
+const USER_DETAIL_QUERY = `
+  query GetUser($id: ID!) {
+    user(id: $id, idType: DATABASE_ID) {
+      databaseId
+      email
+      firstName
+      lastName
+      registeredDate
+      roles {
+        nodes {
+          name
+        }
+      }
+      userFields {
+        phoneNumber
+      }
+    }
+  }
+`;
+
+interface UserDetailParams {
+  token: string;
+  id: string;
+}
+
+const getUserCached = unstable_cache(
+  async (params: UserDetailParams): Promise<AdminUserDetail> => {
+    const data = await wpFetch<GetUserResponse>(
+      USER_DETAIL_QUERY,
+      { id: params.id },
+      { accessToken: params.token },
+    );
+
+    const node = data.user;
+    if (!node) {
+      throw new Error("User not found");
+    }
+
+    return {
+      id: node.databaseId.toString(),
+      email: node.email,
+      firstName: node.firstName ?? "",
+      lastName: node.lastName ?? "",
+      phone:
+        node.userFields?.phoneNumber != null
+          ? String(node.userFields.phoneNumber)
+          : "",
+      role: node.roles?.nodes?.[0]?.name ?? "customer",
+      registeredDate: node.registeredDate ?? "",
+    };
+  },
+  ["users", "detail"],
+  { revalidate: LIST_CACHE_REVALIDATE, tags: ["users"] },
+);
+
+export async function getUser(id: string): Promise<AdminUserDetail> {
+  const session = await auth();
+  if (!session?.user?.accessToken || !isAdministrator(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+
+  return getUserCached({ token: session.user.accessToken, id });
+}
+
+interface UpdateUserResponse {
+  updateUser?: {
+    user?: { databaseId?: number } | null;
+  } | null;
+}
+
+const UPDATE_USER_MUTATION = `
+  mutation UpdateUser($input: UpdateUserInput!) {
+    updateUser(input: $input) {
+      user {
+        databaseId
+      }
+    }
+  }
+`;
+
+export interface UpdateUserPayload {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export async function updateUser(
+  id: string,
+  payload: UpdateUserPayload,
+): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.accessToken || !isAdministrator(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+
+  // NOTE: phoneNumber is an ACF user field and is NOT part of UpdateUserInput
+  // (only RegisterUserInput was extended via WP snippet #277). Persisting phone
+  // edits needs a WP-side extension; the form collects it but does not send it yet.
+  const data = await wpFetch<UpdateUserResponse>(UPDATE_USER_MUTATION, {
+    input: {
+      id,
+      email: payload.email,
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      roles: [payload.role.toUpperCase()],
+    },
+  });
+
+  if (!data.updateUser?.user) {
+    throw new Error("Failed to update user");
+  }
+
+  revalidateTag("users", "max");
 }
