@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
 import { assertSessionActive } from "@/app/lib/refresh-token";
 import { canAccessInspection } from "@/app/lib/access";
+import { APPROVAL_GROUPS } from "@/app/lib/approval-fields";
 import type {
   InspectionDetail,
   InspectionStatus,
@@ -51,6 +52,27 @@ interface InspectionDetailsNode {
   orderSubtotal: string;
   inspectionStatus: string | string[];
   paymentStatus: string | string[];
+  numberOfDoors: string;
+  numberOfSeatbelts: string;
+  tncLicesnePlatesLast4Digit: string;
+  hasRegistrationSticker: string;
+  registrationStickerMonthyear: string;
+  zip: string;
+  tiresOlderThan6Years: string;
+  batteryOlderThan5Years: string;
+  voltageGreaterThan12_1V: string;
+  minPerManufacturerFront: string;
+  minPerManufacturerRear: string;
+  frontBrakeLeft: string;
+  frontBrakeRight: string;
+  rearBrakeLeft: string;
+  rearBrakeRight: string;
+  tireRightFrontDepth: string;
+  tireLeftFrontDepth: string;
+  tireRightRearDepth: string;
+  tireLeftRearDepth: string;
+  handlerName: string;
+  handlerSignature: string;
   registrationCardPhoto: string;
   odometerPhoto: string;
   hornVideo: string;
@@ -160,6 +182,20 @@ function asString(value: string | string[] | undefined): string {
   return value ?? "";
 }
 
+function mapApprovalFields(
+  details: InspectionDetailsNode,
+): Record<string, string> {
+  const fields: Record<string, string> = {};
+  for (const group of APPROVAL_GROUPS) {
+    for (const field of group.fields) {
+      fields[field.name] = asString(
+        details[field.name as keyof InspectionDetailsNode],
+      );
+    }
+  }
+  return fields;
+}
+
 function mapSummary(node: InspectionNode): InspectionSummary {
   return {
     id: node.databaseId.toString(),
@@ -207,7 +243,7 @@ function mapDetail(node: InspectionNode): InspectionDetail {
           name: node.assignedInspector.name ?? "",
         }
       : null,
-    approvalFields: {},
+    approvalFields: mapApprovalFields(details),
   };
 }
 
@@ -285,6 +321,27 @@ const DETAIL_QUERY = `
         orderSubtotal
         inspectionStatus
         paymentStatus
+        numberOfDoors
+        numberOfSeatbelts
+        tncLicesnePlatesLast4Digit
+        hasRegistrationSticker
+        registrationStickerMonthyear
+        zip
+        tiresOlderThan6Years
+        batteryOlderThan5Years
+        voltageGreaterThan12_1V
+        minPerManufacturerFront
+        minPerManufacturerRear
+        frontBrakeLeft
+        frontBrakeRight
+        rearBrakeLeft
+        rearBrakeRight
+        tireRightFrontDepth
+        tireLeftFrontDepth
+        tireRightRearDepth
+        tireLeftRearDepth
+        handlerName
+        handlerSignature
         registrationCardPhoto
         odometerPhoto
         hornVideo

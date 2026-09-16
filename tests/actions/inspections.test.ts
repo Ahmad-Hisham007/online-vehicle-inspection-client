@@ -71,6 +71,27 @@ function detailNode(id: number, overrides: Record<string, unknown> = {}) {
       orderSubtotal: "63",
       inspectionStatus: "pending",
       paymentStatus: "pending",
+      numberOfDoors: "4",
+      numberOfSeatbelts: "5",
+      tncLicesnePlatesLast4Digit: "4352",
+      hasRegistrationSticker: "pass",
+      registrationStickerMonthyear: "08/2026",
+      zip: "90001",
+      tiresOlderThan6Years: "no",
+      batteryOlderThan5Years: "no",
+      voltageGreaterThan12_1V: "yes",
+      minPerManufacturerFront: "3",
+      minPerManufacturerRear: "2",
+      frontBrakeLeft: "pass",
+      frontBrakeRight: "pass",
+      rearBrakeLeft: "fail",
+      rearBrakeRight: "pass",
+      tireRightFrontDepth: "6",
+      tireLeftFrontDepth: "6",
+      tireRightRearDepth: "5",
+      tireLeftRearDepth: "5",
+      handlerName: "Handler One",
+      handlerSignature: "H. One",
       registrationCardPhoto: "https://rideshareinspection.b-cdn.net/reg",
       odometerPhoto: "https://rideshareinspection.b-cdn.net/odo",
       hornVideo: "https://rideshareinspection.b-cdn.net/horn",
@@ -306,5 +327,43 @@ describe("fetchInspection", () => {
 
     const result = await fetchInspection("1");
     expect(result.companies).toEqual([]);
+  });
+
+  it("populates approvalFields from the ACF detail fields", async () => {
+    mockWpFetch.mockResolvedValue({ inspection: detailNode(1) });
+
+    const result = await fetchInspection("1");
+
+    expect(result.approvalFields.vehicleMake).toBe("Honda");
+    expect(result.approvalFields.vin).toBe("1HGCM82633A004352");
+    expect(result.approvalFields.hasRegistrationSticker).toBe("pass");
+    expect(result.approvalFields.frontBrakeLeft).toBe("pass");
+    expect(result.approvalFields.rearBrakeLeft).toBe("fail");
+    expect(result.approvalFields.tireLeftRearDepth).toBe("5");
+    expect(result.approvalFields.handlerName).toBe("Handler One");
+    expect(result.approvalFields.hostEmail).toBe("test@example.com");
+  });
+
+  it("normalizes array ACF values in approvalFields to a single string", async () => {
+    mockWpFetch.mockResolvedValue({
+      inspection: detailNode(1, { inspectionStatus: ["paid"] }),
+    });
+
+    const result = await fetchInspection("1");
+
+    expect(result.approvalFields).toBeTypeOf("object");
+    expect(result.inspectionStatus).toBe("paid");
+  });
+
+  it("requests the approval ACF fields in the detail query", async () => {
+    mockWpFetch.mockResolvedValue({ inspection: detailNode(1) });
+
+    await fetchInspection("1");
+
+    const [query] = mockWpFetch.mock.calls[0] as [string];
+    expect(query).toContain("frontBrakeLeft");
+    expect(query).toContain("tireRightFrontDepth");
+    expect(query).toContain("handlerSignature");
+    expect(query).toContain("hasRegistrationSticker");
   });
 });
