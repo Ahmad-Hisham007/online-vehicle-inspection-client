@@ -207,6 +207,7 @@ function mapDetail(node: InspectionNode): InspectionDetail {
           name: node.assignedInspector.name ?? "",
         }
       : null,
+    approvalFields: {},
   };
 }
 

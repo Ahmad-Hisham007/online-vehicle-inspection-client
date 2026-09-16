@@ -1,6 +1,5 @@
 import {
   INSPECTION_STATUSES,
-  type extendedInspectionStatus,
   type InspectionStatus,
   type PaymentStatus,
 } from "@/app/lib/types";
@@ -104,4 +103,21 @@ export function getStatusPillStyle(status: InspectionStatus): StatusPillStyle {
     };
   }
   return INSPECTION_STATUS_PILL_META[status];
+}
+
+const APPROVABLE_STATUSES: InspectionStatus[] = ["paid", "in_progress"];
+const NON_REJECTABLE_STATUSES: InspectionStatus[] = [
+  "paid",
+  "in_progress",
+  "approved",
+];
+
+/** Admin may approve only paid or in-progress inspections. */
+export function canApproveInspection(status: InspectionStatus): boolean {
+  return APPROVABLE_STATUSES.includes(status);
+}
+
+/** Admin may reject any inspection except paid / in-progress / already-approved. */
+export function canRejectInspection(status: InspectionStatus): boolean {
+  return !NON_REJECTABLE_STATUSES.includes(status);
 }

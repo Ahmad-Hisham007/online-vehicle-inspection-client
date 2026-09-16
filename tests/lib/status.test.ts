@@ -4,6 +4,8 @@ import {
   getStatusLabel,
   getPaymentStatusLabel,
   getStatusPillStyle,
+  canApproveInspection,
+  canRejectInspection,
 } from "@/app/lib/status";
 import { INSPECTION_STATUSES, PAYMENT_STATUSES } from "@/app/lib/types";
 
@@ -66,5 +68,51 @@ describe("getStatusPillStyle", () => {
       expect(pill.className).toContain("border-");
       expect(pill.label).toBeTruthy();
     }
+  });
+});
+
+describe("canApproveInspection / canRejectInspection", () => {
+  const APPROVABLE: Record<string, boolean> = {
+    pending: false,
+    paid: true,
+    payment_failed: false,
+    in_progress: true,
+    approved: false,
+    rejected: false,
+    cancelled: false,
+  };
+
+  const REJECTABLE: Record<string, boolean> = {
+    pending: true,
+    paid: false,
+    payment_failed: true,
+    in_progress: false,
+    approved: false,
+    rejected: true,
+    cancelled: true,
+  };
+
+  it("covers every inspection status", () => {
+    for (const status of INSPECTION_STATUSES) {
+      expect(canApproveInspection(status)).toBe(APPROVABLE[status]);
+      expect(canRejectInspection(status)).toBe(REJECTABLE[status]);
+    }
+  });
+
+  it("allows approve only for paid and in_progress", () => {
+    expect(canApproveInspection("paid")).toBe(true);
+    expect(canApproveInspection("in_progress")).toBe(true);
+    expect(canApproveInspection("approved")).toBe(false);
+    expect(canApproveInspection("pending")).toBe(false);
+  });
+
+  it("allows reject for everything except paid/in_progress/approved", () => {
+    expect(canRejectInspection("pending")).toBe(true);
+    expect(canRejectInspection("payment_failed")).toBe(true);
+    expect(canRejectInspection("rejected")).toBe(true);
+    expect(canRejectInspection("cancelled")).toBe(true);
+    expect(canRejectInspection("paid")).toBe(false);
+    expect(canRejectInspection("in_progress")).toBe(false);
+    expect(canRejectInspection("approved")).toBe(false);
   });
 });

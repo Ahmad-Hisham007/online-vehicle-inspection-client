@@ -62,6 +62,7 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     },
     certificates: {},
     orderSubtotal: "63",
+    approvalFields: {},
     ...overrides,
   };
 }

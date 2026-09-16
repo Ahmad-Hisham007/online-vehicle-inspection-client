@@ -76,6 +76,8 @@ export interface InspectionDetail extends InspectionSummary {
   certificates: { lyft?: string; uber?: string; turo?: string };
   orderSubtotal: string;
   assignedInspector?: AssignedInspectorRef | null;
+  /** Flat ACF field values (GraphQL field name → value) used to pre-fill the approve forms. */
+  approvalFields: Record<string, string>;
 }
 
 // Admin Requests Types
