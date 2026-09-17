@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
 import RejectDialog from "@/app/components/InspectionDetailView/RejectDialog";
+import ApprovalDialog from "@/app/components/InspectionDetailView/ApprovalDialog";
 import {
   canApproveInspection,
   canRejectInspection,
@@ -27,6 +28,7 @@ export default function CertificatesPanel({
 }: CertificatesPanelProps) {
   const router = useRouter();
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [approveOpen, setApproveOpen] = useState(false);
   const isApproved = inspection.inspectionStatus === "approved";
   const isPaid =
     inspection.paymentStatus === "succeeded" ||
@@ -95,6 +97,7 @@ export default function CertificatesPanel({
             className="!w-auto !px-5"
             type="button"
             disabled={!canApprove}
+            onClick={() => setApproveOpen(true)}
           >
             Approve
           </Button>
@@ -115,6 +118,11 @@ export default function CertificatesPanel({
         open={rejectOpen}
         onOpenChange={setRejectOpen}
         inspectionId={inspection.id}
+      />
+      <ApprovalDialog
+        open={approveOpen}
+        onOpenChange={setApproveOpen}
+        inspection={inspection}
       />
     </div>
   );
