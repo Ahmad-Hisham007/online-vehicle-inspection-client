@@ -12,6 +12,10 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
+vi.mock("@/app/actions/admin", () => ({
+  rejectInspection: vi.fn(),
+}));
+
 vi.mock("next/image", () => ({
   default: ({ src, alt, width, height, style, className }: React.ComponentProps<"img">) =>
     React.createElement("img", {
@@ -201,7 +205,7 @@ describe("InspectionDetailView", () => {
     const approve = screen.getByRole("button", { name: /approve/i });
     const reject = screen.getByRole("button", { name: /reject/i });
     expect(approve).toBeDisabled();
-    expect(reject).toBeDisabled();
+    expect(reject).toBeEnabled();
     expect(screen.queryByRole("button", { name: /pay/i })).not.toBeInTheDocument();
   });
 });
