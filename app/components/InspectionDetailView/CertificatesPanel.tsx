@@ -1,7 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
+import RejectDialog from "@/app/components/InspectionDetailView/RejectDialog";
+import {
+  canApproveInspection,
+  canRejectInspection,
+} from "@/app/lib/status";
 import type { InspectionDetail } from "@/app/lib/types";
 
 interface CertificatesPanelProps {
@@ -20,10 +26,13 @@ export default function CertificatesPanel({
   role,
 }: CertificatesPanelProps) {
   const router = useRouter();
+  const [rejectOpen, setRejectOpen] = useState(false);
   const isApproved = inspection.inspectionStatus === "approved";
   const isPaid =
     inspection.paymentStatus === "succeeded" ||
     inspection.inspectionStatus === "paid";
+  const canApprove = canApproveInspection(inspection.inspectionStatus);
+  const canReject = canRejectInspection(inspection.inspectionStatus);
 
   const availableCertificates = CERTIFICATE_LABELS.filter(
     ({ key }) => inspection.certificates[key],
@@ -85,7 +94,7 @@ export default function CertificatesPanel({
             size="sm"
             className="!w-auto !px-5"
             type="button"
-            disabled
+            disabled={!canApprove}
           >
             Approve
           </Button>
@@ -94,12 +103,19 @@ export default function CertificatesPanel({
             size="sm"
             className="!w-auto !px-5"
             type="button"
-            disabled
+            disabled={!canReject}
+            onClick={() => setRejectOpen(true)}
           >
             Reject
           </Button>
         </div>
       )}
+
+      <RejectDialog
+        open={rejectOpen}
+        onOpenChange={setRejectOpen}
+        inspectionId={inspection.id}
+      />
     </div>
   );
 }
