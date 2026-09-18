@@ -82,7 +82,7 @@ export default function EditUserForm({ user }: EditUserFormProps) {
     <AdminPageShell title="Edit user">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="flex w-full flex-col gap-5 rounded-lg border border-border bg-card p-6 shadow-sm"
+        className="flex w-full md:max-w-120 flex-col gap-5 rounded-lg border border-border bg-card p-6 shadow-sm"
       >
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
