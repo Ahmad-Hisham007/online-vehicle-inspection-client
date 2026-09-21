@@ -8,12 +8,18 @@ function isAdminRole(role?: string): boolean {
 }
 
 export default auth((req) => {
-  const isLoggedIn = !!req.auth;
+  // A session whose WordPress refresh token was definitively rejected is no
+  // longer usable: treat it as logged out so the dashboard cannot bounce the
+  // user straight back to /dashboard after sign-out.
+  const authError = req.auth?.error;
+  const isLoggedIn = !!req.auth && !authError;
   const path = req.nextUrl.pathname;
   const isDashboard = path.startsWith("/dashboard");
 
   if (isDashboard && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(
+      new URL(authError ? "/login?expired=1" : "/login", req.url),
+    );
   }
 
   const role = req.auth?.user?.role;

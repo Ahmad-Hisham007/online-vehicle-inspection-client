@@ -160,6 +160,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
 
+      // The refresh token was already definitively rejected. Do not probe WP
+      // again on every session call — keep the flag (and the token) so the
+      // client/proxy still treat this session as expired.
+      if (token.error === REFRESH_ACCESS_TOKEN_ERROR) {
+        return token;
+      }
+
       const current = token.user;
       if (!current?.accessToken || !current.refreshToken) {
         return token;

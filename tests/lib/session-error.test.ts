@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   REFRESH_ACCESS_TOKEN_ERROR,
   isRefreshAccessTokenError,
+  shouldForceSignOut,
   shouldMarkSessionExpired,
 } from "@/app/lib/session-error";
 import {
@@ -30,6 +31,30 @@ describe("session-error", () => {
     expect(
       shouldMarkSessionExpired({ success: true, serverReached: true }),
     ).toBe(false);
+  });
+
+  describe("shouldForceSignOut", () => {
+    it("forces sign-out for a rejected refresh token off the login page", () => {
+      expect(
+        shouldForceSignOut("/dashboard/customer", REFRESH_ACCESS_TOKEN_ERROR),
+      ).toBe(true);
+    });
+
+    it("never forces sign-out on the login page", () => {
+      expect(
+        shouldForceSignOut("/login", REFRESH_ACCESS_TOKEN_ERROR),
+      ).toBe(false);
+      expect(
+        shouldForceSignOut("/login?expired=1", REFRESH_ACCESS_TOKEN_ERROR),
+      ).toBe(false);
+    });
+
+    it("ignores healthy sessions and unrelated errors", () => {
+      expect(shouldForceSignOut("/dashboard/customer", undefined)).toBe(false);
+      expect(
+        shouldForceSignOut("/dashboard/customer", "some-other-error"),
+      ).toBe(false);
+    });
   });
 
   describe("assertSessionActive", () => {
