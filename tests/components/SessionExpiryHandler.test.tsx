@@ -6,10 +6,15 @@ const mockSignOut = vi.hoisted(() => vi.fn());
 const mockSession = vi.hoisted(() => ({
   value: { data: null } as { data: { error?: string } | null },
 }));
+const mockPathname = vi.hoisted(() => ({ value: "/dashboard/customer" }));
 
 vi.mock("next-auth/react", () => ({
   useSession: () => mockSession.value,
   signOut: mockSignOut,
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => mockPathname.value,
 }));
 
 import SessionExpiryHandler from "@/app/components/SessionExpiryHandler";
@@ -18,6 +23,7 @@ describe("SessionExpiryHandler", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSession.value = { data: null };
+    mockPathname.value = "/dashboard/customer";
   });
 
   it("does not sign out for a healthy session", () => {
@@ -44,5 +50,14 @@ describe("SessionExpiryHandler", () => {
     rerender(<SessionExpiryHandler />);
 
     expect(mockSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it("never signs out while on the login page", () => {
+    mockSession.value = { data: { error: "RefreshAccessTokenError" } };
+    mockPathname.value = "/login";
+
+    render(<SessionExpiryHandler />);
+
+    expect(mockSignOut).not.toHaveBeenCalled();
   });
 });

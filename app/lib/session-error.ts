@@ -11,6 +11,15 @@ export function isRefreshAccessTokenError(error: unknown): boolean {
 }
 
 /**
+ * Whether the client should force a single sign-out for an expired session.
+ * Never fires on the login page — otherwise sign-out and the login redirect
+ * ping-pong against each other and the user is stuck in a redirect loop.
+ */
+export function shouldForceSignOut(pathname: string, error: unknown): boolean {
+  return !pathname.startsWith("/login") && isRefreshAccessTokenError(error);
+}
+
+/**
  * A failed refresh is fatal only when WordPress was actually reached and
  * rejected the token. A transient/network failure must not sign the user out.
  */
