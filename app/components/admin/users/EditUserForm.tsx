@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
+import { z } from "zod";
 
 import AdminPageShell from "@/app/components/admin/AdminPageShell";
 import { FormInput } from "@/app/components/FormInput";
@@ -13,20 +14,40 @@ import { Button } from "@/app/components/Button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   USER_ROLES,
   userEditSchema,
   type UserEditInput,
 } from "@/app/lib/schemas/userEdit";
-import { updateUser } from "@/app/actions/users";
+import { updateUser, updateUserPassword } from "@/app/actions/users";
 import type { AdminUserDetail } from "@/app/lib/types";
 
 const ROLE_OPTIONS = [
-  { value: "customer", label: "Customer" },
+  { value: "subscriber", label: "Customer" },
   { value: "inspector", label: "Inspector" },
   { value: "administrator", label: "Administrator" },
 ].filter((opt): opt is { value: string; label: string } =>
   USER_ROLES.includes(opt.value as (typeof USER_ROLES)[number]),
 );
+
+const passwordSchema = z
+  .object({
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type PasswordInput = z.infer<typeof passwordSchema>;
 
 function formatJoined(iso: string): string {
   if (!iso) return "—";
@@ -46,6 +67,8 @@ interface EditUserFormProps {
 export default function EditUserForm({ user }: EditUserFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const { control, handleSubmit } = useForm<UserEditInput>({
     resolver: zodResolver(userEditSchema),
@@ -60,6 +83,15 @@ export default function EditUserForm({ user }: EditUserFormProps) {
     },
   });
 
+  const {
+    control: pwControl,
+    handleSubmit: handlePwSubmit,
+    reset: resetPwForm,
+  } = useForm<PasswordInput>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { password: "", confirmPassword: "" },
+  });
+
   const onSubmit = async (data: UserEditInput) => {
     setIsSubmitting(true);
     try {
@@ -68,6 +100,7 @@ export default function EditUserForm({ user }: EditUserFormProps) {
         firstName: data.firstName,
         lastName: data.lastName,
         role: data.role,
+        phoneNumber: data.phone,
       });
       toast.success("User updated");
       router.refresh();
@@ -75,6 +108,22 @@ export default function EditUserForm({ user }: EditUserFormProps) {
       toast.error(err instanceof Error ? err.message : "Failed to update user");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const onPasswordSubmit = async (data: PasswordInput) => {
+    setIsUpdatingPassword(true);
+    try {
+      await updateUserPassword(user.id, data.password);
+      toast.success("Password updated");
+      setPasswordOpen(false);
+      resetPwForm();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update password",
+      );
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -153,12 +202,70 @@ export default function EditUserForm({ user }: EditUserFormProps) {
           <Button type="button" variant="secondary" size="sm">
             Block
           </Button>
-          {/* TODO(task 6.3): make functional — send a password reset / update */}
-          <Button type="button" variant="secondary" size="sm">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => setPasswordOpen(true)}
+          >
             Update password
           </Button>
         </div>
       </form>
+
+      <Dialog
+        open={passwordOpen}
+        onOpenChange={(open) => {
+          setPasswordOpen(open);
+          if (!open) resetPwForm();
+        }}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Update password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {user.firstName || user.email}.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePwSubmit(onPasswordSubmit)} className="grid gap-4 py-4">
+            <FormInput
+              name="password"
+              control={pwControl}
+              label="New password"
+              type="password"
+              placeholder="Enter new password"
+            />
+            <FormInput
+              name="confirmPassword"
+              control={pwControl}
+              label="Confirm password"
+              type="password"
+              placeholder="Confirm new password"
+            />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setPasswordOpen(false);
+                  resetPwForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                size="sm"
+                disabled={isUpdatingPassword}
+              >
+                {isUpdatingPassword ? "Updating…" : "Update password"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </AdminPageShell>
   );
 }
