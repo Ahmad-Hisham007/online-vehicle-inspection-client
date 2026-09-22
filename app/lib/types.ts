@@ -99,6 +99,7 @@ export interface AdminUserRow {
   phone?: number | null;
   firstName?: string | null;
   lastName?: string | null;
+  role?: string;
 }
 
 export interface AdminUserDetail {

@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import { z } from "zod";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 import AdminPageShell from "@/app/components/admin/AdminPageShell";
 import { FormInput } from "@/app/components/FormInput";
@@ -69,6 +70,8 @@ export default function EditUserForm({ user }: EditUserFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   const { control, handleSubmit } = useForm<UserEditInput>({
     resolver: zodResolver(userEditSchema),
@@ -217,7 +220,11 @@ export default function EditUserForm({ user }: EditUserFormProps) {
         open={passwordOpen}
         onOpenChange={(open) => {
           setPasswordOpen(open);
-          if (!open) resetPwForm();
+          if (!open) {
+            resetPwForm();
+            setShowPw(false);
+            setShowConfirmPw(false);
+          }
         }}
       >
         <DialogContent className="sm:max-w-sm">
@@ -228,20 +235,71 @@ export default function EditUserForm({ user }: EditUserFormProps) {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePwSubmit(onPasswordSubmit)} className="grid gap-4 py-4">
-            <FormInput
-              name="password"
-              control={pwControl}
-              label="New password"
-              type="password"
-              placeholder="Enter new password"
-            />
-            <FormInput
-              name="confirmPassword"
-              control={pwControl}
-              label="Confirm password"
-              type="password"
-              placeholder="Confirm new password"
-            />
+            <Field className="relative flex flex-col gap-1 text-left text-sm">
+              <FieldLabel className="font-semibold text-gray-700">
+                New password
+              </FieldLabel>
+              <div className="relative">
+                <Controller
+                  name="password"
+                  control={pwControl}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <Input
+                        {...field}
+                        type={showPw ? "text" : "password"}
+                        placeholder="Enter new password"
+                        className="h-12 w-full rounded-md border-0 bg-white px-4 pr-10 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus-visible:ring-2 focus-visible:ring-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPw((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        aria-label={showPw ? "Hide password" : "Show password"}
+                      >
+                        {showPw ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                      </button>
+                      {fieldState.error && (
+                        <p className="mt-1 text-xs text-red-500">{fieldState.error.message}</p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
+            </Field>
+
+            <Field className="relative flex flex-col gap-1 text-left text-sm">
+              <FieldLabel className="font-semibold text-gray-700">
+                Confirm password
+              </FieldLabel>
+              <div className="relative">
+                <Controller
+                  name="confirmPassword"
+                  control={pwControl}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <Input
+                        {...field}
+                        type={showConfirmPw ? "text" : "password"}
+                        placeholder="Confirm new password"
+                        className="h-12 w-full rounded-md border-0 bg-white px-4 pr-10 text-sm shadow-sm ring-1 ring-inset ring-gray-300 focus-visible:ring-2 focus-visible:ring-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPw((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        aria-label={showConfirmPw ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPw ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                      </button>
+                      {fieldState.error && (
+                        <p className="mt-1 text-xs text-red-500">{fieldState.error.message}</p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
+            </Field>
             <DialogFooter>
               <Button
                 type="button"

@@ -27,6 +27,7 @@ interface AdminUsersParams {
   page?: number;
   perPage?: number;
   search?: string;
+  role?: string;
 }
 interface AdminUsersFetchResponse {
   users: {
@@ -41,6 +42,7 @@ interface AdminUsersPageParams {
   page: number;
   perPage: number;
   search?: string;
+  role?: string;
 }
 export interface AdminUsersPageRender {
   items: AdminUserRow[];
@@ -58,6 +60,7 @@ const USERS_LIST_QUERY = `
   $offset: Int
   $search: String
   $roleNotIn: [UserRoleEnum]
+  $roleIn: [UserRoleEnum]
 ) {
   users(
     where: {
@@ -65,6 +68,7 @@ const USERS_LIST_QUERY = `
       limit: $limit
       offset: $offset
       roleNotIn: $roleNotIn
+      roleIn: $roleIn
     }
   ) {
     nodes {
@@ -101,16 +105,23 @@ function mapSummary(node: UserNode): AdminUserRow {
 
 const getUsersPageCached = unstable_cache(
   async (params: AdminUsersPageParams) => {
-    const { token, page, perPage, search } = params;
+    const { token, page, perPage, search, role } = params;
+
+    const variables: Record<string, unknown> = {
+      limit: perPage,
+      offset: (page - 1) * perPage,
+      search: search,
+    };
+
+    if (role) {
+      variables.roleIn = [role.toUpperCase()];
+    } else {
+      variables.roleNotIn = ["ADMINISTRATOR"];
+    }
 
     const data = await wpFetch<AdminUsersFetchResponse>(
       USERS_LIST_QUERY,
-      {
-        limit: perPage,
-        offset: (page - 1) * perPage,
-        search: search,
-        roleNotIn: ["ADMINISTRATOR"],
-      },
+      variables,
       { accessToken: token },
     );
 
@@ -145,6 +156,7 @@ export async function listUsers(
     page,
     perPage,
     search: params.search,
+    role: params.role,
   });
 
   const totalPages = Math.max(1, Math.ceil(total / perPage));
