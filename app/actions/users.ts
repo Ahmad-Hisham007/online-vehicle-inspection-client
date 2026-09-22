@@ -11,11 +11,15 @@ const ADMIN_ROLES = ["administrator", "inspector"];
 interface userField {
   phoneNumber?: number | null;
 }
+interface userRole {
+  nodes: { name: string }[];
+}
 interface UserNode {
   databaseId: number;
   firstName?: string | null;
   lastName?: string | null;
   email: string;
+  roles: userRole;
   userFields?: userField;
 }
 
@@ -68,6 +72,11 @@ const USERS_LIST_QUERY = `
       firstName
       lastName
       email
+      roles {
+        nodes {
+          name
+        }
+      }
       userFields {
         phoneNumber
       }
@@ -86,6 +95,7 @@ function mapSummary(node: UserNode): AdminUserRow {
     lastName: node.lastName,
     email: node.email,
     phone: node?.userFields?.phoneNumber,
+    role: node.roles?.nodes?.[0]?.name,
   };
 }
 
@@ -208,7 +218,7 @@ const getUserCached = unstable_cache(
         node.userFields?.phoneNumber != null
           ? String(node.userFields.phoneNumber)
           : "",
-      role: node.roles?.nodes?.[0]?.name ?? "customer",
+      role: node.roles?.nodes?.[0]?.name ?? "subscriber",
       registeredDate: node.registeredDate ?? "",
     };
   },
@@ -247,6 +257,7 @@ export interface UpdateUserPayload {
   firstName: string;
   lastName: string;
   role: string;
+  phoneNumber?: string;
 }
 
 export async function updateUser(
@@ -259,22 +270,60 @@ export async function updateUser(
   }
   assertSessionActive(session.error);
 
-  // NOTE: phoneNumber is an ACF user field and is NOT part of UpdateUserInput
-  // (only RegisterUserInput was extended via WP snippet #277). Persisting phone
-  // edits needs a WP-side extension; the form collects it but does not send it yet.
+const input: Record<string, unknown> = {
+    id,
+    email: payload.email,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    roles: [payload.role.toLowerCase()],
+  };
+  if (payload.phoneNumber) {
+    input.phoneNumber = payload.phoneNumber;
+  }
+
   const data = await wpFetch<UpdateUserResponse>(UPDATE_USER_MUTATION, {
-    input: {
-      id,
-      email: payload.email,
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      roles: [payload.role.toUpperCase()],
-    },
+    input,
   });
 
-  if (!data.updateUser?.user) {
+if (!data.updateUser?.user) {
     throw new Error("Failed to update user");
   }
 
   revalidateTag("users", "max");
+}
+
+// ---------------------------------------------------------------------------
+// Update user password (admin-only)
+// ---------------------------------------------------------------------------
+
+const UPDATE_USER_PASSWORD_MUTATION = `
+  mutation UpdateUser($input: UpdateUserInput!) {
+    updateUser(input: $input) {
+      user {
+        databaseId
+      }
+    }
+  }
+`;
+
+export async function updateUserPassword(
+  id: string,
+  password: string,
+): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.accessToken || !isAdministrator(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+
+  const data = await wpFetch<UpdateUserResponse>(UPDATE_USER_PASSWORD_MUTATION, {
+    input: {
+      id,
+      password,
+    },
+  });
+
+  if (!data.updateUser?.user) {
+    throw new Error("Failed to update password");
+  }
 }
