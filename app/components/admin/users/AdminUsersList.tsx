@@ -7,15 +7,16 @@ import { auth } from "@/auth";
 import { isAdministrator } from "@/app/lib/access";
 
 interface AdminUsersListSearchParams {
-  searchParams: Promise<{ page?: string; search?: string }>;
+  searchParams: Promise<{ page?: string; search?: string; role?: string }>;
 }
 const AdminUsersList = async ({ searchParams }: AdminUsersListSearchParams) => {
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
   const search = sp.search?.trim() || "";
+  const role = sp.role?.trim() || null;
   const session = await auth();
   const canEdit = isAdministrator(session?.user?.role);
-  const data = await listUsers({ page, perPage: 8, search });
+  const data = await listUsers({ page, perPage: 8, search, role: role ?? undefined });
   const rows = data.items;
   return (
     <AdminPageShell title={"Users"}>
@@ -24,6 +25,7 @@ const AdminUsersList = async ({ searchParams }: AdminUsersListSearchParams) => {
           rows={rows}
           page={page}
           search={search}
+          role={role}
           total={data.total}
           totalPages={data.totalPages}
           canEdit={canEdit}

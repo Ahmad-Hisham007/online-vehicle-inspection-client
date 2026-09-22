@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const USER_ROLES = ["customer", "inspector", "administrator"] as const;
+export const USER_ROLES = ["subscriber", "inspector", "administrator"] as const;
 
 export const userEditSchema = z.object({
   email: z.string().email("Invalid email address"),

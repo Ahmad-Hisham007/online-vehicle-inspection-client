@@ -16,7 +16,9 @@ const DEFAULT_FILTER_OPTIONS = [
 type DataToolBarProps = {
   initialSearchValue?: string;
   initialStatusFilter?: InspectionStatus | null | undefined;
+  initialRoleFilter?: string | null | undefined;
   filterOptions?: { label: string; value: string }[];
+  filterParamName?: "status" | "role";
   startTransition: React.TransitionStartFunction;
   isPending: boolean;
 };
@@ -24,32 +26,44 @@ type DataToolBarProps = {
 const DataToolbar = ({
   initialSearchValue,
   initialStatusFilter,
+  initialRoleFilter,
   filterOptions = DEFAULT_FILTER_OPTIONS,
+  filterParamName = "status",
   isPending,
   startTransition,
 }: DataToolBarProps) => {
   const router = useRouter();
   const path = usePathname().split("?")[0];
   const [searchValue, setSearchValue] = useState(initialSearchValue);
-  const [statusFilter, setStatusFilter] = useState(
-    initialStatusFilter ?? "all",
-  );
+  const initialValue =
+    filterParamName === "role"
+      ? (initialRoleFilter ?? "all")
+      : (initialStatusFilter ?? "all");
+  const [filterValue, setFilterValue] = useState(initialValue);
 
   const debouncedSearch = useDebounce(searchValue, 500);
+
+  const navigateWithFilter = (search: string, filter: string) => {
+    const href =
+      filterParamName === "role"
+        ? buildListAdminHref({
+            page: 1,
+            role: filter === "all" ? null : filter,
+            search,
+          })
+        : buildListAdminHref({
+            page: 1,
+            status:
+              filter === "all" ? null : (filter as InspectionStatus),
+            search,
+          });
+    router.push(`${path}${href}`);
+  };
 
   useEffect(() => {
     if (searchValue === initialSearchValue) return;
     startTransition(() => {
-      const status =
-        statusFilter === "all" ? null : (statusFilter as InspectionStatus);
-
-      const href = buildListAdminHref({
-        page: 1,
-        status,
-        search: debouncedSearch,
-      });
-
-      router.push(`${path}${href}`);
+      navigateWithFilter(debouncedSearch ?? "", filterValue);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
@@ -58,16 +72,11 @@ const DataToolbar = ({
     const value = e.target.value;
     setSearchValue(value);
   };
-  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setStatusFilter(value);
+    setFilterValue(value);
     startTransition(() => {
-      const href = buildListAdminHref({
-        page: 1,
-        status: value === "all" ? null : (value as InspectionStatus),
-        search: searchValue,
-      });
-      router.push(`${path}${href}`);
+      navigateWithFilter(searchValue ?? "", value);
     });
   };
 
@@ -90,8 +99,8 @@ const DataToolbar = ({
 
       {filterOptions.length > 0 && (
         <select
-          value={statusFilter}
-          onChange={handleStatusChange}
+          value={filterValue}
+          onChange={handleFilterChange}
           aria-label="Filter"
           disabled={isPending}
           className={

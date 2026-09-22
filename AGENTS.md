@@ -15,7 +15,7 @@
 | `npm run dev`       | Dev server at `http://localhost:3000` |
 | `npm run lint`      | ESLint (Next.js config)               |
 | `npm run build`     | Build + typecheck via `next build`    |
-| `npm run test`      | Vitest unit tests (241 tests)         |
+| `npm run test`      | Vitest unit tests (299 tests)         |
 | `npm run test:ui`   | Vitest UI mode                        |
 | `npm run test:coverage` | Vitest with v8 coverage           |
 | `npm run e2e`       | Playwright e2e (opens browser)        |
@@ -53,7 +53,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 ## Architecture
 
 - **Middleware**: `proxy.ts` (NOT `middleware.ts`). Protects `/dashboard/:path*`. Redirects unauthenticated to `/login`.
-- **Auth**: `auth.ts` + `auth.config.ts`. JWT session strategy. Custom `User` type in `next-auth.d.ts` extends with `wpId`, `accessToken`. Route handler at `app/api/auth/[...nextauth]/route.ts`.
+- **Auth**: `auth.ts` + `auth.config.ts`. JWT session strategy (`maxAge` 30 days). Custom `User` type in `next-auth.d.ts` extends with `wpId`, `accessToken`. Route handler at `app/api/auth/[...nextauth]/route.ts`. WP token refresh is centralized in `app/lib/refresh-token.ts` (`refreshAccessToken()` — single 3-field `refreshToken` mutation) used by BOTH the NextAuth `jwt` callback and `wp-auth.ts` `getValidAccessToken()`; a real WP rejection throws `SessionExpiredError` (transient network stays non-fatal). The `jwt` callback flags definitive rejections via `token.error = "RefreshAccessTokenError"` (exposed as `session.error`; transient failures stay silent), server actions fail fast with `assertSessionActive()`, and `SessionExpiryHandler` (inside `SessionWrapper`) signs the user out to `/login?expired=1` once, where `SessionExpiredNotice` shows a one-time message. No proactive ping guard (per-request auto-refresh only).
 - **Registration**: Route handler `app/api/register/route.ts` — creates WP user via GraphQL `registerUser`. Sends `firstName`/`lastName`/`displayName`/`email`/`password`/`phoneNumber`; the WP `username` is auto-generated (`{first+last|email-local}` sanitized to `[a-z0-9]` + `_` + 8-char UUID) rather than using the raw email. `phoneNumber` persists to the ACF "User fields" group (`phone_number`) via a WP-side `RegisterUserInput` extension (WPCode snippet #277 on the live CMS) that adds the input through the `graphql_input_fields` filter — direct `register_graphql_field` on `RegisterUserInput` silently fails on WPGraphQL 2.21+ — and saves via `graphql_user_object_mutation_update_additional_data` scoped to `registerUser` (`update_field('phone_number', …, 'user_' . $user_id)`).
 - **Layout**: `app/layout.tsx` — wraps with `SessionWrapper` (SessionProvider), `ToasterProvider` (react-hot-toast), and the single route-aware `Header` (client component). Root layout fetches all 3 WP menus (cached) and passes them to `<Header menus={…}>`.
 - **Multistep form**: 7-step inspection form at `/dashboard/customer/inspection` with Zustand store persisting to `sessionStorage`.
@@ -74,9 +74,9 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Styling**: Tailwind v4 (`@theme inline` syntax, `@custom-variant dark`). CSS variables in `app/globals.css`.
 - **Scrollbar**: `.thin-scrollbar` utility class in `globals.css` — thin 4px rounded scrollbar for overflow containers.
 - **Component split**:
-  - `app/components/` — app-specific (Button, FormInput, FormSelect, ImageCheckboxGroup, FileUploadField, PriceSummary, StepIndicator, StatusBadge, InspectionCard, FilterInspectionsModal, InspectionDetailView, NavLink, NavigationLoader, LoadingIndicator, Header, HeaderMenuSkeleton, LanguageSelector, SessionWrapper, ToasterProvider)
-  - `app/components/admin/` — AdminSidebar, DataTable, PaginationFooter, AdminPageShell, StatusPill
-  - `components/ui/` — shadcn primitives (button, card, input, checkbox, field, separator, dropdown-menu, dialog, tabs, skeleton, etc.)
+  - `app/components/` — app-specific (Button, FormInput, FormSelect, ImageCheckboxGroup, FileUploadField, PriceSummary, StepIndicator, StatusBadge, InspectionCard, FilterInspectionsModal, InspectionDetailView, NavLink, NavigationLoader, LoadingIndicator, Header, HeaderMenuSkeleton, LanguageSelector, SessionWrapper, SessionExpiryHandler, ToasterProvider)
+  - `app/components/admin/` — AdminSidebar, DataTable, PaginationFooter, AdminPageShell, StatusPill, users/EditUserForm
+  - `components/ui/` — shadcn primitives (button, card, input, checkbox, field, separator, dropdown-menu, dialog, accordion, tabs, skeleton, etc.)
 - **Two Button components**: `@/app/components/Button` (app custom with `primary`/`secondary` variants) vs `@/components/ui/button` (shadcn). Use the app one for forms.
 - **Form pattern**: React Hook Form + Zod schema + `zodResolver` + `@/app/components/FormInput` generic `<T extends FieldValues>` + `@/components/ui/field` (Field, FieldLabel, FieldGroup).
 - **Select pattern**: `@/app/components/FormSelect` — generic `<T extends FieldValues>` with `Controller` + native `<select>` styled same as `FormInput`.
@@ -92,7 +92,7 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Coverage**: v8 provider, excludes `.opencode/**`, `components/ui/**`, `**/index.ts`
 - **Playwright** e2e: `e2e/` directory, Chromium only, `headless: false`
 - E2E credentials loaded from `.env.local` via `dotenv` in `playwright.config.ts`
-- **241 tests across 29 files, all passing**
+- **299 tests across 36 files, all passing**
 - Coverage: Statements 100%, Lines 100%, Branches ~98%, Functions ~98%
 
 ## Environment & Backend
@@ -115,7 +115,8 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Landing page (`/`)                             | Default Next.js boilerplate                                                |
 | Customer dashboard (`/dashboard/customer`)     | Done — Phase 5: owner-scoped listing, status filter + pagination, card layout with Add/Filter, empty state |
 | Admin dashboard (Phase 6 Stage A)              | Done — `/dashboard/admin` admin panel (Requests/Users/Archive/Proposals tables + Settings form), desktop sidebar, single route-aware Header in root layout, `/dashboard` mirrors customer dashboard; functional wiring (approve/reject, PDF) deferred to Stage B |
-| Admin dashboard dynamic (Phase 6 Stage B)      | In progress — Task #1 Archive page dynamic (SSR + `listArchivedInspections` + status filter + search + pagination); Requests + Users pages dynamic; Proposals deferred (external dep); Settings + approve/reject + PDF not started |
+| Admin dashboard dynamic (Phase 6 Stage B)      | In progress — Task #1 Archive page dynamic (SSR + `listArchivedInspections` + status filter + search + pagination); Requests + Users pages dynamic; **Users edit page (admin-only) done**; Proposals deferred (external dep); Settings not started |
+| Admin approve/reject in detail (Phase 6.3)     | **Done (UI)** — `canApproveInspection`/`canRejectInspection` gate the action bar; **Reject wired** (`app/actions/admin.ts` `rejectInspection` → `inspectionDetails.inspectionStatus = "rejected"` + `RejectDialog`); **Approve UI-only** (`ApprovalDialog` + `ApprovalCompanyForm`: one accordion per certificate company, registry-driven grouped fields, Generate/Save stubs); PDF engine + approval mutation deferred to 6.4 |
 | Multistep inspection form (7 steps)            | Done — Phase 2 complete                                                    |
 | Zustand store                                  | Done — `inspectionStore.ts` with sessionStorage persist                    |
 | Upload engine (Bunny CDN)                      | Done — Phase 3/5.8: `app/actions/upload.ts`, `app/hooks/useFileUpload.ts` (S3-compatible presigned PUT) |
@@ -126,12 +127,17 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Inspections listing + detail (Phase 5)         | Done — owner-scoped listing, filters/pagination, shared `InspectionDetailView`, customer detail + pay routes, admin detail route |
 | Navigation performance (00502)                 | Done — no `router.refresh()`, `HeaderMenuSkeleton`, HeaderNav out of Suspense, top loader |
 | Netlify deployment (Phase 5.7)                 | Done — `rideshareinspector.netlify.app`, `AUTH_TRUST_HOST`, context-scoped `NEXTAUTH_URL`, preview/branch deploys |
-| PDF certificate generation                     | Not started — Phase 6 Stage B (approve/reject + `expiryDate` population + PDF) |
-| Google login — admin role returns null user   | Open — 006-B backlog Task A (only `hishamthed@gmail.com` works; WP-side SITETOKEN/role block suspected, snippet #124 draft) |
-| Google sign-in — unregistered users UX        | Open — 006-B backlog Task B (branded "register first" screen replaces NextAuth AccessDenied; `pages.error` unset) |
-| Branded error boundaries                       | Open — 006-B backlog Task C (no root `app/error.tsx`/`global-error.tsx`/`not-found.tsx`; Next default error page can surface) |
-| Admin inspection creation flow + role isolation | Open — 006-B backlog Task D (own `/dashboard/admin/inspection` flow + assign-user dropdown; block admins from `/dashboard/customer/*`) |
-| Tests                                          | Done — 241 Vitest tests, 29 files, ~100% lines, 3 E2E Playwright specs     |
+| PDF certificate generation                     | Not started — Phase 6.4 (real Generate output + approval mutation + `expiryDate` population) |
+| Admin edit user (Phase 6.3)                    | **Done** — admin-only `/dashboard/admin/users/[id]` (`notFound()` for non-admins); `getUser`/`updateUser` (`app/actions/users.ts`); `AdminUserDetail` + `userEdit` Zod schema; `EditUserForm` (email, names, phone, role, read-only date joined; Update wired to `updateUser`; Block + Update password UI-only); **phone not persisted** — WP `UpdateUserInput` has no `phoneNumber` (needs a snippet-#277-style extension); Users table Edit action is admin-only (inspectors see read-only rows) |
+| Google login — admin role returns null user   | **Done** — 006-B Task A: WP SITETOKEN provider had `loginOptions.metaKey: "login"` (matches WP **username**) while the app sends the Google **email** → changed to `"email"` (option `wpgraphql_login_provider_siteToken` on live CMS). Only accounts whose username == email (e.g. `hishamthed@gmail.com`) ever worked before |
+| Google sign-in — unregistered users UX        | **Done** — 006-B Task B: `auth.ts` `pages.error: "/error"` + branded `app/(public)/error/page.tsx` (AccessDenied → "Account not registered" + Register CTA + Back); no NextAuth default error page; login flip-card untouched |
+| Branded error boundaries                       | **Done** — 006-B Task C: shared `ErrorState.tsx` + root `app/error.tsx`/`global-error.tsx`/`not-found.tsx`, `dashboard/error.tsx`, `(site)/error.tsx`, `(panel)/error.tsx` + `not-found.tsx`; existing customer detail boundaries remain; no default Next error/404 page can surface |
+| Inspection access security (Task D)            | **Done** — `app/lib/access.ts` (roles + `canAccessInspection`); `fetchInspection` gate → not-found on deny; Requests/Archive auto-scoped **assigned-only for inspectors**, admins see all; WP snippet #279 (`assigned_inspector` read field + `assignedInspector` where-arg + role-scoped connection reads + admin-only mutation input); Requests rows show Assigned pill + inspector dropdown + ✕ (admin only); assignment actions (`listInspectors` cached like SSR lists, `assignInspector` default-refresh like mutations) |
+| Admin inspection creation flow + role isolation | Open — 006-B backlog Task E (own `/dashboard/admin/inspection` flow + assign-user dropdown; block admins from `/dashboard/customer/*`) |
+| Session/token robustness                       | **Done** — root cause: `auth.ts` jwt refresh queried `refreshToken`/`refreshTokenExpiration` fields that the plugin's `RefreshTokenPayload` does NOT expose → refresh always failed silently → expired tokens sent → all authed fetches failed ~5 min after login. Fixed via shared `refresh-token.ts` (3-field query), `SessionExpiredError` on real rejection, NextAuth `session.maxAge` 30d, WP access-token lifetime 300s→900s (snippet #280). No proactive ping/SessionGuard (removed) |
+| Session expiry → forced logout                 | **Done** — 006-B: `auth.ts` jwt sets `token.error = "RefreshAccessTokenError"` on definitive WP rejection (transient `serverReached=false` stays silent; cleared on success), exposed as `session.error`; `app/lib/session-error.ts` + `assertSessionActive()` make listing/detail/assignment actions fail fast before the WP call; `SessionExpiryHandler` inside `SessionWrapper` calls `signOut({ redirectTo: "/login?expired=1" })` exactly once; `SessionExpiredNotice` (login flip-card) shows a one-time "session expired" note and strips the query param |
+| Session-expiry sign-out redirect loop          | **Done** (`903fe27`) — `shouldForceSignOut(pathname, error)` never fires on `/login`; `proxy.ts` treats an errored session as logged out → `/login?expired=1`; `auth.ts` jwt stops re-probing WP once the token is already flagged |
+| Tests                                          | Done — 299 Vitest tests, 36 files, ~100% lines, 3 E2E Playwright specs     |
 
 ## Phase 2 & 3 — Shared Components
 
@@ -210,17 +216,22 @@ app/dashboard/(site)/layout.tsx            # passthrough <main> (header comes fr
 app/dashboard/(panel)/layout.tsx           # AdminSidebar + content + role guard (administrator | inspector)
 app/dashboard/(panel)/admin/page.tsx       # /dashboard/admin → redirect → requests
 app/dashboard/(panel)/admin/requests/page.tsx  # Stage B: server component → RequestsListing
-app/dashboard/(panel)/admin/users/page.tsx     # Stage B: server component → AdminUsersList
+app/dashboard/(panel)/admin/users/page.tsx     # Stage B: server component → AdminUsersList (Edit action admin-only)
+app/dashboard/(panel)/admin/users/[id]/page.tsx # Phase 6.3: admin-only edit user page (notFound() for non-admins) → EditUserForm
 app/dashboard/(panel)/admin/archive/page.tsx   # Stage B: server component → ArchiveListing (Task #1 done)
 app/dashboard/(panel)/admin/proposals/page.tsx # Stage A: static sample data (DEFERRED external dep)
 app/dashboard/(panel)/admin/settings/page.tsx  # Stage A: client-only form (Task #2 — not started)
 app/dashboard/(site)/page.tsx              # /dashboard mirror of customer dashboard (admin/inspector)
 app/actions/requests.ts                    # Stage B: listRequests (unstable_cache 300s, tag "requests", excludes archived)
-app/actions/users.ts                       # Stage B: listUsers (unstable_cache 300s, tag "users", roleNotIn ADMINISTRATOR)
+app/actions/users.ts                       # Stage B: listUsers (unstable_cache 300s, tag "users", roleNotIn ADMINISTRATOR) + Phase 6.3 getUser/updateUser (admin-only)
 app/actions/archive.ts                     # Stage B: listArchivedInspections (unstable_cache 300s, tag "archive", inspectionStatusIn approved/rejected/cancelled)
+app/actions/admin.ts                       # Phase 6.3: rejectInspection (updateInspection → inspectionStatus "rejected"; approveInspection deferred to 6.4)
+app/lib/approval-fields.ts                 # Phase 6.3: approval form registry (ApprovalFieldType/Def/Group, APPROVAL_GROUPS, getVisibleFields, cert companies)
+app/lib/schemas/userEdit.ts                # Phase 6.3: user edit Zod schema (email, names, phone, role)
 app/components/admin/RequestsListing.tsx   # Stage B: server listing (Suspense + skeleton)
 app/components/admin/RequestsContent.tsx   # Stage B: client table + toolbar
-app/components/admin/users/AdminUsersList.tsx / AdminUsersContent.tsx  # Stage B: server + client
+app/components/admin/users/AdminUsersList.tsx / AdminUsersContent.tsx  # Stage B: server + client (Edit column admin-only via canEdit)
+app/components/admin/users/EditUserForm.tsx # Phase 6.3: edit user form (profile fields; Update wired; Block/password UI-only)
 app/components/admin/ArchiveListing.tsx    # Stage B: server listing (Suspense + skeleton)
 app/components/admin/ArchiveContent.tsx    # Stage B: client table + toolbar (status filter Approved/Rejected/Cancelled)
 app/components/admin/DataToolbar.tsx       # reusable search + status filter (configurable filterOptions prop)
@@ -234,10 +245,15 @@ app/components/Header/LanguageSelector.tsx # shared language dropdown (extracted
 app/lib/header-config.ts                   # unified ITEM_ICONS / BRAND_LOGOS / getMenuIcon / isLogoutItem / isBrandItem
 app/lib/menu.ts                            # getMenu(slug) via unstable_cache(["menu","slug"], 300s)
 app/lib/companyLabels.ts                   # company value → label map (from USA/CA_COMPANIES)
-auth.ts                                    # events.signIn/signOut → revalidatePath("/", "layout")
+auth.ts                                    # events.signIn/signOut → revalidatePath("/", "layout"); jwt flags session.error on definitive refresh rejection
+app/lib/session-error.ts                   # REFRESH_ACCESS_TOKEN_ERROR + shouldMarkSessionExpired (pure, client-safe)
+app/components/SessionExpiryHandler.tsx    # session.error → signOut({ redirectTo: "/login?expired=1" }) once (rendered inside SessionWrapper)
+app/(public)/(auth)/login/_components/SessionExpiredNotice.tsx  # one-time "session expired" note + strips the query param
 proxy.ts                                   # administrator + inspector → /dashboard/admin/requests; others → /dashboard/customer
 tests/components/StatusPill.test.tsx / PaginationFooter.test.tsx / DataTable.test.tsx / AdminSidebar.test.tsx / Header.test.tsx / admin-pages.test.tsx
-tests/lib/header-config.test.ts            # + 36 new tests (241 total, 29 files)
+tests/lib/header-config.test.ts            # + 36 new tests (295 tests, 36 files)
+tests/lib/session-error.test.ts / tests/components/SessionExpiryHandler.test.tsx / tests/components/SessionExpiredNotice.test.tsx
+tests/lib/approval-fields.test.ts / tests/actions/admin.test.ts / tests/components/CertificatesPanel.test.tsx / tests/components/ApprovalDialog.test.tsx  # Phase 6.3
 ```
 
 ## Skills

@@ -9,6 +9,7 @@ export interface ListAdminHrefOptions {
   page?: number;
   status?: string | null;
   search?: string;
+  role?: string | null;
 }
 
 export function buildListHref({
@@ -29,9 +30,11 @@ export function buildListAdminHref({
   page = 1,
   status = null,
   search = "",
+  role = null,
 }: ListAdminHrefOptions = {}): string {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
+  if (role) params.set("role", role);
   if (search) params.set("search", search);
   if (page) params.set("page", String(page));
   const qs = params.toString();

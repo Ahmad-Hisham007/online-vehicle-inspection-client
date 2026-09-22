@@ -2,18 +2,25 @@
 
 ## Phase 1: Auth & WP Infrastructure ✅ DONE
 
-| Task | Status |
-|------|--------|
-| Next.js 16 + Tailwind v4 + shadcn setup | Done |
-| NextAuth v5 (Credentials + Google OAuth) | Done |
-| WPGraphQL JWT login mutation (`auth.ts`) | Done |
-| Google Site Token login (`signIn` callback) | Done |
-| Custom `User` type (`next-auth.d.ts`) | Done |
-| Registration API (`/api/register`) | Done |
-| Login/signup flip-card UI | Done |
-| Middleware (`proxy.ts`) | Done |
+| Task                                        | Status |
+| ------------------------------------------- | ------ |
+| Next.js 16 + Tailwind v4 + shadcn setup     | Done   |
+| NextAuth v5 (Credentials + Google OAuth)    | Done   |
+| WPGraphQL JWT login mutation (`auth.ts`)    | Done   |
+| Google Site Token login (`signIn` callback) | Done   |
+| Custom `User` type (`next-auth.d.ts`)       | Done   |
+| Registration API (`/api/register`)          | Done   |
+| Login/signup flip-card UI                   | Done   |
+| Middleware (`proxy.ts`)                     | Done   |
 
 **Registration details**: `/api/register` forwards `phoneNumber` (persisted to the ACF "User fields" group `phone_number`) and sends an auto-generated WP `username` (`{first+last|email-local}` → `[a-z0-9]` + `_` + 8-char UUID) rather than the raw email. Depends on a WP-side `RegisterUserInput` extension (WPCode snippet #277 on the live CMS): the input field is added via the `graphql_input_fields` filter — direct `register_graphql_field` on `RegisterUserInput` does not apply on WPGraphQL 2.21 — and persisted via `graphql_user_object_mutation_update_additional_data` scoped to `registerUser`.
+
+**Auth & session robustness (follow-up)**:
+
+- **Google login fixed for admins**: WP SITETOKEN provider was configured with `loginOptions.metaKey: "login"` (username match) while the app authenticates Google identities by **email** → only accounts whose WP username == email worked. Set to `"email"` on `wpgraphql_login_provider_siteToken` (live CMS).
+- **Refresh query root cause**: `auth.ts` `jwt` refresh selected `refreshToken`/`refreshTokenExpiration` from `refreshToken(...)`, but the plugin's `RefreshTokenPayload` only exposes `authToken`/`authTokenExpiration`/`success` → the refresh always failed validation → expired tokens were sent → all token-bearing fetches failed ~5 min after login. Fixed with a **single shared** `app/lib/refresh-token.ts` `refreshAccessToken()` (3-field query) used by both the `jwt` callback and `wp-auth.ts` `getValidAccessToken()`. A real WP rejection throws `SessionExpiredError`; transient network stays non-fatal. NextAuth session `maxAge` set to 30 days. WP access-token lifetime raised 300s → 900s (WPCode snippet #280). No proactive ping/SessionGuard (per-request auto-refresh only).
+- **Session expiry → forced logout**: the `jwt` callback flags definitive WP rejections with `token.error = "RefreshAccessTokenError"` (exposed as `session.error`; transient failures stay silent) and clears it on success. Server actions (`listInspections`, `fetchInspection`, `listRequests`, `listUsers`, `listArchivedInspections`, `listInspectors`, `assignInspector`) fail fast via `app/lib/session-error.ts` `assertSessionActive()` / `SessionExpiredError` before any WP call. Client `SessionExpiryHandler` (inside `SessionWrapper`) reacts to `session.error` with a single `signOut({ redirectTo: "/login?expired=1" })`; `SessionExpiredNotice` on the login flip-card shows a one-time message and strips the query param. No polling.
+- **Redirect-loop guard (`903fe27`)**: `shouldForceSignOut(pathname, error)` suppresses the forced sign-out on `/login` (otherwise sign-out and the login redirect ping-pong), `proxy.ts` treats a session carrying `error` as logged out and redirects it to `/login?expired=1`, and the `jwt` callback short-circuits once the token is already flagged so a dead session stops probing WP on every `auth()` call.
 
 ---
 
@@ -40,13 +47,13 @@ interface InspectionState {
 
 ### 2.2 — Step Schemas (`app/lib/schemas/`)
 
-| File | Fields |
-|------|--------|
-| `vehicleInfo.ts` | `licensePlate`, `mileage` |
-| `vinInfo.ts` | `vin`, `make`, `model`, `year`, `fuelType` |
+| File                 | Fields                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `vehicleInfo.ts`     | `licensePlate`, `mileage`                                                                                                       |
+| `vinInfo.ts`         | `vin`, `make`, `model`, `year`, `fuelType`                                                                                      |
 | `inspectionScope.ts` | `country`, `state`, `companies`, `tiresOlderThan6Years`, `batteryOlderThan5Years`, `voltageGreaterThan12_1V` (with superRefine) |
-| `uploadFields.ts` | 16 file metadata fields across 4 media steps |
-| `reviewAgreement.ts` | `userAgreement` (literal true), `inspectionAgreement` (literal true) |
+| `uploadFields.ts`    | 16 file metadata fields across 4 media steps                                                                                    |
+| `reviewAgreement.ts` | `userAgreement` (literal true), `inspectionAgreement` (literal true)                                                            |
 
 ### 2.3 — Multistep Form Container
 
@@ -63,37 +70,39 @@ interface InspectionState {
 
 ### 2.4 — Step Components
 
-| Component | File | Description |
-|-----------|------|-------------|
+| Component              | File                                                                     | Description                                                                            |
+| ---------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | `StepVehicleSelection` | `app/dashboard/customer/inspection/_components/StepVehicleSelection.tsx` | License plate, mileage, country, state, companies (logo grid), Turo conditional radios |
-| `StepVinLicense` | `app/dashboard/customer/inspection/_components/StepVinLicense.tsx` | VIN, make, model, year (dropdown 1990-2026), fuelType |
-| `StepMediaA` | `app/dashboard/customer/inspection/_components/StepMediaA.tsx` | Registration card photo, odometer photo, horn video |
-| `StepMediaB` | `app/dashboard/customer/inspection/_components/StepMediaB.tsx` | Interior driver/passenger photos + seat adjustments |
-| `StepMediaC` | `app/dashboard/customer/inspection/_components/StepMediaC.tsx` | Back seat, exterior left/right, front/rear videos |
-| `StepMediaD` | `app/dashboard/customer/inspection/_components/StepMediaD.tsx` | 4 tire photos |
-| `StepReviewPayment` | `app/dashboard/customer/inspection/_components/StepReviewPayment.tsx` | Order summary, PriceSummary, agreement checkboxes |
+| `StepVinLicense`       | `app/dashboard/customer/inspection/_components/StepVinLicense.tsx`       | VIN, make, model, year (dropdown 1990-2026), fuelType                                  |
+| `StepMediaA`           | `app/dashboard/customer/inspection/_components/StepMediaA.tsx`           | Registration card photo, odometer photo, horn video                                    |
+| `StepMediaB`           | `app/dashboard/customer/inspection/_components/StepMediaB.tsx`           | Interior driver/passenger photos + seat adjustments                                    |
+| `StepMediaC`           | `app/dashboard/customer/inspection/_components/StepMediaC.tsx`           | Back seat, exterior left/right, front/rear videos                                      |
+| `StepMediaD`           | `app/dashboard/customer/inspection/_components/StepMediaD.tsx`           | 4 tire photos                                                                          |
+| `StepReviewPayment`    | `app/dashboard/customer/inspection/_components/StepReviewPayment.tsx`    | Order summary, PriceSummary, agreement checkboxes                                      |
 
 ### 2.5 — Shared Components Created
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| `FormSelect` | `app/components/FormSelect.tsx` | Generic `<T extends FieldValues>` select with Controller |
-| `ImageCheckboxGroup` | `app/components/ImageCheckboxGroup.tsx` | Company logo grid with selection badges |
-| `FileUploadField` | `app/components/FileUploadField.tsx` | File upload with drag-drop, progress, icon preview, retry |
-| `PriceSummary` | `app/components/PriceSummary.tsx` | Live price from `calculatePrice()` |
-| `StepIndicator` | `app/components/StepIndicator.tsx` | 7-step two-row stepper (circles + connectors + labels) |
+| Component            | File                                    | Purpose                                                   |
+| -------------------- | --------------------------------------- | --------------------------------------------------------- |
+| `FormSelect`         | `app/components/FormSelect.tsx`         | Generic `<T extends FieldValues>` select with Controller  |
+| `ImageCheckboxGroup` | `app/components/ImageCheckboxGroup.tsx` | Company logo grid with selection badges                   |
+| `FileUploadField`    | `app/components/FileUploadField.tsx`    | File upload with drag-drop, progress, icon preview, retry |
+| `PriceSummary`       | `app/components/PriceSummary.tsx`       | Live price from `calculatePrice()`                        |
+| `StepIndicator`      | `app/components/StepIndicator.tsx`      | 7-step two-row stepper (circles + connectors + labels)    |
 
 ### 2.6 — Key Details
 
 **Company logos** at `public/company-logos/` with mixed extensions (png/jpg/jpeg), `ext` field in `constants.ts`.
 
 **Pricing formula**:
+
 ```
 if (uber && lyft) → $39 for the pair + $24 per other company
 else → $24 per company
 ```
 
 **Turo conditional logic** (on Step 1):
+
 - "Manufacture date less than 6 years?" → Yes required to proceed
 - "Battery less than 5 years?" → Yes or No
   - If No → "Voltage greater than 12.1V?" → Yes required to proceed
@@ -102,15 +111,15 @@ else → $24 per company
 
 ### 2.7 — Testing & QA
 
-| Layer | What | Status |
-|-------|------|--------|
-| Vitest + RTL setup | `vitest.config.ts`, `tests/setup.ts` | Done |
-| Constants tests | `tests/constants.test.ts` (12 tests) | Done |
-| Schema tests | `tests/schemas.test.ts` (24 tests) | Done |
-| Store tests | `tests/store.test.ts` (9 tests) | Done |
-| Component tests | 6 files, 60 tests total | Done |
-| E2E Playwright | `e2e/inspection-form.spec.ts` | Done |
-| Auth fix | `auth.ts` — missing headers + try/catch | Done |
+| Layer              | What                                    | Status |
+| ------------------ | --------------------------------------- | ------ |
+| Vitest + RTL setup | `vitest.config.ts`, `tests/setup.ts`    | Done   |
+| Constants tests    | `tests/constants.test.ts` (12 tests)    | Done   |
+| Schema tests       | `tests/schemas.test.ts` (24 tests)      | Done   |
+| Store tests        | `tests/store.test.ts` (9 tests)         | Done   |
+| Component tests    | 6 files, 60 tests total                 | Done   |
+| E2E Playwright     | `e2e/inspection-form.spec.ts`           | Done   |
+| Auth fix           | `auth.ts` — missing headers + try/catch | Done   |
 
 **Coverage goal**: 100% statements/lines, ≥95% branches (3 unreachable branches accepted).
 
@@ -141,6 +150,7 @@ function useFileUpload() {
 ```
 
 **Behavior**:
+
 - `upload(file)` → calls `generateUploadUrl`, detects provider via `uploadUrl` sentinel
   - Uploadcare: uses `@uploadcare/upload-client` SDK
   - S3: uses fetch PUT to presigned URL
@@ -171,14 +181,14 @@ function useFileUpload() {
 
 ### 3.5 — Environment Variables
 
-| Variable | Required | Purpose |
-|----------|----------|---------|
-| `UPLOADCARE_PUBLIC_KEY` | Server-side | Server Action detects Uploadcare mode |
-| `NEXT_PUBLIC_UPLOADCARE_PUBLIC_KEY` | Client-side | `@uploadcare/upload-client` SDK |
-| `AWS_ACCESS_KEY_ID` | Prod only | S3 presigned URL generation |
-| `AWS_SECRET_ACCESS_KEY` | Prod only | S3 credentials |
-| `AWS_BUCKET` | Prod only | S3 bucket name |
-| `AWS_REGION` | Prod only | S3 region |
+| Variable                            | Required    | Purpose                               |
+| ----------------------------------- | ----------- | ------------------------------------- |
+| `UPLOADCARE_PUBLIC_KEY`             | Server-side | Server Action detects Uploadcare mode |
+| `NEXT_PUBLIC_UPLOADCARE_PUBLIC_KEY` | Client-side | `@uploadcare/upload-client` SDK       |
+| `AWS_ACCESS_KEY_ID`                 | Prod only   | S3 presigned URL generation           |
+| `AWS_SECRET_ACCESS_KEY`             | Prod only   | S3 credentials                        |
+| `AWS_BUCKET`                        | Prod only   | S3 bucket name                        |
+| `AWS_REGION`                        | Prod only   | S3 region                             |
 
 ### 3.6 — Media Step Validation
 
@@ -186,14 +196,15 @@ All 4 media steps (StepMediaA/B/C/D) validate that all their file fields have `s
 
 ### 3.7 — Testing
 
-| Test File | Tests | Covers |
-|-----------|-------|--------|
-| `tests/upload-action.test.ts` | 2 | `generateUploadUrl` Uploadcare sentinel path, no-provider throw |
-| `tests/useFileUpload.test.ts` | 5 | Upload via Uploadcare, progress callback, retry on failure, all retries exhausted, cancel abort |
+| Test File                     | Tests | Covers                                                                                          |
+| ----------------------------- | ----- | ----------------------------------------------------------------------------------------------- |
+| `tests/upload-action.test.ts` | 2     | `generateUploadUrl` Uploadcare sentinel path, no-provider throw                                 |
+| `tests/useFileUpload.test.ts` | 5     | Upload via Uploadcare, progress callback, retry on failure, all retries exhausted, cancel abort |
 
 ### 3.8 — next.config.ts
 
 Added `images.remotePatterns` for:
+
 - `*.ucarecdn.com` (Uploadcare CDN)
 - `*.ucarecd.net` (Uploadcare upload domain)
 - `*.s3.*.amazonaws.com` (S3)
@@ -202,45 +213,46 @@ Added `images.remotePatterns` for:
 
 ## Phase 4: Stripe Payments & Webhooks ✅ DONE
 
-| Task | Status | Files |
-|------|--------|-------|
-| 4.1 — Inspection Draft | ✅ Done | `app/actions/inspection.ts` — `createInspectionDraft` |
-| 4.2 — PaymentIntent + Payment CPT | ✅ Done | `app/actions/payment.ts` — `createPaymentIntent` |
-| 4.3 — Payment Status Polling | ✅ Done | `app/api/payment/status/route.ts` |
-| 4.4 — Stripe Webhook | ✅ Done | `app/api/webhooks/stripe/route.ts` |
-| 4.5 — PaymentForm | ✅ Done | `app/components/PaymentForm.tsx` |
-| 4.6 — Success Page | ✅ Done | `app/dashboard/customer/success/page.tsx` |
-| 4.7 — StepReviewPayment integration | ✅ Done | `StepReviewPayment.tsx` |
-| 4.8 — Types & Constants | ✅ Done | `app/lib/types.ts`, `inspectionStore.ts` |
-| 4.9 — Env docs | ✅ Done | AGENTS.md, session-summary.md |
-| 4.10 — E2E Tests | ✅ Done | `e2e/payment.spec.ts` (+ `e2e/inspection-form.spec.ts`) |
+| Task                                | Status  | Files                                                   |
+| ----------------------------------- | ------- | ------------------------------------------------------- |
+| 4.1 — Inspection Draft              | ✅ Done | `app/actions/inspection.ts` — `createInspectionDraft`   |
+| 4.2 — PaymentIntent + Payment CPT   | ✅ Done | `app/actions/payment.ts` — `createPaymentIntent`        |
+| 4.3 — Payment Status Polling        | ✅ Done | `app/api/payment/status/route.ts`                       |
+| 4.4 — Stripe Webhook                | ✅ Done | `app/api/webhooks/stripe/route.ts`                      |
+| 4.5 — PaymentForm                   | ✅ Done | `app/components/PaymentForm.tsx`                        |
+| 4.6 — Success Page                  | ✅ Done | `app/dashboard/customer/success/page.tsx`               |
+| 4.7 — StepReviewPayment integration | ✅ Done | `StepReviewPayment.tsx`                                 |
+| 4.8 — Types & Constants             | ✅ Done | `app/lib/types.ts`, `inspectionStore.ts`                |
+| 4.9 — Env docs                      | ✅ Done | AGENTS.md, session-summary.md                           |
+| 4.10 — E2E Tests                    | ✅ Done | `e2e/payment.spec.ts` (+ `e2e/inspection-form.spec.ts`) |
 
 ### 4.11 — Standardization Fixes (Final Session)
 
-| Fix | Description |
-|-----|-------------|
+| Fix                          | Description                                                                                                       |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | WPGraphQL standard mutations | Plain integer string IDs (`"173"`), `paymentFields`/`inspectionDetails` nested inputs, JWT auth for all mutations |
-| JWT webhook auth | Service account login via `WP_WEBHOOK_USERNAME`/`WP_WEBHOOK_PASSWORD`, token cached per invocation |
-| Amount normalization | WordPress stores dollars (`Math.round(amountCents/100)`), Stripe receives cents |
-| Payment metadata | `user_ip`, `user_agent`, `referrer`, `payment_method`, `amount_cents` — built via `headers()` |
-| Inspection title | `"Inspection - {plate}"`, then updated to `"Inspection #{id} - {plate}"` after creation |
-| Back button step 7 | Same style as steps 1–6 |
-| Role-based middleware | Non-admin redirected from `/dashboard` and `/dashboard/admin` to `/dashboard/customer` |
-| Field mapping | `rightRearTirePhoto` mapping removed, `interiorBackSeatPhoto` → `interiorBackseatPhoto` |
+| JWT webhook auth             | Service account login via `WP_WEBHOOK_USERNAME`/`WP_WEBHOOK_PASSWORD`, token cached per invocation                |
+| Amount normalization         | WordPress stores dollars (`Math.round(amountCents/100)`), Stripe receives cents                                   |
+| Payment metadata             | `user_ip`, `user_agent`, `referrer`, `payment_method`, `amount_cents` — built via `headers()`                     |
+| Inspection title             | `"Inspection - {plate}"`, then updated to `"Inspection #{id} - {plate}"` after creation                           |
+| Back button step 7           | Same style as steps 1–6                                                                                           |
+| Role-based middleware        | Non-admin redirected from `/dashboard` and `/dashboard/admin` to `/dashboard/customer`                            |
+| Field mapping                | `rightRearTirePhoto` mapping removed, `interiorBackSeatPhoto` → `interiorBackseatPhoto`                           |
 
 ### 4.12 — WP Token Auto-Refresh & Debug (Complete)
 
-| Task | Status | Files |
-|------|--------|-------|
-| Token refresh logic | ✅ Done | `app/lib/wp-auth.ts` — `getValidAccessToken()`, `wpFetch()` |
-| Auth types extension | ✅ Done | `next-auth.d.ts` — `refreshToken`, `refreshTokenExpiration` |
-| Login mutation updates | ✅ Done | `auth.ts` — requests `authTokenExpiration`, `refreshToken`, `refreshTokenExpiration` |
-| WP headers constant | ✅ Done | `app/lib/wp-headers.ts` — `WP_SITE_TOKEN_HEADER` |
-| Debug logging in authorize | ✅ Done | `auth.ts` — `[DEBUG-LAYER-1]` marked logs |
-| Debug route | ✅ Done | `app/api/debug/graphql/route.ts` |
-| Test mock updates | ✅ Done | All 147 tests pass with new token fields |
+| Task                       | Status  | Files                                                                                |
+| -------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| Token refresh logic        | ✅ Done | `app/lib/wp-auth.ts` — `getValidAccessToken()`, `wpFetch()`                          |
+| Auth types extension       | ✅ Done | `next-auth.d.ts` — `refreshToken`, `refreshTokenExpiration`                          |
+| Login mutation updates     | ✅ Done | `auth.ts` — requests `authTokenExpiration`, `refreshToken`, `refreshTokenExpiration` |
+| WP headers constant        | ✅ Done | `app/lib/wp-headers.ts` — `WP_SITE_TOKEN_HEADER`                                     |
+| Debug logging in authorize | ✅ Done | `auth.ts` — `[DEBUG-LAYER-1]` marked logs                                            |
+| Debug route                | ✅ Done | `app/api/debug/graphql/route.ts`                                                     |
+| Test mock updates          | ✅ Done | All 147 tests pass with new token fields                                             |
 
 **Key Implementation Details:**
+
 - **Auto-refresh**: `getValidAccessToken()` checks `accessTokenExpiration`; if < 1 min, calls `refreshToken` mutation with `X-OVI-0982-Token` header
 - **Shared wpFetch**: All WP mutations route through `wpFetch()` — auto-refreshes token, validates content-type, logs non-JSON responses
 - **Debug layers**: `authorize()` logs full request/response; `/api/debug/graphql` returns egress IP + raw WP response
@@ -248,11 +260,12 @@ Added `images.remotePatterns` for:
 
 ### 4.13 — Refresh Token Origin Header Fix (Complete)
 
-| Task | Status | Files |
-|------|--------|-------|
+| Task                              | Status  | Files                                                                 |
+| --------------------------------- | ------- | --------------------------------------------------------------------- |
 | Origin header on refresh mutation | ✅ Done | `app/lib/wp-auth.ts` — added Origin header to `getValidAccessToken()` |
 
 **Details:**
+
 - The `refreshToken` mutation was failing with "Unauthorized request origin" because the `Origin` header was missing
 - Added `Origin` header using same logic as `wpFetch`: `NEXT_PUBLIC_SITE_URL` → `AUTH_URL` → `localhost:3000`
 - PHP snippet on WP side handles CORS/origin validation
@@ -301,22 +314,23 @@ Added `images.remotePatterns` for:
 
 ### 4.5 — Test Cards
 
-| Card | Scenario |
-|------|----------|
-| `4242 4242 4242 4242` | Success |
-| `4000 0000 0000 0002` | Decline |
+| Card                  | Scenario           |
+| --------------------- | ------------------ |
+| `4242 4242 4242 4242` | Success            |
+| `4000 0000 0000 0002` | Decline            |
 | `4000 0025 0000 3155` | Requires 3D Secure |
 
 ### 4.14 — Navigation Performance & Header Live Session (Complete)
 
-| Task | Status | Files |
-|------|--------|-------|
-| Remove redundant `router.refresh()` after push | ✅ Done | `LoginForm.tsx`, `SignupForm.tsx` |
-| Move HeaderNav out of Suspense | ✅ Done | `app/dashboard/layout.tsx`, `HeaderNav.tsx`, deleted `HeaderSkeleton.tsx` |
-| Per-menu loading skeleton | ✅ Done | New `HeaderMenuSkeleton.tsx` |
-| Header live session on public pages | ✅ Done | `app/components/Header/Header.tsx` |
+| Task                                           | Status  | Files                                                                     |
+| ---------------------------------------------- | ------- | ------------------------------------------------------------------------- |
+| Remove redundant `router.refresh()` after push | ✅ Done | `LoginForm.tsx`, `SignupForm.tsx`                                         |
+| Move HeaderNav out of Suspense                 | ✅ Done | `app/dashboard/layout.tsx`, `HeaderNav.tsx`, deleted `HeaderSkeleton.tsx` |
+| Per-menu loading skeleton                      | ✅ Done | New `HeaderMenuSkeleton.tsx`                                              |
+| Header live session on public pages            | ✅ Done | `app/components/Header/Header.tsx`                                        |
 
 **Header live session (00502 follow-up):**
+
 - **Bug**: Public pages (`/`, `/login`, `/register`) always showed "Login" in the menu because `app/(public)/layout.tsx` hardcoded `initialAuthStatus="unauthenticated"` and passed no session.
 - **Fix**: `Header.tsx` (client) now subscribes to `useSession()` — `effectiveSession = clientSession ?? session`, `authenticated` derived from live session/status, falling back to server prop. While `!session && status === "loading"` it renders `HeaderMenuSkeleton` instead of a wrong "Login" flash.
 - **Why not server-prop**: Passing `auth()` in the public layout would make public pages dynamic (cookies), losing static/ISR caching. Keeping them static (○ / 1h ISR) costs only a ~100-300ms client-session skeleton; page content streams immediately.
@@ -330,10 +344,10 @@ Added `images.remotePatterns` for:
 
 ### 5.1 — Status Enums & Shared Utilities
 
-| Task | Status | Files |
-|------|--------|-------|
+| Task                                     | Status  | Files                                                                          |
+| ---------------------------------------- | ------- | ------------------------------------------------------------------------------ |
 | Status enums, styles, types, utility CSS | ✅ Done | `app/lib/types.ts`, `app/lib/status.ts`, `app/globals.css` (`.scrollbar-none`) |
-| Date formatter | ✅ Done | `app/lib/format.ts` |
+| Date formatter                           | ✅ Done | `app/lib/format.ts`                                                            |
 
 - `INSPECTION_STATUSES`: `pending`, `paid`, `payment_failed`, `in_progress`, `approved`, `rejected`, `cancelled` — replaces all hard-coded status string literals (actions, webhooks, cards, badges).
 - `PAYMENT_STATUSES`: `pending`, `succeeded`, `failed`, `refunded`, `requires_action`, `processing`.
@@ -351,11 +365,11 @@ Added `images.remotePatterns` for:
 
 ### 5.3 — Listing UI Components
 
-| Component | File | Tests |
-|-----------|------|-------|
-| `StatusBadge` | `app/components/StatusBadge.tsx` | — |
-| `FilterInspectionsModal` (dialog primitive) | `components/ui/dialog.tsx`, `app/components/FilterInspectionsModal.tsx` | 5 |
-| `InspectionCard` | `app/components/InspectionCard.tsx` (chevron unfold, Payment Link + Car details) | 7 |
+| Component                                   | File                                                                             | Tests |
+| ------------------------------------------- | -------------------------------------------------------------------------------- | ----- |
+| `StatusBadge`                               | `app/components/StatusBadge.tsx`                                                 | —     |
+| `FilterInspectionsModal` (dialog primitive) | `components/ui/dialog.tsx`, `app/components/FilterInspectionsModal.tsx`          | 5     |
+| `InspectionCard`                            | `app/components/InspectionCard.tsx` (chevron unfold, Payment Link + Car details) | 7     |
 
 ### 5.4 — Pages & Routes
 
@@ -369,12 +383,12 @@ Added `images.remotePatterns` for:
 
 ### 5.5 — Navigation Performance Fix (00502)
 
-| Task | Files | Status |
-|------|-------|--------|
-| Remove redundant `router.refresh()` after `router.push()` | `LoginForm.tsx`, `SignupForm.tsx` | ✅ Done |
-| Per-menu loading skeleton | `app/components/Header/HeaderMenuSkeleton.tsx` (new); `HeaderSkeleton.tsx` deleted | ✅ Done |
-| Move `HeaderNav` out of Suspense (menu/auth passed as props) | `app/dashboard/layout.tsx`, `app/components/Header/HeaderNav.tsx` | ✅ Done |
-| Header live session on public pages (`useSession()`, skeleton while loading) | `app/components/Header/Header.tsx` | ✅ Done |
+| Task                                                                         | Files                                                                              | Status  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------- |
+| Remove redundant `router.refresh()` after `router.push()`                    | `LoginForm.tsx`, `SignupForm.tsx`                                                  | ✅ Done |
+| Per-menu loading skeleton                                                    | `app/components/Header/HeaderMenuSkeleton.tsx` (new); `HeaderSkeleton.tsx` deleted | ✅ Done |
+| Move `HeaderNav` out of Suspense (menu/auth passed as props)                 | `app/dashboard/layout.tsx`, `app/components/Header/HeaderNav.tsx`                  | ✅ Done |
+| Header live session on public pages (`useSession()`, skeleton while loading) | `app/components/Header/Header.tsx`                                                 | ✅ Done |
 
 Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 
@@ -414,12 +428,12 @@ Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 
 ### 5.10 — Testing & QA
 
-| Layer | Count | Status |
-|-------|-------|--------|
-| Vitest unit tests | 208 tests, 22 files | ✅ |
-| Coverage | Statements 100%, Lines 100% | ✅ |
-| E2E specs | `inspection-form`, `payment`, `customer-dashboard` (3) | ✅ |
-| Lint / Build | 0 errors, 8 pre-existing warnings / passes | ✅ |
+| Layer             | Count                                                  | Status |
+| ----------------- | ------------------------------------------------------ | ------ |
+| Vitest unit tests | 208 tests, 22 files                                    | ✅     |
+| Coverage          | Statements 100%, Lines 100%                            | ✅     |
+| E2E specs         | `inspection-form`, `payment`, `customer-dashboard` (3) | ✅     |
+| Lint / Build      | 0 errors, 8 pre-existing warnings / passes             | ✅     |
 
 **Deferred to Phase 6**: admin management table + approve/reject action bar wiring, `expiryDate` population (ACF field exists), PDF certificate generation + visible cert links (only render when approved).
 
@@ -430,6 +444,7 @@ Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 ### 6.1 — Admin Dashboard (Stage A ✅ DONE — UI/Design; Stage B 🚧 In Progress — Dynamic Data)
 
 **Single route-aware Header (root layout)**: `app/layout.tsx` fetches all 3 WP menus (cached) → `<Header menus={…}>`. No nested layout renders a header. `Header.tsx` uses `usePathname()` + `useSession()`:
+
 - Admin panel routes (`/dashboard/admin/*` excluding `/dashboard/admin/inspection`) → AdminHeader variant (language left, page title center from the admin panel menu item label, hamburger `md:hidden` only; mobile drawer = admin panel menu).
 - All other routes → standard header (language left, logo center, hamburger right) with role-based menu.
 - `app/lib/header-config.ts` — unified `ITEM_ICONS` / `BRAND_LOGOS` / `getMenuIcon` / `isLogoutItem` / `isBrandItem`.
@@ -446,15 +461,16 @@ Login→Dashboard perceived time: ~300ms (was 700–1800ms).
 
 Pattern mirrors the customer listing: **Server Components + Server Actions + `unstable_cache` (300s, tag-based) + URL searchParams (`?page&status&search`) + `useTransition` non-blocking nav + Suspense skeletons**.
 
-| Page | Status | Action | Cache tag | Filter |
-|------|--------|--------|-----------|--------|
-| Requests | ✅ Done | `listRequests` (`app/actions/requests.ts`) — `inspectionStatusNotIn: [approved,rejected,cancelled]` | `requests` | status: paid / pending / payment_failed |
-| Users | ✅ Done | `listUsers` (`app/actions/users.ts`) — `roleNotIn: [ADMINISTRATOR]` | `users` | search only |
-| Archive | ✅ Done (Task #1) | `listArchivedInspections` (`app/actions/archive.ts`) — `inspectionStatusIn: [approved,rejected,cancelled]` | `archive` | status: approved / rejected / cancelled |
-| Proposals | ⏳ Deferred (external WP dep) | — | — | — |
-| Settings | ⏳ Not started (Task #2) | `getSettings`/`updateSettings` (`app/actions/settings.ts`) | `users` | — |
+| Page      | Status                        | Action                                                                                                     | Cache tag  | Filter                                  |
+| --------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------- | --------------------------------------- |
+| Requests  | ✅ Done                       | `listRequests` (`app/actions/requests.ts`) — `inspectionStatusNotIn: [approved,rejected,cancelled]`        | `requests` | status: paid / pending / payment_failed |
+| Users     | ✅ Done                       | `listUsers` (`app/actions/users.ts`) — `roleNotIn: [ADMINISTRATOR]`; **edit page admin-only** (`getUser`/`updateUser`) | `users`    | search only                             |
+| Archive   | ✅ Done (Task #1)             | `listArchivedInspections` (`app/actions/archive.ts`) — `inspectionStatusIn: [approved,rejected,cancelled]` | `archive`  | status: approved / rejected / cancelled |
+| Proposals | ⏳ Deferred (external WP dep) | —                                                                                                          | —          | —                                       |
+| Settings  | ⏳ Not started (Task #2)      | `getSettings`/`updateSettings` (`app/actions/settings.ts`)                                                 | `users`    | —                                       |
 
 **Stage B components**:
+
 - `RequestsListing`/`RequestsContent`, `users/AdminUsersList`/`AdminUsersContent`, `ArchiveListing`/`ArchiveContent` — server listing (Suspense + skeleton) → client table + toolbar.
 - `DataToolbar` — reusable search (debounced 500ms) + status filter via configurable `filterOptions` prop (Requests passes paid/pending/payment_failed; Archive passes approved/rejected/cancelled).
 - `DataTable` (generic), `DataTableSkeleton`, `PaginationFooter` ("Showing X–Y of Z"), `AdminPageShell`, `StatusPill`.
@@ -462,7 +478,20 @@ Pattern mirrors the customer listing: **Server Components + Server Actions + `un
 - `app/lib/companyLabels.ts` — company value → label map (from `USA_COMPANIES`/`CA_COMPANIES`).
 - `app/lib/listing-url.ts` — `buildListAdminHref()` for admin URL building.
 
-**Acceptance**: SSR pages (no "use client" on `page.tsx`), URL-shareable filters, cache tags invalidated on mutations, role guard (administrator|inspector), lint/build/241 tests pass.
+**Acceptance**: SSR pages (no "use client" on `page.tsx`), URL-shareable filters, cache tags invalidated on mutations, role guard (administrator|inspector), lint/build/295 tests pass.
+
+**Follow-up tasks (006-B addendum)**:
+| Task | Status | Notes |
+|------|--------|-------|
+| A — Google login admin null user | ✅ Done | WP SITETOKEN `metaKey` `login`→`email` (see Phase 1 auth note) |
+| B — Branded "register first" UX | ✅ Done | `auth.ts` `pages.error: "/error"` + `app/(public)/error/page.tsx` (AccessDenied → register CTA + back); login flip-card untouched |
+| C — Branded error boundaries | ✅ Done | `ErrorState.tsx` + root `error`/`global-error`/`not-found` + `dashboard`, `(site)`, `(panel)` boundaries |
+| D — Inspection access security + inspector assignment | ✅ Done | `app/lib/access.ts` (`canAccessInspection`); `fetchInspection` gate → not-found; Requests/Archive assigned-only for inspectors; WP snippet #279 (`assigned_inspector` field + where-arg + role-scoped reads + admin-only mutation); Requests Assigned pill + dropdown + ✕; `listInspectors` cached (SSR-list standard), `assignInspector` default-refresh (mutation standard) |
+| E — Admin inspection creation flow | ⏳ Open | own `/dashboard/admin/inspection` + assign-user dropdown; block admins from `/dashboard/customer/*` |
+| Edit user page (out-of-context, 6.3 branch) | ✅ Done | admin-only `/dashboard/admin/users/[id]` (`notFound()` for non-admins); `getUser`/`updateUser` (`app/actions/users.ts`); `AdminUserDetail` + `userEdit` schema; `EditUserForm` (email, names, phone, role, read-only date joined; Update wired to `updateUser`; Block/Update-password UI-only); **phone not persisted** — WP `UpdateUserInput` lacks `phoneNumber` (needs a #277-style input extension); Users table Edit action admin-only |
+| Session/token robustness | ✅ Done | shared `refresh-token.ts` (3-field query), `SessionExpiredError`, session `maxAge` 30d, WP access-token 300→900s (snippet #280), no ping guard |
+| Session expiry → forced logout | ✅ Done | `auth.ts` jwt sets `token.error = "RefreshAccessTokenError"` on definitive rejection (transient silent; cleared on success) → `session.error`; `app/lib/session-error.ts` + `assertSessionActive()` fail-fast in listing/detail/assignment actions; `SessionExpiryHandler` in `SessionWrapper` → `signOut({ redirectTo: "/login?expired=1" })` once; `SessionExpiredNotice` one-time message (+ URL cleanup) |
+| Session-expiry redirect loop | ✅ Done | `903fe27` — `shouldForceSignOut(pathname, error)` never fires on `/login`; `proxy.ts` treats an errored session as logged out → `/login?expired=1`; `auth.ts` jwt early-returns once flagged (no per-call WP probe); +4 tests (299 total) |
 
 ### 6.2 — Customer Dashboard
 
@@ -472,7 +501,23 @@ Pattern mirrors the customer listing: **Server Components + Server Actions + `un
 - ✅ **Phase 6**: listing extracted to shared `InspectionListing` (mirrors to `/dashboard`)
 - Remaining (Phase 6 Stage B): past inspection report / PDF download links (tied to certificate generation)
 
-### 6.3 — PDF Certificate Generation (Stage B — deferred)
+### 6.3 — Admin Approval / Rejection Action ✅ DONE (UI; PDF deferred to 6.4)
+
+**Spec**: `.opencode/spec/006-3-admin-actions-in-inspection-detail/` (`spec.md`, `plan.md`, `session-summary.md`).
+
+| Task | Status | Files |
+| --- | --- | --- |
+| Availability helpers | ✅ Done | `app/lib/status.ts` — `canApproveInspection` (`paid`/`in_progress`), `canRejectInspection` (all but `paid`/`in_progress`/`approved`) |
+| Approval field registry | ✅ Done | `app/lib/approval-fields.ts` — `APPROVAL_GROUPS` (Vehicle/Registration/Condition/Brakes/Tires/Inspection/Handler/Host), precise types, `visibleFor`, `getVisibleFields`, cert companies |
+| Detail pre-fill | ✅ Done | `app/actions/inspections.ts` — `DETAIL_QUERY` + `mapApprovalFields()` → `InspectionDetail.approvalFields` |
+| Reject action | ✅ Done | `app/actions/admin.ts` — `rejectInspection` → `inspectionDetails.inspectionStatus = "rejected"`, revalidates `requests`/`archive`/`inspections` |
+| Reject UI | ✅ Done | `app/components/InspectionDetailView/RejectDialog.tsx` + enablement in `CertificatesPanel.tsx`; confirm toasts + `router.refresh()` |
+| Approve UI | ✅ Done | `app/components/InspectionDetailView/ApprovalDialog.tsx` + `ApprovalCompanyForm.tsx`; one accordion per cert company (lyft/uber/turo), registry-driven groups, **Generate** (icon empty→checked + placeholder new tab) and inline **Save** (stub); `components/ui/accordion.tsx` |
+| PDF engine + approval mutation | ⏳ Deferred | Phase 6.4 (`approveInspection`, real Generate output, certificate field persistence, `expiryDate`) |
+
+**Notes**: Reject allows `pending`/`payment_failed`/`rejected`/`cancelled`. Approve is disabled outside `paid`/`in_progress`. Form field edits are local state only; nothing except the reject status is written to WP this phase. Tests: `tests/lib/status.test.ts`, `tests/lib/approval-fields.test.ts`, `tests/actions/admin.test.ts`, `tests/components/{CertificatesPanel,ApprovalDialog}.test.tsx`.
+
+### 6.4 — PDF Certificate Generation (deferred)
 
 **File**: `app/actions/pdf.ts`
 
@@ -480,14 +525,7 @@ Pattern mirrors the customer listing: **Server Components + Server Actions + `un
 - Uses a PDF generation library (e.g., `@react-pdf/renderer` or server-side Puppeteer)
 - 68 templates — template selection based on `inspectionType` + `vehicleMake` + `year`
 - Stores PDF URL in WP via GraphQL (never in Media Library)
-
-### 6.4 — Admin Approval Action (Stage B — deferred)
-
-**File**: `app/actions/admin.ts`
-
-- `approveInspection(inspectionId: string): Promise<void>` — triggers PDF generation
-- `rejectInspection(inspectionId: string, reason: string): Promise<void>` — sends rejection notification
-- Both update WP status via GraphQL mutation
+- Wires `ApprovalDialog` Generate/Save to real output + `approveInspection` (status `approved`, cert fields, `expiryDate`)
 
 ---
 
