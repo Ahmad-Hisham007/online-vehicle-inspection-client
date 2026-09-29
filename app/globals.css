@@ -56,32 +56,32 @@
   --card-foreground: oklch(0.148 0.004 228.8);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.148 0.004 228.8);
-  --primary: oklch(0.704 0.14 182.503);
-  --primary-foreground: oklch(0.984 0.014 180.72);
+  --primary: oklch(0.627 0.257 25.33);
+  --primary-foreground: oklch(0.985 0.002 25);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.963 0.002 197.1);
-  --muted-foreground: oklch(0.56 0.021 213.5);
-  --accent: oklch(0.963 0.002 197.1);
-  --accent-foreground: oklch(0.218 0.008 223.9);
+  --muted: oklch(96.269% 0.00212 14.347);
+  --muted-foreground: oklch(0.56 0.021 25);
+  --accent: oklch(0.963 0.002 25);
+  --accent-foreground: oklch(0.218 0.008 25);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.925 0.005 214.3);
-  --input: oklch(0.925 0.005 214.3);
-  --ring: oklch(0.723 0.014 214.4);
-  --chart-1: oklch(0.855 0.138 181.071);
-  --chart-2: oklch(0.704 0.14 182.503);
-  --chart-3: oklch(0.6 0.118 184.704);
-  --chart-4: oklch(0.511 0.096 186.391);
-  --chart-5: oklch(0.437 0.078 188.216);
+  --border: oklch(0.925 0.005 25);
+  --input: oklch(0.925 0.005 25);
+  --ring: oklch(0.723 0.014 25);
+  --chart-1: oklch(0.855 0.138 25);
+  --chart-2: oklch(0.704 0.2 25.33);
+  --chart-3: oklch(0.6 0.18 25);
+  --chart-4: oklch(0.511 0.16 25);
+  --chart-5: oklch(0.437 0.14 25);
   --radius: 0.625rem;
-  --sidebar: oklch(0.987 0.002 197.1);
+  --sidebar: oklch(0.987 0.002 25);
   --sidebar-foreground: oklch(0.148 0.004 228.8);
-  --sidebar-primary: oklch(0.704 0.14 182.503);
-  --sidebar-primary-foreground: oklch(0.984 0.014 180.72);
-  --sidebar-accent: oklch(0.963 0.002 197.1);
-  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-  --sidebar-border: oklch(0.925 0.005 214.3);
-  --sidebar-ring: oklch(0.723 0.014 214.4);
+  --sidebar-primary: oklch(0.627 0.257 25.33);
+  --sidebar-primary-foreground: oklch(0.985 0.002 25);
+  --sidebar-accent: oklch(0.963 0.002 25);
+  --sidebar-accent-foreground: oklch(0.218 0.008 25);
+  --sidebar-border: oklch(0.925 0.005 25);
+  --sidebar-ring: oklch(0.723 0.014 25);
 }
 
 .dark {
@@ -91,31 +91,31 @@
   --card-foreground: oklch(0.987 0.002 197.1);
   --popover: oklch(0.218 0.008 223.9);
   --popover-foreground: oklch(0.987 0.002 197.1);
-  --primary: oklch(0.437 0.078 188.216);
-  --primary-foreground: oklch(0.984 0.014 180.72);
+  --primary: oklch(0.55 0.22 25.33);
+  --primary-foreground: oklch(0.985 0.002 25);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.275 0.011 216.9);
-  --muted-foreground: oklch(0.723 0.014 214.4);
-  --accent: oklch(0.275 0.011 216.9);
-  --accent-foreground: oklch(0.987 0.002 197.1);
+  --muted: oklch(0.275 0.011 25);
+  --muted-foreground: oklch(0.723 0.014 25);
+  --accent: oklch(0.275 0.011 25);
+  --accent-foreground: oklch(0.987 0.002 25);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.56 0.021 213.5);
-  --chart-1: oklch(0.855 0.138 181.071);
-  --chart-2: oklch(0.704 0.14 182.503);
-  --chart-3: oklch(0.6 0.118 184.704);
-  --chart-4: oklch(0.511 0.096 186.391);
-  --chart-5: oklch(0.437 0.078 188.216);
-  --sidebar: oklch(0.218 0.008 223.9);
-  --sidebar-foreground: oklch(0.987 0.002 197.1);
-  --sidebar-primary: oklch(0.704 0.14 182.503);
-  --sidebar-primary-foreground: oklch(0.277 0.046 192.524);
-  --sidebar-accent: oklch(0.275 0.011 216.9);
-  --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+  --ring: oklch(0.56 0.021 25);
+  --chart-1: oklch(0.855 0.138 25);
+  --chart-2: oklch(0.704 0.2 25.33);
+  --chart-3: oklch(0.6 0.18 25);
+  --chart-4: oklch(0.511 0.16 25);
+  --chart-5: oklch(0.437 0.14 25);
+  --sidebar: oklch(0.218 0.008 25);
+  --sidebar-foreground: oklch(0.987 0.002 25);
+  --sidebar-primary: oklch(0.55 0.22 25.33);
+  --sidebar-primary-foreground: oklch(0.277 0.046 25);
+  --sidebar-accent: oklch(0.275 0.011 25);
+  --sidebar-accent-foreground: oklch(0.987 0.002 25);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.56 0.021 213.5);
+  --sidebar-ring: oklch(0.56 0.021 25);
 }
 
 @layer base {
@@ -155,4 +155,101 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Scoped to EmblaCarousel.tsx — won't affect other embla carousels (e.g. logoCarousel) */
+.embla-hero-carousel {
+  --slide-height: 80vh;
+  --slide-spacing: 1rem;
+  --slide-size: 100%;
+  height: var(--slide-height);
+}
+
+.embla-hero-carousel .embla__viewport {
+  overflow: hidden;
+  height: 80vh;
+}
+
+.embla-hero-carousel .embla__container {
+  display: flex;
+  flex-direction: column;
+  touch-action: pan-x pinch-zoom;
+  height: 100%;
+}
+
+.embla-hero-carousel .embla__slide {
+  transform: translate3d(0, 0, 0);
+  flex: 0 0 var(--slide-size);
+  min-width: 0;
+  border-radius: 0;
+  height: 100%;
+}
+
+.embla-hero-carousel .embla__slide__img {
+  display: block;
+  height: var(--slide-height);
+  width: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 0;
+}
+
+.embla-hero-carousel .embla__controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  justify-content: space-between;
+  gap: 1.2rem;
+  margin-top: 1.8rem;
+}
+
+.embla-hero-carousel .embla__parallax {
+  height: 100%;
+  overflow: hidden;
+}
+
+.embla-hero-carousel .embla__parallax__layer {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  will-change: transform;
+}
+
+.embla-hero-carousel .embla__parallax__img {
+  max-width: none;
+  width: 100%;
+  flex: 0 0 calc(115% + (var(--slide-spacing) * 2));
+  height: calc(115% + (var(--slide-spacing) * 2)) !important;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Logo carousel */
+
+.embla.logo-carousel {
+  width: 100%;
+  --slide-height: auto;
+  --slide-spacing: 7rem;
+  --slide-size: 20%;
+}
+
+.logo-carousel .embla__container {
+  touch-action: pan-y pinch-zoom;
+  margin-left: calc(var(--slide-spacing) * -1);
+}
+
+.logo-carousel .embla__slide {
+  transform: translate3d(0, 0, 0);
+  flex: 0 0 var(--slide-size);
+  min-width: 0;
+  padding-left: var(--slide-spacing);
+}
+
+.logo-carousel .embla__controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  justify-content: space-between;
+  gap: 1.2rem;
+  margin-top: 1.8rem;
 }
