@@ -9,6 +9,7 @@ import {
   IoMdArrowDown,
   IoMdCheckmarkCircleOutline,
 } from "react-icons/io";
+import Link from "next/link";
 
 const HowItWorks = () => {
   const steps = [
@@ -48,7 +49,7 @@ const HowItWorks = () => {
           {/* Left Column: Heading & Subtitle */}
           <div className="lg:col-span-6 space-y-4">
             <div className="inline-flex items-center gap-3">
-              <GiCarWheel className="animate-spin text-red-600 text-xl duration-[20s]" />
+              <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
               <span className="text-sm font-semibold text-red-700 tracking-wide">
                 Fast, easy, and risk-free.
               </span>
@@ -82,10 +83,12 @@ const HowItWorks = () => {
 
             {/* CTA Button */}
             <div className="pt-2">
-              <Button className="gap-3 px-8 py-3.5 text-base uppercase rounded-full tracking-wider">
-                Start Now
-                <RiArrowRightLongLine className="w-5 h-5 text-xl" />
-              </Button>
+              <Link href="http://localhost:3000/dashboard/customer/inspection">
+                <Button className="gap-3 px-8 py-3.5 text-base uppercase rounded-full tracking-wider">
+                  Start Now
+                  <RiArrowRightLongLine className="w-5 h-5 text-xl" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -143,7 +146,7 @@ const HowItWorks = () => {
           {/* Row 2: Steps 3 & 4 (Reversed Arrow Sequence) */}
           <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
             {/* Step 3 */}
-            <div className="md:col-span-5 relative group bg-white p-3 rounded-2xl border border-stone-200/70 shadow-md hover:shadow-xl hover:border-red-200 transition-all duration-300 order-1 md:order-1">
+            <div className="md:col-span-5 relative group bg-white p-3 rounded-2xl border border-stone-200/70 shadow-md hover:shadow-xl hover:border-red-200 transition-all duration-300 order-1 md:order-3">
               <span className="absolute top-5 left-5 z-10 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
                 Step {steps[2].title}
               </span>
@@ -166,7 +169,7 @@ const HowItWorks = () => {
             </div>
 
             {/* Step 4 */}
-            <div className="md:col-span-5 relative group bg-white p-3 rounded-2xl border border-stone-200/70 shadow-md hover:shadow-xl hover:border-red-200 transition-all duration-300 order-3 md:order-3">
+            <div className="md:col-span-5 relative group bg-white p-3 rounded-2xl border border-stone-200/70 shadow-md hover:shadow-xl hover:border-red-200 transition-all duration-300 order-3 md:order-1">
               <span className="absolute top-5 left-5 z-10 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
                 Step {steps[3].title}
               </span>

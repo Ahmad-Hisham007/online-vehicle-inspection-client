@@ -1,144 +1,178 @@
 import React from "react";
 import { Check } from "lucide-react";
+import { GiCarWheel } from "react-icons/gi";
+import Image from "next/image";
+import Link from "next/link";
 
 const PricingSection = () => {
   const plans = [
     {
-      name: "Basic Wash",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      price: "49",
-      period: "/ Service",
+      image: "/uber.png",
+      name: "Uber Inspection",
+      price: "24",
+      period: "/ Year",
       bgColor: "bg-white",
       textColor: "text-[#1C1917]",
       subTextColor: "text-[#78716C]",
-      priceTagBg: "bg-[#F5F5F4]",
-      priceTextColor: "text-[#C2410C]",
+      priceTagBg: "bg-[#F7F5F0]",
+      priceTextColor: "text-destructive",
       pricePeriodColor: "text-[#A8A29E]",
-      checkColor: "text-[#F97316]",
+      checkColor: "text-primary",
       featureTextColor: "text-[#57534E]",
-      btnBg: "bg-[#FF5700] hover:bg-[#E64E00] text-white",
+      btnBg: "bg-primary hover:bg-red-900 text-white",
+      mt: "mt-55",
       features: [
-        "Premium Car Wash",
-        "High-Speed Internet Access",
-        "Access to Shared Rooms",
+        "Full Inspection",
+        "All In Data",
+        "Location varieties",
         "Moneyback Guarantee",
-        "Full Service",
+        "24/7 Support",
       ],
     },
     {
-      name: "Full Detailing",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      price: "149",
-      period: "/ Service",
-      bgColor: "bg-[#C2410C]",
-      textColor: "text-white",
-      subTextColor: "text-orange-100/80",
-      priceTagBg: "bg-[#F5F5F4]",
-      priceTextColor: "text-[#C2410C]",
-      pricePeriodColor: "text-[#78716C]",
-      checkColor: "text-white",
-      featureTextColor: "text-white/90",
-      btnBg: "bg-white hover:bg-orange-50 text-[#1C1917]",
+      image: "/lyft.png",
+      name: "Lyft Inspection",
+      price: "24",
+      period: "/ Year",
+      bgColor: "bg-white",
+      textColor: "text-[#1C1917]",
+      subTextColor: "text-[#78716C]",
+      priceTagBg: "bg-[#F7F5F0]",
+      priceTextColor: "text-destructive",
+      pricePeriodColor: "text-[#A8A29E]",
+      checkColor: "text-primary",
+      featureTextColor: "text-[#57534E]",
+      btnBg: "bg-primary hover:bg-red-900 text-white",
+      mt: "mt-35",
       features: [
-        "Premium Detailing",
-        "High-Speed Internet",
-        "Dedicated Waiting Rooms",
+        "Full Inspection",
+        "All In Data",
+        "Location varieties",
         "Moneyback Guarantee",
-        "Common Areas",
+        "24/7 Support",
       ],
     },
     {
-      name: "Premium Care",
-      description: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-      price: "299",
-      period: "/ Month",
-      bgColor: "bg-[#1C0F08]",
-      textColor: "text-white",
-      subTextColor: "text-stone-400",
-      priceTagBg: "bg-[#F5F5F4]",
-      priceTextColor: "text-[#C2410C]",
-      pricePeriodColor: "text-[#78716C]",
-      checkColor: "text-white",
-      featureTextColor: "text-stone-300",
-      btnBg: "bg-white hover:bg-stone-100 text-[#1C1917]",
+      image: "/turo.png",
+      name: "Turo Inspection",
+      price: "24",
+      period: "/ Year",
+      bgColor: "bg-white",
+      textColor: "text-[#1C1917]",
+      subTextColor: "text-[#78716C]",
+      priceTagBg: "bg-[#F7F5F0]",
+      priceTextColor: "text-destructive",
+      pricePeriodColor: "text-[#A8A29E]",
+      checkColor: "text-primary",
+      featureTextColor: "text-[#57534E]",
+      btnBg: "bg-primary hover:bg-red-900 text-white",
+      mt: "mt-15",
       features: [
-        "Dedicated Care Services",
-        "High-Speed Internet",
-        "Full Detailing",
-        "Free 10X Monthly",
-        "Premium Lounge",
+        "Full Inspection",
+        "All In Data",
+        "Location varieties",
+        "Moneyback Guarantee",
+        "24/7 Support",
+      ],
+    },
+    {
+      image: "/uber.png",
+      image2: "/lyft.png",
+      name: "Uber Lyft Inspection",
+      price: "39",
+      period: "/ Year",
+      bgColor: "bg-primary",
+      textColor: "text-white",
+      subTextColor: "text-white/60",
+      priceTagBg: "bg-[#F7F5F0]",
+      priceTextColor: "text-destructive",
+      pricePeriodColor: "text-[#A8A29E]",
+      checkColor: "text-white",
+      featureTextColor: "text-white/70",
+      btnBg: "bg-white hover:bg-red-900 hover:text-white text-primary",
+      mt: "mt-0",
+      features: [
+        "Full Inspection",
+        "All In Data",
+        "Location varieties",
+        "Moneyback Guarantee",
+        "24/7 Support",
       ],
     },
   ];
 
   return (
-    <section className="relative bg-[#F7F5F0] py-24 px-6 overflow-hidden min-h-screen flex items-center justify-center font-sans">
-      {/* Background Decorative Wavy Lines */}
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none opacity-40"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 1440 800"
-        fill="none"
-      >
-        <path
-          d="M-100,500 C300,200 600,700 1000,300 C1200,100 1500,400 1600,200"
-          stroke="#E7E5E4"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M-100,300 C400,600 700,100 1100,500 C1300,700 1500,200 1600,300"
-          stroke="#E7E5E4"
-          strokeWidth="1.5"
-        />
-      </svg>
-
-      <div className="relative max-w-6xl mx-auto w-full">
+    <section className="before:bg-cover before:bg-center before:bg-overlay before:bg-[url('/Layer-3-1.png')] before:content-[''] before:w-full before:h-full relative before:absolute before:top-0 before:left-0 z-10 before:opacity-20 bg-[#F7F5F0] py-24 px-6 overflow-hidden min-h-screen flex items-center justify-center font-sans">
+      <div className="relative max-w-6xl mx-auto w-full ">
         {/* Header Section */}
         <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-[#F2EFE9] px-3 py-1 rounded-full text-xs font-medium text-[#78716C]">
-            <span className="w-2 h-2 rounded-full bg-[#FB923C]"></span>
-            Pricing & Package
+          <div className="inline-flex items-center gap-3">
+            <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
+            <span className="text-sm font-semibold text-red-700 tracking-wide">
+              Pricing & Package
+            </span>
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-[42px] font-bold text-[#1C1917] tracking-tight leading-tight">
+          <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
             Lets Discover Our Affordable & <br className="hidden sm:inline" />
             Transparent Pricing.
           </h2>
         </div>
 
         {/* Pricing Cards Container */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="flex gap-8 [&>div]:flex-1 items-start">
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`rounded-[28px] p-8 shadow-sm flex flex-col justify-between ${plan.bgColor} transition-transform duration-300 hover:-translate-y-1`}
+              className={`rounded-[28px]  ${plan.mt} py-8 shadow-sm flex flex-col justify-between ${plan.bgColor} transition-transform duration-300 hover:-translate-y-1`}
             >
-              <div>
+              <div className="px-8">
                 {/* Header Info */}
+                <div className="flex gap-2 items-center">
+                  <Image
+                    src={plan.image ?? ""}
+                    width={80}
+                    height={50}
+                    alt="inspection logo"
+                    className="max-w-full object-contain"
+                  />
+                  {plan.image2 && (
+                    <>
+                      <span className="text-gray-500 font-bold">+</span>
+                      <Image
+                        src={plan.image2}
+                        width={80}
+                        height={50}
+                        className="max-w-full object-contain"
+                        alt="secondary inspection logo"
+                      />
+                    </>
+                  )}
+                </div>
                 <h3 className={`text-2xl font-bold mb-2 ${plan.textColor}`}>
-                  {plan.name}
+                  Inspection
                 </h3>
                 <p
-                  className={`text-sm leading-relaxed mb-8 ${plan.subTextColor}`}
+                  className={`text-lg leading-relaxed mb-8 ${plan.subTextColor}`}
                 >
-                  {plan.description}
+                  {plan.name}
                 </p>
-
-                {/* Price Tag Badge */}
-                <div
-                  className={`inline-flex items-baseline gap-1.5 px-6 py-3 rounded-r-2xl rounded-l-full ${plan.priceTagBg} mb-8 -ml-8`}
+              </div>
+              {/* Price Tag Badge */}
+              <div
+                className={`inline-flex w-full items-baseline gap-1.5 px-6 py-3 rounded-r-2xl rounded-l-full ${plan.priceTagBg} mb-8 ml-3`}
+              >
+                <span
+                  className={`text-3xl font-extrabold ${plan.priceTextColor}`}
                 >
-                  <span
-                    className={`text-3xl font-extrabold ${plan.priceTextColor}`}
-                  >
-                    ${plan.price}
-                  </span>
-                  <span
-                    className={`text-xs font-medium ${plan.pricePeriodColor}`}
-                  >
-                    {plan.period}
-                  </span>
-                </div>
-
+                  ${plan.price}
+                </span>
+                <span
+                  className={`text-xs font-medium ${plan.pricePeriodColor}`}
+                >
+                  {plan.period}
+                </span>
+              </div>
+              <div className="px-8">
                 {/* Features List */}
                 <ul className="space-y-4 mb-10">
                   {plan.features.map((feature, fIndex) => (
@@ -154,14 +188,15 @@ const PricingSection = () => {
                     </li>
                   ))}
                 </ul>
-              </div>
 
-              {/* Action Button */}
-              <button
-                className={`w-full py-4 rounded-full text-sm font-semibold tracking-wide transition-colors duration-200 shadow-sm ${plan.btnBg}`}
-              >
-                Get A Quote
-              </button>
+                {/* Action Button */}
+                <Link
+                  href="/dashboard/customer/inspection"
+                  className={`w-full py-4 block text-center rounded-full text-sm font-semibold tracking-wide transition-colors duration-200 shadow-sm ${plan.btnBg}`}
+                >
+                  Get Started
+                </Link>
+              </div>
             </div>
           ))}
         </div>

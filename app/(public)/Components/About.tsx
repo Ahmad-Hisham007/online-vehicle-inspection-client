@@ -9,6 +9,7 @@ import { IoCheckmark, IoCheckmarkDoneCircleSharp } from "react-icons/io5";
 
 import { RiArrowRightLongLine } from "react-icons/ri";
 import { Button } from "@/app/components/Button";
+import Link from "next/link";
 
 const Slides = [
   "/veyo.png",
@@ -29,7 +30,7 @@ const About = () => {
   return (
     <section className="bg-muted pt-20 text-center">
       <div className="inline-flex items-center gap-3 mb-6">
-        <GiCarWheel className="animate-spin text-red-600 text-xl duration-[20s]" />
+        <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
         <span className="text-sm font-semibold text-red-700 tracking-wide">
           Inspected With Top Certification Companies
         </span>
@@ -45,8 +46,11 @@ const About = () => {
         // style={{ backgroundImage: "url('/Layer-3-1.png')" }}
       >
         <div className="max-w-7xl relative mx-auto z-20">
-          <h2 className="max-w-3xl mx-auto text-mist-800/90 capitalize leading-tight font-medium text-5xl">
-            Stop wasting time. Get your car-inspection done online in minutes
+          <h2 className="max-w-3xl mx-auto text-stone-900 capitalize leading-tight font-medium text-5xl tracking-tight">
+            Stop wasting time. Get your car-inspection done online in{" "}
+            <span className="text-red-600 underline decoration-red-200 underline-offset-4">
+              minutes
+            </span>
           </h2>
           <div className="grid grid-cols-2 gap-15 pt-15">
             <div>
@@ -89,13 +93,17 @@ const About = () => {
                   </p>
                 </div>
               </div>
-              <Button
-                variant={"secondary"}
-                className="gap-3 mt-7 px-6 py-3 text-lg upppercase rounded-full leading-none min-h-[unset] h-[unset] w-[unset]"
+              <Link
+                href={"http://localhost:3000/dashboard/customer/inspection"}
               >
-                Start Now
-                <RiArrowRightLongLine className="w-6! h-6! text-3xl!" />
-              </Button>
+                <Button
+                  variant={"secondary"}
+                  className="gap-3 mt-7 px-6 py-3 text-lg upppercase rounded-full leading-none min-h-[unset] h-[unset] w-[unset]"
+                >
+                  Start Now
+                  <RiArrowRightLongLine className="w-6! h-6! text-3xl!" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

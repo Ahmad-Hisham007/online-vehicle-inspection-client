@@ -1,54 +1,79 @@
 import React from "react";
-import { Shield, Diamond, Target, Heart } from "lucide-react";
+import {
+  Shield,
+  Diamond,
+  Target,
+  Heart,
+  ShieldCheck,
+  FastForward,
+  BanknoteCheck,
+  WandSparkles,
+  BadgePercent,
+  MapPin,
+} from "lucide-react";
+import { GiCarWheel } from "react-icons/gi";
 
 const WhyChooseUs = () => {
   const features = [
     {
-      icon: <Shield className="w-5 h-5 text-white" />,
-      title: "Trained Professionals",
+      icon: <MapPin className="w-5 h-5 text-white" />,
+      title: "Access Anywhere",
       description:
-        "Skilled detailing experts delivering precision automotive care and flawless finishes.",
+        "No appointment is needed. Do it in any convenient place at any time you want.",
     },
     {
-      icon: <Diamond className="w-5 h-5 text-white" />,
-      title: "High-Quality Products",
+      icon: <BadgePercent className="w-5 h-5 text-white" />,
+      title: "Affordable prices",
       description:
-        "Using trusted premium products for lasting vehicle protection and exceptional shine results.",
+        "The lowest prices on the market. Twice cheaper than your car service charges.",
     },
     {
-      icon: <Target className="w-5 h-5 text-white" />,
-      title: "Advanced Techniques",
-      description:
-        "Modern detailing methods designed for superior cleaning and surface enhancement.",
+      icon: <WandSparkles className="w-5 h-5 text-white" />,
+      title: "Ridiculously simple",
+      description: "Avoid wasting hours on car services",
     },
     {
-      icon: <Heart className="w-5 h-5 text-white" />,
-      title: "Customer Satisfaction",
+      icon: <BanknoteCheck className="w-5 h-5 text-white" />,
+      title: "Compliance",
       description:
-        "Committed to exceptional service, quality results, and premium, professional vehicle care.",
+        "Just upload your vehicle inspection certificates to the app.",
+    },
+    {
+      icon: <FastForward className="w-5 h-5 text-white" />,
+      title: "Easy process",
+      description:
+        "All you need is a smartphone with a camera and internet access.",
+    },
+    {
+      icon: <ShieldCheck className="w-5 h-5 text-white" />,
+      title: "Transparency",
+      description:
+        "Get your rideshare vehicle inspection certificates that are fully legal and approved.",
     },
   ];
 
   return (
     <section className="bg-[#f4f5f7] py-20 px-6 md:px-12 lg:px-20 min-h-screen flex items-center justify-center font-sans">
-      <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
         {/* Left Heading Column */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 bg-[#A82B33] inline-block"></span>
-            <span className="text-xs font-medium text-gray-600 tracking-wide">
-              Why Choose Us
-            </span>
-          </div>
+        <div className="lg:col-span-3 ">
+          <div className="space-y-4 mt-7 sticky">
+            <div className="inline-flex items-center gap-3">
+              <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
+              <span className="text-sm font-semibold text-red-700 tracking-wide">
+                Why Choose Us
+              </span>
+            </div>
 
-          <h2 className="text-4xl md:text-5xl lg:text-[54px] font-light text-[#111827] leading-[1.15] tracking-tight">
-            Excellence in <br />
-            <span className="text-[#8B93A1] font-normal">Every Detail</span>
-          </h2>
+            <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
+              Excellence in <br />
+              <span className="text-[#8B93A1] font-normal">Every Detail</span>
+            </h2>
+          </div>
         </div>
 
         {/* Right Feature Cards Grid Column */}
-        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <div
               key={index}
