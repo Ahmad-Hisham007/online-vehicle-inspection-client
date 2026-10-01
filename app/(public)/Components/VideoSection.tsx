@@ -5,8 +5,8 @@ const VideoSection = () => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <section className="py-10">
-      <div className="relative max-w-325 mx-auto h-175 w-full rounded-[18px] overflow-hidden">
+    <section className="py-10 px-4">
+      <div className="relative max-w-325 mx-auto md:h-175 h-[40vh] w-full rounded-[18px] overflow-hidden">
         {isPlaying ? (
           <iframe
             width="100%"

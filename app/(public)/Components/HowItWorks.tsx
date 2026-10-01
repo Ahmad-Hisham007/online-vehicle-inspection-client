@@ -42,10 +42,10 @@ const HowItWorks = () => {
     "VEYO INSPECTION",
   ];
   return (
-    <section className="py-20 bg-gradient-to-b from-stone-50/50 via-white to-stone-50/30 overflow-hidden font-sans">
+    <section className="md:py-20 py-15 bg-gradient-to-b from-stone-100 via-white to-stone-50/30 overflow-hidden font-sans">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Top Header Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-startn mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-startn md:mb-16 mb-10">
           {/* Left Column: Heading & Subtitle */}
           <div className="lg:col-span-6 space-y-4">
             <div className="inline-flex items-center gap-3">
@@ -82,7 +82,7 @@ const HowItWorks = () => {
             </div>
 
             {/* CTA Button */}
-            <div className="pt-2">
+            <div className="pt-2 w-full">
               <Link href="http://localhost:3000/dashboard/customer/inspection">
                 <Button className="gap-3 px-8 py-3.5 text-base uppercase rounded-full tracking-wider">
                   Start Now
@@ -114,7 +114,7 @@ const HowItWorks = () => {
 
             {/* Connector Arrow 1 */}
             <div className="md:col-span-1 flex justify-center py-2 md:py-0">
-              <div className="w-12 h-12 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-red-700">
+              <div className="w-12 h-12 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-red-700 animate-bounce md:animate-ping">
                 <IoMdArrowForward className="w-6 h-6 hidden md:block" />
                 <IoMdArrowDown className="w-6 h-6 md:hidden" />
               </div>
@@ -137,7 +137,7 @@ const HowItWorks = () => {
           </div>
 
           {/* Row Connector Down Arrow */}
-          <div className="flex justify-end pr-0 md:pr-[22.5%] my-2">
+          <div className="flex md:justify-end justify-center pr-0 md:pr-[22.5%] my-2">
             <div className="w-12 h-12 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-red-700 animate-bounce">
               <IoMdArrowDown className="w-6 h-6" />
             </div>
@@ -162,7 +162,7 @@ const HowItWorks = () => {
 
             {/* Connector Arrow 2 */}
             <div className="md:col-span-1 flex justify-center py-2 md:py-0 order-2 md:order-2">
-              <div className="w-12 h-12 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-red-700">
+              <div className="w-12 h-12 rounded-full bg-white border border-stone-200 shadow-sm flex items-center justify-center text-red-700 animate-bounce md:animate-ping">
                 <IoMdArrowBack className="w-6 h-6 hidden md:block" />
                 <IoMdArrowDown className="w-6 h-6 md:hidden" />
               </div>
