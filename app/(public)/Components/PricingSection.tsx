@@ -3,6 +3,8 @@ import { Check } from "lucide-react";
 import { GiCarWheel } from "react-icons/gi";
 import Image from "next/image";
 import Link from "next/link";
+import { AnimateOnScroll } from "./AnimateOnScroll";
+import { slideFromBottom, slideFromTop } from "./animations";
 
 const PricingSection = () => {
   const plans = [
@@ -105,99 +107,113 @@ const PricingSection = () => {
     <section className="before:bg-cover before:bg-center before:bg-overlay before:bg-[url('/Layer-3-1.png')] before:content-[''] before:w-full before:h-full relative before:absolute before:top-0 before:left-0 z-10 before:opacity-20 bg-[#F7F5F0] md:py-24 py-15 md:px-6 px-4 overflow-hidden min-h-screen flex items-center justify-center font-sans">
       <div className="relative max-w-6xl mx-auto w-full ">
         {/* Header Section */}
-        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
-          <div className="inline-flex items-center gap-3">
-            <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
-            <span className="text-sm font-semibold text-red-700 tracking-wide">
-              Pricing & Package
-            </span>
-          </div>
-          <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
-            Lets Discover Our Affordable & <br className="hidden sm:inline" />
-            Transparent Pricing.
-          </h2>
+
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <AnimateOnScroll
+            variants={slideFromTop}
+            duration={0.9}
+            delay={0.9}
+            className="space-y-3"
+          >
+            <div className="inline-flex items-center gap-3">
+              <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
+              <span className="text-sm font-semibold text-red-700 tracking-wide">
+                Pricing & Package
+              </span>
+            </div>
+            <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
+              Lets Discover Our Affordable & <br className="hidden sm:inline" />
+              Transparent Pricing.
+            </h2>
+          </AnimateOnScroll>
         </div>
 
         {/* Pricing Cards Container */}
         <div className="flex md:flex-row flex-col gap-8 [&>div]:flex-1 items-start">
           {plans.map((plan, index) => (
-            <div
+            <AnimateOnScroll
               key={index}
-              className={`rounded-[28px]  ${plan.mt} py-8 w-full shadow-sm flex flex-col justify-between ${plan.bgColor} transition-transform duration-300 hover:-translate-y-1`}
+              className={`${plan.mt} w-full`}
+              delay={index * 0.2}
+              variants={slideFromBottom}
             >
-              <div className="px-8">
-                {/* Header Info */}
-                <div className="flex gap-2 items-center">
-                  <Image
-                    src={plan.image ?? ""}
-                    width={80}
-                    height={50}
-                    alt="inspection logo"
-                    className="max-w-full object-contain"
-                  />
-                  {plan.image2 && (
-                    <>
-                      <span className="text-gray-500 font-bold">+</span>
-                      <Image
-                        src={plan.image2}
-                        width={80}
-                        height={50}
-                        className="max-w-full object-contain"
-                        alt="secondary inspection logo"
-                      />
-                    </>
-                  )}
-                </div>
-                <h3 className={`text-2xl font-bold mb-2 ${plan.textColor}`}>
-                  Inspection
-                </h3>
-                <p
-                  className={`text-lg leading-relaxed mb-8 ${plan.subTextColor}`}
-                >
-                  {plan.name}
-                </p>
-              </div>
-              {/* Price Tag Badge */}
               <div
-                className={`inline-flex w-full items-baseline gap-1.5 px-6 py-3 rounded-r-2xl rounded-l-full ${plan.priceTagBg} mb-8 ml-3`}
+                className={`rounded-[28px]  py-8 shadow-sm flex flex-col justify-between ${plan.bgColor} transition-transform duration-300 hover:-translate-y-1`}
               >
-                <span
-                  className={`text-3xl font-extrabold ${plan.priceTextColor}`}
+                <div className="px-8">
+                  {/* Header Info */}
+                  <div className="flex gap-2 items-center">
+                    <Image
+                      src={plan.image ?? ""}
+                      width={80}
+                      height={50}
+                      alt="inspection logo"
+                      className="max-w-full object-contain"
+                    />
+                    {plan.image2 && (
+                      <>
+                        <span className="text-gray-500 font-bold">+</span>
+                        <Image
+                          src={plan.image2}
+                          width={80}
+                          height={50}
+                          className="max-w-full object-contain"
+                          alt="secondary inspection logo"
+                        />
+                      </>
+                    )}
+                  </div>
+                  <h3 className={`text-2xl font-bold mb-2 ${plan.textColor}`}>
+                    Inspection
+                  </h3>
+                  <p
+                    className={`text-lg leading-relaxed mb-8 ${plan.subTextColor}`}
+                  >
+                    {plan.name}
+                  </p>
+                </div>
+                {/* Price Tag Badge */}
+                <div
+                  className={`inline-flex w-full items-baseline gap-1.5 px-6 py-3 rounded-r-2xl rounded-l-full ${plan.priceTagBg} mb-8 ml-3`}
                 >
-                  ${plan.price}
-                </span>
-                <span
-                  className={`text-xs font-medium ${plan.pricePeriodColor}`}
-                >
-                  {plan.period}
-                </span>
-              </div>
-              <div className="px-8">
-                {/* Features List */}
-                <ul className="space-y-4 mb-10">
-                  {plan.features.map((feature, fIndex) => (
-                    <li key={fIndex} className="flex items-center gap-3">
-                      <Check
-                        className={`w-4 h-4 stroke-[3] ${plan.checkColor}`}
-                      />
-                      <span
-                        className={`text-sm font-medium ${plan.featureTextColor}`}
-                      >
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                  <span
+                    className={`text-3xl font-extrabold ${plan.priceTextColor}`}
+                  >
+                    ${plan.price}
+                  </span>
+                  <span
+                    className={`text-xs font-medium ${plan.pricePeriodColor}`}
+                  >
+                    {plan.period}
+                  </span>
+                </div>
+                <div className="px-8">
+                  {/* Features List */}
+                  <ul className="space-y-4 mb-10">
+                    {plan.features.map((feature, fIndex) => (
+                      <li key={fIndex} className="flex items-center gap-3">
+                        <Check
+                          className={`w-4 h-4 stroke-[3] ${plan.checkColor}`}
+                        />
+                        <span
+                          className={`text-sm font-medium ${plan.featureTextColor}`}
+                        >
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
 
-                {/* Action Button */}
-                <Link
-                  href="/dashboard/customer/inspection"
-                  className={`w-full py-4 block text-center rounded-full text-sm font-semibold tracking-wide transition-colors duration-200 shadow-sm ${plan.btnBg}`}
-                >
-                  Get Started
-                </Link>
+                  {/* Action Button */}
+                  <Link
+                    href="/dashboard/customer/inspection"
+                    className={`w-full py-4 block text-center rounded-full text-sm font-semibold tracking-wide transition-colors duration-200 shadow-sm ${plan.btnBg}`}
+                  >
+                    Get Started
+                  </Link>
+                </div>
               </div>
-            </div>
+            </AnimateOnScroll>
           ))}
         </div>
       </div>

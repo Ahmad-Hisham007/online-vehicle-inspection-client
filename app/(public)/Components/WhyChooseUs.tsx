@@ -12,6 +12,8 @@ import {
   MapPin,
 } from "lucide-react";
 import { GiCarWheel } from "react-icons/gi";
+import { AnimateOnScroll } from "./AnimateOnScroll";
+import { charFlyInTop, scaleIn } from "./animations";
 
 const WhyChooseUs = () => {
   const features = [
@@ -56,50 +58,52 @@ const WhyChooseUs = () => {
     <section className="bg-[#f4f5f7] py-20 px-6 md:px-12 lg:px-20 min-h-screen flex items-center justify-center font-sans">
       <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
         {/* Left Heading Column */}
-        <div className="lg:col-span-3 ">
-          <div className="space-y-4 mt-7 sticky">
-            <div className="inline-flex items-center gap-3">
-              <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
-              <span className="text-sm font-semibold text-red-700 tracking-wide">
-                Why Choose Us
-              </span>
-            </div>
 
-            <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
-              Excellence in <br />
-              <span className="text-[#8B93A1] font-normal">Every Detail</span>
-            </h2>
+        <AnimateOnScroll variants={charFlyInTop} className="lg:col-span-3">
+          <div>
+            <div className="space-y-4 mt-7 sticky">
+              <div className="inline-flex items-center gap-3">
+                <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
+                <span className="text-sm font-semibold text-red-700 tracking-wide">
+                  Why Choose Us
+                </span>
+              </div>
+
+              <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
+                Excellence in <br />
+                <span className="text-[#8B93A1] font-normal">Every Detail</span>
+              </h2>
+            </div>
           </div>
-        </div>
+        </AnimateOnScroll>
 
         {/* Right Feature Cards Grid Column */}
         <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-gray-100/80 flex flex-col justify-between min-h-[260px] hover:shadow-[0_15px_35px_rgba(0,0,0,0.08)] transition-shadow duration-300"
-            >
-              <div>
-                {/* Icon Circle */}
-                <div className="w-10 h-10 rounded-lg bg-[#A82B33] flex items-center justify-center mb-6 shadow-sm">
-                  {feature.icon}
+            <AnimateOnScroll key={index} delay={index * 0.2} variants={scaleIn}>
+              <div className="bg-white rounded-xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-gray-100/80 flex flex-col justify-between min-h-[260px] hover:shadow-[0_15px_35px_rgba(0,0,0,0.08)] transition-shadow duration-300">
+                <div>
+                  {/* Icon Circle */}
+                  <div className="w-10 h-10 rounded-lg bg-[#A82B33] flex items-center justify-center mb-6 shadow-sm">
+                    {feature.icon}
+                  </div>
+
+                  {/* Card Title */}
+                  <h3 className="text-xl font-normal text-[#18181B] leading-snug tracking-tight mb-3">
+                    {feature.title.split(" ").map((word, i) => (
+                      <React.Fragment key={i}>
+                        {word} {i === 0 && <br />}
+                      </React.Fragment>
+                    ))}
+                  </h3>
                 </div>
 
-                {/* Card Title */}
-                <h3 className="text-xl font-normal text-[#18181B] leading-snug tracking-tight mb-3">
-                  {feature.title.split(" ").map((word, i) => (
-                    <React.Fragment key={i}>
-                      {word} {i === 0 && <br />}
-                    </React.Fragment>
-                  ))}
-                </h3>
+                {/* Card Description */}
+                <p className="text-xs text-gray-500 leading-relaxed font-normal">
+                  {feature.description}
+                </p>
               </div>
-
-              {/* Card Description */}
-              <p className="text-xs text-gray-500 leading-relaxed font-normal">
-                {feature.description}
-              </p>
-            </div>
+            </AnimateOnScroll>
           ))}
         </div>
       </div>

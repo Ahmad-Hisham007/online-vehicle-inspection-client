@@ -10,6 +10,8 @@ import { IoCheckmark, IoCheckmarkDoneCircleSharp } from "react-icons/io5";
 import { RiArrowRightLongLine } from "react-icons/ri";
 import { Button } from "@/app/components/Button";
 import Link from "next/link";
+import { AnimateOnScroll } from "./AnimateOnScroll";
+import { slideFromLeft, slideFromRight, slideFromTop } from "./animations";
 
 const Slides = [
   "/veyo.png",
@@ -46,65 +48,79 @@ const About = () => {
         // style={{ backgroundImage: "url('/Layer-3-1.png')" }}
       >
         <div className="max-w-7xl relative mx-auto z-20">
-          <h2 className="max-w-3xl mx-auto text-stone-900 capitalize leading-tight font-medium md:text-5xl text-3xl tracking-tight">
-            Stop wasting time. Get your car-inspection done online in{" "}
-            <span className="text-red-600 underline decoration-red-200 underline-offset-4">
-              minutes
-            </span>
-          </h2>
+          <AnimateOnScroll variants={slideFromTop} duration={0.9} delay={0.9}>
+            <h2 className="max-w-3xl mx-auto text-stone-900 capitalize leading-tight font-medium md:text-5xl text-3xl tracking-tight">
+              Stop wasting time. Get your car-inspection done online in{" "}
+              <span className="text-red-600 underline decoration-red-200 underline-offset-4">
+                minutes
+              </span>
+            </h2>
+          </AnimateOnScroll>
           <div className="grid md:grid-cols-2 grid-cols-1 md:gap-15 gap-5 md:pt-15 pt-10">
-            <div>
-              <Image
-                src="/detailing-film-specialist-cutting-and-wrapping-car-at-auto-repair-shop.jpg"
-                alt="car inspection"
-                width={900}
-                height={700}
-                className=" w-full rounded-3xl"
-              />
-            </div>
-            <div className="text-left">
-              <p className="text-left text-[16px]">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-                enim ad minim veniam, quis nostrud exercitation ullamco laboris
-                nisi ut aliquip.
-              </p>
-              <div className="flex gap-4 items-start mt-6">
-                <IoCheckmarkDoneCircleSharp className="text-destructive/60 w-8 h-8 grow-0 shrink-0 mt-1" />
-                <div className="text-left">
-                  <h3 className="md:text-2xl text-xl font-semibold text-stone-800 mb-3">
-                    Expert Inspectors
-                  </h3>
-                  <p className="text-justify">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                    do eiusmod tempor incididunt ut
-                  </p>
-                </div>
+            <AnimateOnScroll
+              variants={slideFromLeft}
+              duration={0.6}
+              delay={0.3}
+            >
+              <div>
+                <Image
+                  src="/detailing-film-specialist-cutting-and-wrapping-car-at-auto-repair-shop.jpg"
+                  alt="car inspection"
+                  width={900}
+                  height={700}
+                  className=" w-full rounded-3xl"
+                />
               </div>
-              <div className="flex gap-4 items-start mt-5">
-                <IoCheckmarkDoneCircleSharp className="text-destructive/60 w-8 h-8 grow-0 shrink-0 mt-1" />
-                <div className="text-left">
-                  <h3 className="md:text-2xl text-xl font-semibold text-stone-800 mb-3">
-                    24/7 Active Support
-                  </h3>
-                  <p className="text-justify">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                    do eiusmod tempor incididunt ut
-                  </p>
+            </AnimateOnScroll>
+            <AnimateOnScroll
+              variants={slideFromRight}
+              duration={0.6}
+              delay={0.3}
+            >
+              <div className="text-left">
+                <p className="text-left text-[16px]">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                  laboris nisi ut aliquip.
+                </p>
+                <div className="flex gap-4 items-start mt-6">
+                  <IoCheckmarkDoneCircleSharp className="text-destructive/60 w-8 h-8 grow-0 shrink-0 mt-1" />
+                  <div className="text-left">
+                    <h3 className="md:text-2xl text-xl font-semibold text-stone-800 mb-3">
+                      Expert Inspectors
+                    </h3>
+                    <p className="text-justify">
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+                      sed do eiusmod tempor incididunt ut
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <Link
-                href={"http://localhost:3000/dashboard/customer/inspection"}
-              >
-                <Button
-                  variant={"secondary"}
-                  className="gap-3 mt-7 px-6 py-3 md:text-lg text-sm upppercase rounded-full leading-none min-h-[unset] h-[unset] w-[unset]"
+                <div className="flex gap-4 items-start mt-5">
+                  <IoCheckmarkDoneCircleSharp className="text-destructive/60 w-8 h-8 grow-0 shrink-0 mt-1" />
+                  <div className="text-left">
+                    <h3 className="md:text-2xl text-xl font-semibold text-stone-800 mb-3">
+                      24/7 Active Support
+                    </h3>
+                    <p className="text-justify">
+                      Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+                      sed do eiusmod tempor incididunt ut
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={"http://localhost:3000/dashboard/customer/inspection"}
                 >
-                  Start Now
-                  <RiArrowRightLongLine className="w-6! h-6! text-3xl!" />
-                </Button>
-              </Link>
-            </div>
+                  <Button
+                    variant={"secondary"}
+                    className="gap-3 mt-7 px-6 py-3 md:text-lg text-sm upppercase rounded-full leading-none min-h-[unset] h-[unset] w-[unset]"
+                  >
+                    Start Now
+                    <RiArrowRightLongLine className="w-6! h-6! text-3xl!" />
+                  </Button>
+                </Link>
+              </div>
+            </AnimateOnScroll>
           </div>
         </div>
       </div>
