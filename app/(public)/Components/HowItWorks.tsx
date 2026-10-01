@@ -100,7 +100,7 @@ const HowItWorks = () => {
 
               {/* CTA Button */}
               <div className="pt-2 w-full">
-                <Link href="http://localhost:3000/dashboard/customer/inspection">
+                <Link href="/dashboard/customer/inspection">
                   <Button className="gap-3 px-8 py-3.5 text-base uppercase rounded-full tracking-wider">
                     Start Now
                     <RiArrowRightLongLine className="w-5 h-5 text-xl" />

@@ -108,9 +108,7 @@ const About = () => {
                     </p>
                   </div>
                 </div>
-                <Link
-                  href={"http://localhost:3000/dashboard/customer/inspection"}
-                >
+                <Link href={"/dashboard/customer/inspection"}>
                   <Button
                     variant={"secondary"}
                     className="gap-3 mt-7 px-6 py-3 md:text-lg text-sm upppercase rounded-full leading-none min-h-[unset] h-[unset] w-[unset]"
