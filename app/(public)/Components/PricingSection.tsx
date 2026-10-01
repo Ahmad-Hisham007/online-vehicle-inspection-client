@@ -20,7 +20,7 @@ const PricingSection = () => {
       checkColor: "text-primary",
       featureTextColor: "text-[#57534E]",
       btnBg: "bg-primary hover:bg-red-900 text-white",
-      mt: "mt-55",
+      mt: "md:mt-55 mt-0",
       features: [
         "Full Inspection",
         "All In Data",
@@ -43,7 +43,7 @@ const PricingSection = () => {
       checkColor: "text-primary",
       featureTextColor: "text-[#57534E]",
       btnBg: "bg-primary hover:bg-red-900 text-white",
-      mt: "mt-35",
+      mt: "md:mt-35 mt-0",
       features: [
         "Full Inspection",
         "All In Data",
@@ -66,7 +66,7 @@ const PricingSection = () => {
       checkColor: "text-primary",
       featureTextColor: "text-[#57534E]",
       btnBg: "bg-primary hover:bg-red-900 text-white",
-      mt: "mt-15",
+      mt: "md:mt-15 mt-0",
       features: [
         "Full Inspection",
         "All In Data",
@@ -102,7 +102,7 @@ const PricingSection = () => {
   ];
 
   return (
-    <section className="before:bg-cover before:bg-center before:bg-overlay before:bg-[url('/Layer-3-1.png')] before:content-[''] before:w-full before:h-full relative before:absolute before:top-0 before:left-0 z-10 before:opacity-20 bg-[#F7F5F0] py-24 px-6 overflow-hidden min-h-screen flex items-center justify-center font-sans">
+    <section className="before:bg-cover before:bg-center before:bg-overlay before:bg-[url('/Layer-3-1.png')] before:content-[''] before:w-full before:h-full relative before:absolute before:top-0 before:left-0 z-10 before:opacity-20 bg-[#F7F5F0] md:py-24 py-15 md:px-6 px-4 overflow-hidden min-h-screen flex items-center justify-center font-sans">
       <div className="relative max-w-6xl mx-auto w-full ">
         {/* Header Section */}
         <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
@@ -119,11 +119,11 @@ const PricingSection = () => {
         </div>
 
         {/* Pricing Cards Container */}
-        <div className="flex gap-8 [&>div]:flex-1 items-start">
+        <div className="flex md:flex-row flex-col gap-8 [&>div]:flex-1 items-start">
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`rounded-[28px]  ${plan.mt} py-8 shadow-sm flex flex-col justify-between ${plan.bgColor} transition-transform duration-300 hover:-translate-y-1`}
+              className={`rounded-[28px]  ${plan.mt} py-8 w-full shadow-sm flex flex-col justify-between ${plan.bgColor} transition-transform duration-300 hover:-translate-y-1`}
             >
               <div className="px-8">
                 {/* Header Info */}

@@ -167,7 +167,7 @@
 
 .embla-hero-carousel .embla__viewport {
   overflow: hidden;
-  height: 80vh;
+  height: var(--slide-height);
 }
 
 .embla-hero-carousel .embla__container {
@@ -225,6 +225,12 @@
   object-position: center;
 }
 
+@media (max-width: 576px) {
+  .embla-hero-carousel {
+    --slide-height: 50vh;
+  }
+}
+
 /* Logo carousel */
 
 .embla.logo-carousel {
@@ -252,4 +258,10 @@
   justify-content: space-between;
   gap: 1.2rem;
   margin-top: 1.8rem;
+}
+@media (max-width: 576px) {
+  .embla.logo-carousel {
+    --slide-spacing: 2rem;
+    --slide-size: 40%;
+  }
 }

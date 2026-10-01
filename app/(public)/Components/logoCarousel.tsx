@@ -21,14 +21,14 @@ const LogoCarousel = (props: PropType) => {
   }, [emblaApi]);
   return (
     <div className="embla logo-carousel max-w-6xl mx-auto mb-10 relative">
-      <div className="w-90 z-999 h-full bg-[linear-gradient(90deg,#02010100_0%,#f4f2f2_80%)] right-0 absolute top-0"></div>
-      <div className="w-90 z-999 h-full bg-[linear-gradient(270deg,#02010100_0%,#f4f2f2_80%)] left-0 absolute top-0"></div>
+      <div className="md:w-90 w-5/12 z-999 h-full bg-[linear-gradient(90deg,#02010100_0%,#f4f2f2_80%)] right-0 absolute top-0"></div>
+      <div className="md:w-90 w-5/12 z-999 h-full bg-[linear-gradient(270deg,#02010100_0%,#f4f2f2_80%)] left-0 absolute top-0"></div>
       <div className="embla__viewport overflow-hidden" ref={emblaRef}>
         <div className="embla__container flex items-center">
           {slides.map((slide, index) => (
             <div className="embla__slide" key={index}>
               <Image
-                className="embla__slide__img w-full object-contain object-center block"
+                className="embla__slide__img min-w-24 w-full min-h-12 object-contain object-center block"
                 src={slide}
                 alt="Your alt text"
                 width={260}
