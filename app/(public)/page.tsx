@@ -5,6 +5,8 @@ import VideoSection from "./Components/VideoSection";
 import HowItWorks from "./Components/HowItWorks";
 import WhyChooseUs from "./Components/WhyChooseUs";
 import PricingSection from "./Components/PricingSection";
+import FAQ from "./Components/FAQ";
+import CtaSection from "./Components/CTA";
 
 export default function Home() {
   return (
@@ -15,6 +17,8 @@ export default function Home() {
       <HowItWorks />
       <PricingSection />
       <WhyChooseUs />
+      <FAQ />
+      <CtaSection />
     </>
   );
 }

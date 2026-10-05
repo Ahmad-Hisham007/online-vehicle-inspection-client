@@ -10,7 +10,7 @@ import { IoCheckmark, IoCheckmarkDoneCircleSharp } from "react-icons/io5";
 import { RiArrowRightLongLine } from "react-icons/ri";
 import { Button } from "@/app/components/Button";
 import Link from "next/link";
-import { AnimateOnScroll } from "./AnimateOnScroll";
+import { AnimateOnScroll, AutoLineSplitter } from "./AnimateOnScroll";
 import { slideFromLeft, slideFromRight, slideFromTop } from "./animations";
 
 const Slides = [
@@ -49,11 +49,11 @@ const About = () => {
       >
         <div className="max-w-7xl relative mx-auto z-20">
           <AnimateOnScroll variants={slideFromTop} duration={0.9} delay={0.9}>
-            <h2 className="max-w-3xl mx-auto text-stone-900 capitalize leading-tight font-medium md:text-5xl text-3xl tracking-tight">
-              Stop wasting time. Get your car-inspection done online in{" "}
-              <span className="text-red-600 underline decoration-red-200 underline-offset-4">
-                minutes
-              </span>
+            <h2 className="max-w-212 mx-auto font-semibold text-3xl md:text-5xl capitalize text-stone-900 leading-tight tracking-tight">
+              <AutoLineSplitter
+                text="Stop wasting time. Get your inspection done online in minutes"
+                className="[&>span:last-child>span]:underline [&>span:last-child>span]:decoration-red-200 [&>span:last-child>span]:underline-offset-4 [&>span:last-child>span]:last:text-red-600"
+              />
             </h2>
           </AnimateOnScroll>
           <div className="grid md:grid-cols-2 grid-cols-1 md:gap-15 gap-5 md:pt-15 pt-10">

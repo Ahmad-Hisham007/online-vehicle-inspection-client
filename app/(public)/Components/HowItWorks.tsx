@@ -10,7 +10,7 @@ import {
   IoMdCheckmarkCircleOutline,
 } from "react-icons/io";
 import Link from "next/link";
-import { AnimateOnScroll } from "./AnimateOnScroll";
+import { AnimateOnScroll, AutoLineSplitter } from "./AnimateOnScroll";
 import {
   flyDownFromTop,
   slideFromBottom,
@@ -52,30 +52,24 @@ const HowItWorks = () => {
     <section className="md:py-20 py-15 bg-gradient-to-b from-stone-100 via-white to-stone-50/30 overflow-hidden font-sans">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
         {/* Top Header Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:mb-16 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 md:mb-16 mb-6 ">
           {/* Left Column: Heading & Subtitle */}
-          <AnimateOnScroll
-            variants={slideFromLeft}
-            duration={1.0}
-            className="lg:col-span-6"
-          >
-            <div className=" space-y-4">
-              <div className="inline-flex items-center gap-3">
-                <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
-                <span className="text-sm font-semibold text-red-700 tracking-wide">
-                  Fast, easy, and risk-free.
-                </span>
-              </div>
 
-              <h2 className="font-semibold text-3xl md:text-4xl text-stone-900 leading-tight tracking-tight">
-                Complete your vehicle inspection online in minutes with your{" "}
-                <span className="text-red-600 underline decoration-red-200 underline-offset-4">
-                  smartphone
-                </span>
-                .
-              </h2>
+          <div className=" space-y-4 lg:col-span-6">
+            <div className="inline-flex items-center gap-3">
+              <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
+              <span className="text-sm font-semibold text-red-700 tracking-wide">
+                <AutoLineSplitter text="Fast, easy, and risk-free." />
+              </span>
             </div>
-          </AnimateOnScroll>
+
+            <h2 className="font-semibold text-3xl md:text-4xl text-stone-900 leading-tight tracking-tight">
+              <AutoLineSplitter
+                text="Complete your vehicle inspection online in minutes with your smartphone"
+                className="[&>span:last-child>span]:underline [&>span:last-child>span]:decoration-red-200 [&>span:last-child>span]:underline-offset-4 [&>span:last-child>span]:last:text-red-600"
+              />
+            </h2>
+          </div>
 
           {/* Right Column: Description, Features & CTA */}
           <AnimateOnScroll
