@@ -1,5 +1,50 @@
 # Implementation Plan — Online Vehicle Inspection Platform
 
+## Phase 000: Public Site UI & Design 🚧 IN PROGRESS
+
+> Spec: `.opencode/spec/000-UI/spec.md` (status board — resume point for interleaved design sessions).
+
+Design work runs in parallel with feature phases and commits directly to `main`.
+
+### Homepage (`/`)
+
+| Section | File | Status |
+|---------|------|--------|
+| Hero slider | `app/(public)/Components/Slider.tsx` | ✅ Done |
+| About + logo carousel | `About.tsx` + `logoCarousel.tsx` | ✅ Done |
+| Video section | `VideoSection.tsx` | ✅ Done |
+| How It Works | `HowItWorks.tsx` | ✅ Done |
+| Pricing | `PricingSection.tsx` | ✅ Done |
+| Why Choose Us | `WhyChooseUs.tsx` | ✅ Done |
+| FAQ | `FAQ.tsx` | ✅ Done |
+| CTA | `CTA.tsx` | ✅ Done (design) — placeholder copy, needs real text |
+
+### Footer (site-wide)
+
+`Footer.tsx` rendered in `app/(public)/layout.tsx` — appears on every public route (`/`, `/login`, `/register`, `/error`). Dark `#0B0F17`: brand logo + description · Contact Us (support@insve.com, 808-800-9292, ARD315746) · Follow Us (Telegram/Instagram/Facebook) · INSVE.COM © year.
+
+### Other Pages (all pending)
+
+Contact Us (`/contact`), Blog (`/blog`), Blog single (`/blog/[slug]`), Uber (`/uber`), Lyft (`/lyft`), Turo (`/turo`).
+
+### Section Notes (2026-10-05)
+
+- **FAQ** (`FAQ.tsx`): 5-item shadcn `Accordion` (`type="single" collapsible`); wheel badge ("Answer of your queries") + heading via `AutoLineSplitter`; triggers show a `#A82B33` bar→dot morph + `ArrowDownToDot` icon; answers render HTML strings via `dangerouslySetInnerHTML` (`<br/>` line breaks).
+- **CTA** (`CTA.tsx`): full-bleed background image (`/car-detailing-concept.jpg`, new asset) + floating `bg-black/90 backdrop-blur-md` card (right-aligned on desktop, centered mobile); heading "…Certified Vehicle Insection at only $29" (typo + price are placeholders), lorem subtitle, "Start Now" shadcn Button → `/dashboard/customer/inspection`. **Needs real copy.**
+- **Accordion primitive** (`components/ui/accordion.tsx`): `AccordionTrigger` now accepts optional `icon`, `iconClassName`, `hideDefaultIcon`; default `border border-border` removed from `AccordionItem` (consumers add their own borders).
+
+### Animation System
+
+- `app/(public)/Components/AnimateOnScroll.tsx` — the single `"use client"` wrapper; all landing sections stay Server Components. Props: `variants`, `delay`, `duration`, `className`, `staggerChildren`. Also exports:
+  - `TextSplitter` — char-level split (needs visual verification).
+  - `AutoLineSplitter` — word-level masked line reveal: each word wrapped in `overflow: hidden` inline-block, revealed from below (`y: "100%" → "0%"`, 0.85s, `smoothEase`, stagger 0.12); wraps naturally on resize (responsive-safe); `paddingBottom: 0.1em` protects descenders. Used in the FAQ heading.
+- `app/(public)/Components/animations.ts` — pure-data `Variants`: `fadeUp`, `fadeIn`, `scaleIn`, `slideFromLeft/Right/Top/Bottom`, `flyDownFromTop`, `charFlyInTop/Bottom`, `charFadeInStagger`, `wordFlyInTop`, `lineRevealContainer`/`lineRevealItem`, `staggerChildren`, `childFadeUp`, `smoothFade`, `textWithHighlight`; `withTransition()` helper for per-instance duration/delay; `smoothEase = [0.16, 1, 0.3, 1]`.
+- Logo carousel auto-scroll: Embla v9.0.0-rc03 — `emblaApi.plugins().autoScroll?.play()` in `useEffect` (no `useAutoScroll` hook in this version).
+
+**Rules**: never break desktop layout/design; SSR-compatible (no `"use client"` on sections); smooth animations (0.65–1.0s); text with nested `<span>` animates at word level only.
+
+---
+
 ## Phase 1: Auth & WP Infrastructure ✅ DONE
 
 | Task                                        | Status |

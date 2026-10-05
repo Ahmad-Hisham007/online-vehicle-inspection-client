@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import { GiCarWheel } from "react-icons/gi";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimateOnScroll } from "./AnimateOnScroll";
+import { AnimateOnScroll, AutoLineSplitter } from "./AnimateOnScroll";
 import { slideFromBottom, slideFromTop } from "./animations";
 
 const PricingSection = () => {
@@ -108,24 +108,19 @@ const PricingSection = () => {
       <div className="relative max-w-6xl mx-auto w-full ">
         {/* Header Section */}
 
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <AnimateOnScroll
-            variants={slideFromTop}
-            duration={0.9}
-            delay={0.9}
-            className="space-y-3"
-          >
-            <div className="inline-flex items-center gap-3">
-              <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
-              <span className="text-sm font-semibold text-red-700 tracking-wide">
-                Pricing & Package
-              </span>
-            </div>
-            <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
-              Lets Discover Our Affordable & <br className="hidden sm:inline" />
-              Transparent Pricing.
-            </h2>
-          </AnimateOnScroll>
+        <div className="text-center max-w-2xl mx-auto mb-16 space-y-3">
+          <div className="inline-flex items-center gap-3">
+            <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
+            <span className="text-sm font-semibold text-red-700 tracking-wide">
+              <AutoLineSplitter text="Pricing & Package" />
+            </span>
+          </div>
+          <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
+            <AutoLineSplitter
+              text="Lets Discover Our Affordable & Transparent Pricing."
+              className="[&>span:last-child>span]:underline [&>span:last-child>span]:decoration-red-200 [&>span:last-child>span]:underline-offset-4 [&>span:last-child>span]:last:text-red-600"
+            />
+          </h2>
         </div>
 
         {/* Pricing Cards Container */}

@@ -12,7 +12,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { GiCarWheel } from "react-icons/gi";
-import { AnimateOnScroll } from "./AnimateOnScroll";
+import { AnimateOnScroll, AutoLineSplitter } from "./AnimateOnScroll";
 import { charFlyInTop, scaleIn } from "./animations";
 
 const WhyChooseUs = () => {
@@ -56,26 +56,27 @@ const WhyChooseUs = () => {
 
   return (
     <section className="bg-[#f4f5f7] py-20 px-6 md:px-12 lg:px-20 min-h-screen flex items-center justify-center font-sans">
-      <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
+      <div className="max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
         {/* Left Heading Column */}
 
-        <AnimateOnScroll variants={charFlyInTop} className="lg:col-span-3">
-          <div>
-            <div className="space-y-4 mt-7 sticky">
-              <div className="inline-flex items-center gap-3">
-                <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
-                <span className="text-sm font-semibold text-red-700 tracking-wide">
-                  Why Choose Us
-                </span>
-              </div>
-
-              <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
-                Excellence in <br />
-                <span className="text-[#8B93A1] font-normal">Every Detail</span>
-              </h2>
+        <div className="lg:col-span-3">
+          <div className="space-y-4 mt-7 sticky">
+            <div className="inline-flex items-center gap-3">
+              <GiCarWheel className="animate-bounce text-red-600 text-xl duration-[20s]" />
+              <span className="text-sm font-semibold text-red-700 tracking-wide">
+                <AutoLineSplitter text="Why Choose Us" />
+              </span>
             </div>
+
+            <h2 className="font-semibold text-3xl md:text-5xl text-stone-900 leading-tight tracking-tight">
+              <AutoLineSplitter text="Excellence in" />
+
+              <span className="text-red-600 [&_span]:underline [&_span]:decoration-red-200 [&_span]:underline-offset-4">
+                <AutoLineSplitter text="Every Detail" />
+              </span>
+            </h2>
           </div>
-        </AnimateOnScroll>
+        </div>
 
         {/* Right Feature Cards Grid Column */}
         <div className="lg:col-span-9 grid grid-cols-1 md:grid-cols-3 gap-6">

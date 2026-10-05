@@ -7,6 +7,7 @@
 - NextAuth v5 (beta) — Credentials (WPGraphQL JWT) + Google OAuth (Site Token)
 - Headless WordPress via WPGraphQL — no REST API, no WordPress Media Library
 - Stripe, Bunny Storage + Pull Zone (sole direct-to-cloud upload provider)
+- Framer Motion — scroll-triggered landing page animations (via `AnimateOnScroll` client wrapper)
 
 ## Commands
 
@@ -84,6 +85,8 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 - **Image component**: Next.js `Image` with explicit `width`/`height` + `style={{ width: "auto", height: "auto" }}` when auto-sizing.
 - **Company logos**: Located at `public/company-logos/`, mixed extensions (png/jpg/jpeg), mapped via `ext` field in `constants.ts`.
 - **Upload done state**: Shows static icon (camera/video) + filename + "Uploaded" badge. No live thumbnail rendering to avoid CDN processing delays causing 500 errors.
+- **Landing page components**: `app/(public)/Components/` — Slider, About, VideoSection, HowItWorks, PricingSection, WhyChooseUs, logoCarousel (all Server Components except VideoSection/logoCarousel). Never add `"use client"` to section files.
+- **Animation pattern**: Wrap sections in `<AnimateOnScroll variants={...}>` from `app/(public)/Components/AnimateOnScroll.tsx` (the only client wrapper). Shared variants live in `animations.ts` (pure data, no React). `withTransition(variant, { duration, delay })` for per-instance timing. For text with nested `<span>` (multi-color), animate at word level, not character level. `AutoLineSplitter` (word-level masked line reveal from bottom) is the verified working heading animation; `TextSplitter` (char-level) remains unverified.
 
 ## Test Configuration
 
@@ -112,7 +115,8 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Login page (flip-card login/signup)            | Done                                                                       |
 | Middleware (`proxy.ts`)                        | Done — role-based redirect; `administrator` + `inspector` → `/dashboard/admin/requests`, others → `/dashboard/customer` |
 | Root layout + Header + shadcn primitives       | Done                                                                       |
-| Landing page (`/`)                             | Default Next.js boilerplate                                                |
+| Landing page (`/`)                             | **Done** — 000-UI: all homepage sections (Hero, About, Video, How It Works, Pricing, Why Choose Us, FAQ, CTA) complete; site-wide Footer rendered in `(public)/layout.tsx`; CTA copy still placeholder. See `.opencode/spec/000-UI/spec.md` |
+| Public site UI (000-UI)                        | **In progress** — homepage ✅ complete; pending: Contact Us, Blog, Blog single, Uber, Lyft, Turo pages. Design work interleaved with feature phases |
 | Customer dashboard (`/dashboard/customer`)     | Done — Phase 5: owner-scoped listing, status filter + pagination, card layout with Add/Filter, empty state |
 | Admin dashboard (Phase 6 Stage A)              | Done — `/dashboard/admin` admin panel (Requests/Users/Archive/Proposals tables + Settings form), desktop sidebar, single route-aware Header in root layout, `/dashboard` mirrors customer dashboard; functional wiring (approve/reject, PDF) deferred to Stage B |
 | Admin dashboard dynamic (Phase 6 Stage B)      | In progress — Task #1 Archive page dynamic (SSR + `listArchivedInspections` + status filter + search + pagination); Requests + Users pages dynamic; **Users edit page (admin-only) done**; Proposals deferred (external dep); Settings not started |
@@ -138,6 +142,25 @@ Each spec lives in `.opencode/spec/<NNN>-<name>/`. After implementation+testing:
 | Session expiry → forced logout                 | **Done** — 006-B: `auth.ts` jwt sets `token.error = "RefreshAccessTokenError"` on definitive WP rejection (transient `serverReached=false` stays silent; cleared on success), exposed as `session.error`; `app/lib/session-error.ts` + `assertSessionActive()` make listing/detail/assignment actions fail fast before the WP call; `SessionExpiryHandler` inside `SessionWrapper` calls `signOut({ redirectTo: "/login?expired=1" })` exactly once; `SessionExpiredNotice` (login flip-card) shows a one-time "session expired" note and strips the query param |
 | Session-expiry sign-out redirect loop          | **Done** (`903fe27`) — `shouldForceSignOut(pathname, error)` never fires on `/login`; `proxy.ts` treats an errored session as logged out → `/login?expired=1`; `auth.ts` jwt stops re-probing WP once the token is already flagged |
 | Tests                                          | Done — 299 Vitest tests, 36 files, ~100% lines, 3 E2E Playwright specs     |
+
+## Phase 000 — Public Site UI (Landing Page & Marketing Pages)
+
+```
+app/(public)/page.tsx                        # landing page composition (8 sections)
+app/(public)/layout.tsx                      # renders site-wide Footer on all public routes
+app/(public)/Components/Slider.tsx           # hero: Embla vertical carousel + overlay heading + CTA
+app/(public)/Components/About.tsx            # badge, LogoCarousel, 2-col grid with image + text
+app/(public)/Components/logoCarousel.tsx     # Embla v9 + AutoScroll plugin (client)
+app/(public)/Components/VideoSection.tsx     # click-to-play YouTube embed (client)
+app/(public)/Components/HowItWorks.tsx       # 4-step snake-flow cards with arrow connectors
+app/(public)/Components/PricingSection.tsx   # 4 pricing cards (Uber/Lyft/Turo/Uber+Lyft)
+app/(public)/Components/WhyChooseUs.tsx      # 3x2 feature card grid
+app/(public)/Components/FAQ.tsx              # 5-item shadcn accordion (AutoLineSplitter heading)
+app/(public)/Components/CTA.tsx              # floating dark glass card over bg image (copy TBD)
+app/(public)/Components/Footer.tsx           # dark footer (brand, contact, socials, INSVE copyright)
+app/(public)/Components/AnimateOnScroll.tsx  # client animation wrapper + TextSplitter + AutoLineSplitter
+app/(public)/Components/animations.ts        # shared Variants + withTransition helper
+```
 
 ## Phase 2 & 3 — Shared Components
 

@@ -6,7 +6,7 @@ import { RiArrowRightLongLine } from "react-icons/ri";
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { AnimateOnScroll } from "./AnimateOnScroll";
+import { AnimateOnScroll, AutoLineSplitter } from "./AnimateOnScroll";
 import { slideFromLeft, slideFromRight, VIEWPORT } from "./animations";
 
 const OPTIONS: EmblaOptionsType = {
@@ -27,11 +27,13 @@ const Slider = () => {
       <div className="auto relative z-10!">
         <EmblaCarousel slides={SLIDES} options={OPTIONS} />
         <div className="h-auto absolute top-6/12 -translate-y-6/12 lg:pl-30 pl-8 w-full text-left">
-          <AnimateOnScroll variants={slideFromLeft}>
-            <h2 className="uppercase lg:text-9xl text-5xl font-black text-amber-50 max-w-120">
-              Ride <span className="text-primary">Share</span> Inspection
-            </h2>
-          </AnimateOnScroll>
+          <h2 className="uppercase lg:text-9xl text-5xl font-black text-amber-50 max-w-120">
+            <AutoLineSplitter
+              text="Ride Share Inspection"
+              className="[&>span:nth-child(2)>span]:text-red-600"
+            />
+          </h2>
+
           <AnimateOnScroll variants={slideFromLeft} delay={0.2}>
             <Link
               href="/dashboard/customer/inspection"
