@@ -7,10 +7,6 @@ const mockAuth = vi.hoisted(() => vi.fn());
 const mockAssertSessionActive = vi.hoisted(() => vi.fn());
 const mockBuildCertificateData = vi.hoisted(() => vi.fn());
 
-vi.mock("@/app/lib/pdf/engine", () => ({
-  renderCertificate: mockRenderCertificate,
-}));
-
 vi.mock("@/app/actions/inspections", () => ({
   fetchInspection: mockFetchInspection,
   listInspections: vi.fn(),
@@ -26,6 +22,10 @@ vi.mock("@/app/lib/refresh-token", () => ({
 
 vi.mock("@/app/lib/pdf/data", () => ({
   buildCertificateData: mockBuildCertificateData,
+}));
+
+vi.mock("@/app/lib/pdf/engine", () => ({
+  renderCertificate: mockRenderCertificate,
 }));
 
 import { generateCertificate } from "@/app/actions/certificate";

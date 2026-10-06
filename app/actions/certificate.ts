@@ -60,20 +60,12 @@ export async function generateCertificate(
   // Lazy-load dependencies to keep cold-start low for other actions
   const { fetchInspection } = await import("@/app/actions/inspections");
   const { renderCertificate } = await import("@/app/lib/pdf/engine");
-  const { getTemplateMapper } = await import("@/app/lib/pdf/resolver");
 
   // Fetch the inspection detail
   const detail = (await fetchInspection(inspectionDatabaseId)) as InspectionDetail;
 
   // Determine company - use provided company or first one from inspection
   const company = input?.company ?? detail.companies[0] ?? "lyft";
-
-  // Resolve template
-  const mapper = await getTemplateMapper({
-    company,
-    country: detail.country,
-    state: detail.state,
-  });
 
   // Build certificate data from the inspection
   const certData: CertificateData = buildCertificateData(detail, company, {});
