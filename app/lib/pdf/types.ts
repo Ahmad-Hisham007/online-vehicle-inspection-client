@@ -21,7 +21,7 @@ export interface CertificateData {
   company: string;
   country: CertCountry;
   state: string;
-  driver: { name: string; email: string };
+  driver: { name: string; email: string; phone?: string };
   host: { name: string; email: string; phone: string };
   vehicle: {
     make: string;

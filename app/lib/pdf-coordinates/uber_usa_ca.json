@@ -1,0 +1,55 @@
+{
+  "template": "uber_usa_ca.pdf",
+  "pageSize": {
+    "width": 612,
+    "height": 792
+  },
+  "fields": {
+    "driverInfo": {
+      "driverName": { "x": 62, "y": 702, "fontSize": 12 },
+      "driverPhone": { "x": 372, "y": 702, "fontSize": 11 }
+    },
+    "checklistPassMarks": [
+      { "item": 1, "label": "Headlights", "x": 164, "y": 632 },
+      { "item": 2, "label": "Tail lights", "x": 164, "y": 614 },
+      { "item": 3, "label": "Turn indicator lights", "x": 164, "y": 596 },
+      { "item": 4, "label": "Stop lights", "x": 164, "y": 578 },
+      { "item": 5, "label": "Foot brakes", "x": 164, "y": 560 },
+      { "item": 6, "label": "Emergency brake", "x": 164, "y": 542 },
+      { "item": 7, "label": "Steering mechanism", "x": 164, "y": 524 },
+      { "item": 8, "label": "Windshield", "x": 164, "y": 506 },
+      { "item": 9, "label": "Safety belts", "x": 164, "y": 488 },
+      { "item": 10, "label": "Interior exterior mirrors", "x": 164, "y": 470 },
+      { "item": 11, "label": "Rear window glass", "x": 456, "y": 632 },
+      { "item": 12, "label": "Windshield wipers", "x": 456, "y": 614 },
+      { "item": 13, "label": "Front seat adjustment", "x": 456, "y": 596 },
+      { "item": 14, "label": "Doors", "x": 456, "y": 578 },
+      { "item": 15, "label": "Horn", "x": 456, "y": 560 },
+      { "item": 16, "label": "Speedometer", "x": 456, "y": 542 },
+      { "item": 17, "label": "Bumpers", "x": 456, "y": 524 },
+      { "item": 18, "label": "Muffler and exhaust", "x": 456, "y": 506 },
+      { "item": 19, "label": "Tires", "x": 456, "y": 488 }
+    ],
+    "overallStatus": {
+      "passCircle": { "x": 110, "y": 420, "xScale": 22, "yScale": 12 }
+    },
+    "inspectorInfo": {
+      "inspectionDate": { "x": 62, "y": 332, "fontSize": 11 },
+      "vehicleMileage": { "x": 202, "y": 332, "fontSize": 12 },
+      "licensePlateState": { "x": 342, "y": 332, "fontSize": 11 },
+      "licensePlate": { "x": 482, "y": 332, "fontSize": 12 },
+      "vin": { "x": 62, "y": 296, "fontSize": 12 },
+      "vehicleMake": { "x": 202, "y": 296, "fontSize": 12 },
+      "vehicleModel": { "x": 342, "y": 296, "fontSize": 12 },
+      "vehicleYear": { "x": 482, "y": 296, "fontSize": 12 },
+      "hasRegistrationSticker": { "x": 62, "y": 260, "fontSize": 11 },
+      "registrationStickerMonthyear": { "x": 202, "y": 260, "fontSize": 11 },
+      "numberOfDoors": { "x": 482, "y": 260, "fontSize": 11 },
+      "inspectorCompany": { "x": 62, "y": 218, "fontSize": 12 },
+      "inspectorAddress": { "x": 302, "y": 218, "fontSize": 11 },
+      "inspectorName": { "x": 62, "y": 176, "fontSize": 12 },
+      "stateCertificationNumber": { "x": 302, "y": 176, "fontSize": 11 },
+      "inspectorSignature": { "x": 62, "y": 134, "fontSize": 12 }
+    }
+  }
+}

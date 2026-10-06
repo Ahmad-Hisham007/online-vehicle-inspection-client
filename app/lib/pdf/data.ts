@@ -114,7 +114,11 @@ export function buildCertificateData(
     company,
     country,
     state: detail.location.state,
-    driver: { name: detail.driverName, email: detail.driverEmail },
+    driver: { 
+      name: detail.driverName, 
+      email: detail.driverEmail,
+      phone: v("driverPhoneNumber") || detail.driverPhoneNumber || undefined,
+    },
     host: {
       name: v("hostName") || detail.hostName,
       email: v("hostEmail") || detail.hostEmail,

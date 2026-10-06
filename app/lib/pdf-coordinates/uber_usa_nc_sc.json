@@ -1,0 +1,57 @@
+{
+  "template": "uber_usa_nc_sc.pdf",
+  "pageSize": {
+    "width": 612,
+    "height": 792
+  },
+  "fields": {
+    "checklistPassMarks": [
+      { "item": 1, "label": "Foot brakes", "x": 234, "y": 708 },
+      { "item": 2, "label": "Emergency brake", "x": 234, "y": 687 },
+      { "item": 3, "label": "Steering mechanism", "x": 234, "y": 666 },
+      { "item": 4, "label": "Windshield", "x": 234, "y": 645 },
+      { "item": 5, "label": "Rear window and glass", "x": 234, "y": 624 },
+      { "item": 6, "label": "Windshield wipers", "x": 234, "y": 603 },
+      { "item": 7, "label": "Headlights", "x": 234, "y": 582 },
+      { "item": 8, "label": "Tail lights", "x": 234, "y": 561 },
+      { "item": 9, "label": "Turn indicator lights", "x": 234, "y": 540 },
+      { "item": 10, "label": "Brake lights", "x": 234, "y": 519 },
+      { "item": 11, "label": "Front seat adjustment", "x": 526, "y": 708 },
+      { "item": 12, "label": "Doors", "x": 526, "y": 687 },
+      { "item": 13, "label": "Horn", "x": 526, "y": 666 },
+      { "item": 14, "label": "Speedometer", "x": 526, "y": 645 },
+      { "item": 15, "label": "Bumpers", "x": 526, "y": 624 },
+      { "item": 16, "label": "Muffler and exhaust", "x": 526, "y": 603 },
+      { "item": 17, "label": "Tire condition", "x": 526, "y": 582 },
+      { "item": 18, "label": "Mirrors", "x": 526, "y": 561 },
+      { "item": 19, "label": "Safety belts", "x": 526, "y": 540 }
+    ],
+    "overallStatus": {
+      "passCircle": { "x": 110, "y": 482, "xScale": 22, "yScale": 12 }
+    },
+    "driverInfo": {
+      "partnerName": { "x": 62, "y": 420, "fontSize": 12 },
+      "partnerSignature": { "x": 62, "y": 384, "fontSize": 12 },
+      "licensePlate": { "x": 234, "y": 420, "fontSize": 12 },
+      "vin": { "x": 234, "y": 384, "fontSize": 12 },
+      "vehicleMake": { "x": 372, "y": 420, "fontSize": 12 },
+      "vehicleModel": { "x": 482, "y": 420, "fontSize": 12 },
+      "vehicleYear": { "x": 372, "y": 384, "fontSize": 12 },
+      "vehicleMileage": { "x": 482, "y": 384, "fontSize": 12 },
+      "partnerEmail": { "x": 234, "y": 348, "fontSize": 11 },
+      "partnerPhone": { "x": 482, "y": 348, "fontSize": 11 },
+      "partnerDate": { "x": 372, "y": 348, "fontSize": 11 }
+    },
+    "inspectorInfo": {
+      "facilityName": { "x": 58, "y": 285, "fontSize": 11 },
+      "facilityAddress": { "x": 58, "y": 252, "fontSize": 11 },
+      "inspectorSignature": { "x": 58, "y": 218, "fontSize": 12 },
+      "inspectionDate": { "x": 302, "y": 218, "fontSize": 11 },
+      "stateCheckboxes": {
+        "NC": { "x": 302, "y": 285 },
+        "SC": { "x": 402, "y": 285 },
+        "GA": { "x": 502, "y": 285 }
+      }
+    }
+  }
+}

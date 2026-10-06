@@ -1,0 +1,56 @@
+{
+  "template": "lyft_usa_sc.pdf",
+  "pageSize": {
+    "width": 612,
+    "height": 792
+  },
+  "fields": {
+    "driverInfo": {
+      "driverName": { "x": 62, "y": 702, "fontSize": 12 },
+      "email": { "x": 312, "y": 702, "fontSize": 11 },
+      "licensePlate": { "x": 62, "y": 662, "fontSize": 12 },
+      "vin": { "x": 312, "y": 662, "fontSize": 12 },
+      "vehicleMake": { "x": 62, "y": 628, "fontSize": 12 },
+      "vehicleModel": { "x": 242, "y": 628, "fontSize": 12 },
+      "vehicleYear": { "x": 452, "y": 628, "fontSize": 12 },
+      "driverSignature": { "x": 62, "y": 594, "fontSize": 12 },
+      "driverPhone": { "x": 312, "y": 594, "fontSize": 11 }
+    },
+    "checklistPassMarks": [
+      { "item": 1, "label": "Foot brakes", "x": 234, "y": 520 },
+      { "item": 2, "label": "Emergency brake", "x": 234, "y": 502 },
+      { "item": 3, "label": "Steering mechanism", "x": 234, "y": 484 },
+      { "item": 4, "label": "Windshield", "x": 234, "y": 466 },
+      { "item": 5, "label": "Rear window and glass", "x": 234, "y": 448 },
+      { "item": 6, "label": "Windshield wipers", "x": 234, "y": 430 },
+      { "item": 7, "label": "Headlights", "x": 234, "y": 412 },
+      { "item": 8, "label": "Tail lights", "x": 234, "y": 394 },
+      { "item": 9, "label": "Turn indicator lights", "x": 234, "y": 376 },
+      { "item": 10, "label": "Stop lights", "x": 234, "y": 358 },
+      { "item": 11, "label": "Front seat adjustment", "x": 234, "y": 340 },
+      { "item": 12, "label": "Doors", "x": 234, "y": 322 },
+      { "item": 13, "label": "Horn", "x": 526, "y": 520 },
+      { "item": 14, "label": "Speedometer", "x": 526, "y": 502 },
+      { "item": 15, "label": "Bumpers", "x": 526, "y": 484 },
+      { "item": 16, "label": "Muffler and exhaust", "x": 526, "y": 466 },
+      { "item": 17, "label": "Tires Left Front", "x": 526, "y": 430 },
+      { "item": 17, "label": "Tires Right Front", "x": 526, "y": 412 },
+      { "item": 17, "label": "Tires Left Rear", "x": 526, "y": 394 },
+      { "item": 17, "label": "Tires Right Rear", "x": 526, "y": 376 },
+      { "item": 18, "label": "Mirrors", "x": 526, "y": 358 },
+      { "item": 19, "label": "Safety belts", "x": 526, "y": 340 }
+    ],
+    "overallStatus": {
+      "passCircle": { "x": 518, "y": 242, "xScale": 22, "yScale": 12 }
+    },
+    "inspectorInfo": {
+      "companyName": { "x": 58, "y": 148, "fontSize": 12 },
+      "inspectorName": { "x": 302, "y": 148, "fontSize": 12 },
+      "facilityAddress": { "x": 58, "y": 118, "fontSize": 11 },
+      "facilityState": { "x": 202, "y": 118, "fontSize": 11 },
+      "facilityZip": { "x": 252, "y": 118, "fontSize": 11 },
+      "inspectionDate": { "x": 302, "y": 118, "fontSize": 11 },
+      "inspectorSignature": { "x": 58, "y": 88, "fontSize": 12 }
+    }
+  }
+}

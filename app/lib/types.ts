@@ -75,6 +75,7 @@ export interface InspectionDetail extends InspectionSummary {
   /** Account owner (WP post author) — the driver being certified. */
   driverName: string;
   driverEmail: string;
+  driverPhoneNumber?: string;
   media: Record<MediaTab, MediaItem[]>;
   certificates: { lyft?: string; uber?: string; turo?: string };
   orderSubtotal: string;

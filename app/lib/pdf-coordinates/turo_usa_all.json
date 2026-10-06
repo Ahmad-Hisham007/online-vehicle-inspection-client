@@ -1,0 +1,80 @@
+{
+  "template": "turo_usa_all.pdf",
+  "pageSize": {
+    "width": 612,
+    "height": 792
+  },
+  "fields": {
+    "hostInfo": {
+      "hostName": { "x": 62, "y": 204, "fontSize": 12 },
+      "hostSignature": { "x": 62, "y": 168, "fontSize": 12 },
+      "licensePlate": { "x": 234, "y": 204, "fontSize": 12 },
+      "vin": { "x": 234, "y": 168, "fontSize": 12 },
+      "vehicleMake": { "x": 372, "y": 204, "fontSize": 12 },
+      "vehicleModel": { "x": 482, "y": 204, "fontSize": 12 },
+      "vehicleYear": { "x": 372, "y": 168, "fontSize": 12 },
+      "vehicleMileage": { "x": 482, "y": 168, "fontSize": 12 },
+      "hostEmail": { "x": 234, "y": 132, "fontSize": 11 },
+      "hostPhone": { "x": 482, "y": 132, "fontSize": 11 },
+      "hostDate": { "x": 372, "y": 132, "fontSize": 11 }
+    },
+    "checklistPassMarks": [
+      { "item": 1, "label": "Brakes shoes and pads", "x": 234, "y": 708 },
+      { "item": 2, "label": "Emergency brake", "x": 234, "y": 687 },
+      { "item": 3, "label": "Steering mechanism", "x": 234, "y": 666 },
+      { "item": 4, "label": "Windshield", "x": 234, "y": 645 },
+      { "item": 5, "label": "Rear window and other glass", "x": 234, "y": 612 },
+      { "item": 6, "label": "Windshield wipers", "x": 234, "y": 591 },
+      { "item": 7, "label": "Headlights and tail lights", "x": 234, "y": 570 },
+      { "item": 8, "label": "Turn indicator lights", "x": 234, "y": 549 },
+      { "item": 9, "label": "Brake lights", "x": 234, "y": 528 },
+      { "item": 10, "label": "Front seat adjustment", "x": 234, "y": 507 },
+      { "item": 11, "label": "Doors", "x": 234, "y": 486 },
+      { "item": 12, "label": "Horn", "x": 234, "y": 465 },
+      { "item": 13, "label": "Speedometer functional", "x": 526, "y": 708 },
+      { "item": 14, "label": "Bumpers", "x": 526, "y": 687 },
+      { "item": 15, "label": "Muffler and exhaust system", "x": 526, "y": 666 },
+      {
+        "item": 16,
+        "label": "Tires manufacture date under 6 yrs",
+        "x": 526,
+        "y": 645
+      },
+      {
+        "item": 17,
+        "label": "All 4 tires tread depth over 4/32",
+        "x": 526,
+        "y": 612
+      },
+      {
+        "item": 18,
+        "label": "Interior and exterior mirrors",
+        "x": 526,
+        "y": 591
+      },
+      { "item": 19, "label": "Seat belts", "x": 526, "y": 570 },
+      {
+        "item": 20,
+        "label": "Battery less than 5 years old",
+        "x": 526,
+        "y": 549
+      },
+      {
+        "item": 21,
+        "label": "Battery voltage greater than 12.1V",
+        "x": 526,
+        "y": 507
+      }
+    ],
+    "overallStatus": {
+      "passCircle": { "x": 160, "y": 242, "xScale": 22, "yScale": 12 }
+    },
+    "inspectorInfo": {
+      "inspectorCompanyAndAddress": { "x": 58, "y": 82, "fontSize": 11 },
+      "inspectorName": { "x": 234, "y": 82, "fontSize": 12 },
+      "inspectorSignature": { "x": 372, "y": 82, "fontSize": 12 },
+      "inspectionDate": { "x": 482, "y": 82, "fontSize": 11 },
+      "aseLicenseId": { "x": 234, "y": 48, "fontSize": 11 }
+    }
+  }
+}
