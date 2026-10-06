@@ -46,40 +46,23 @@ describe("generateCertificate", () => {
     vehicleColor: "Blue",
     fuelType: "hybrid",
     inspectionCountry: "USA",
-    inspectionStateUsa: "CA",
-    inspectionStateCanada: "",
-    inspectionCompanies: "lyft",
-    driverName: "John Doe",
-    driverEmail: "john@example.com",
-    driverPhoneNumber: "+15550100",
+    country: "USA",
+    state: "CA",
+    inspectionDate: "2026-10-06",
+    expiryDate: "2027-10-06",
     hostName: "Rideshare Inspection",
     hostEmail: "certs@ride.com",
     hostPhoneNumber: "+15550000",
-    inspectionDate: "2026-10-06",
-    expiryDate: "2027-10-06",
+    driverName: "John Doe",
+    driverEmail: "john@example.com",
+    driverPhoneNumber: "+15550100",
+    media: { general: [], interior: [], exterior: [], tires: [] },
+    certificates: {},
     orderSubtotal: "24.00",
+    companies: ["lyft"],
     inspectionStatus: "approved",
     paymentStatus: "paid",
-    numberOfDoors: "4",
-    numberOfSeatbelts: "5",
-    hasRegistrationSticker: "yes",
-    registrationStickerMonthyear: "01/26",
-    zip: "90001",
-    tiresOlderThan6Years: false,
-    batteryOlderThan5Years: false,
-    voltageGreaterThan12_1V: true,
-    brakeFrontLeftMin: "0.00",
-    brakeFrontRightMin: "0.00",
-    brakeRearLeftMin: "0.00",
-    brakeRearRightMin: "0.00",
-    tireRightFront: "0/32",
-    tireLeftFront: "0/32",
-    tireRightRear: "0/32",
-    tireLeftRear: "0/32",
-    companyName: "Rideshare Inspection Center",
-    facilityAddress: "1234 Inspection Blvd, Los Angeles, CA 90001",
-    ardNumber: "ARD-00000002",
-    inspectionExpiryDate: "2027-10-06",
+    approvalFields: {},
   } as InspectionDetail;
 
   const mockCertData = {
@@ -93,7 +76,7 @@ describe("generateCertificate", () => {
     condition: { tiresOlderThan6Years: "no" as const, batteryOlderThan5Years: "no" as const, voltageGreaterThan12_1V: "yes" as const },
     brakes: { minFront: "0.00", minRear: "0.00", frontLeft: "pass" as const, frontRight: "pass" as const, rearLeft: "pass" as const, rearRight: "pass" as const },
     tires: { rightFront: "0/32", leftFront: "0/32", rightRear: "0/32", leftRear: "0/32" },
-    inspection: { date: "2026-10-06", expiryDate: "2027-10-06", companiesLabel: "Lyft" },
+    inspection: { date: "10/06/2026", expiryDate: "10/06/2027", companiesLabel: "Lyft" },
     handler: { name: "Inspector Smith", signature: "inspector-signature-id" },
     arn: "ARD-00000002",
     facility: { name: "RideShare Inspection Center", address: "1234 Inspection Blvd, Los Angeles, CA 90001" },
@@ -114,9 +97,18 @@ describe("generateCertificate", () => {
     expect(result.previewUrl).toContain("data:application/pdf;base64,");
     expect(mockFetchInspection).toHaveBeenCalledWith("123");
     expect(mockRenderCertificate).toHaveBeenCalledWith(mockCertData, expect.any(Number));
+    expect(mockBuildCertificateData).toHaveBeenCalledWith(mockDetail, "lyft", {});
   });
 
-  it("should reject non-admin user", async () => {
+  it("should render certificate for inspector user", async () => {
+    mockAuth.mockResolvedValue({ user: { accessToken: "token", role: "inspector" } });
+
+    const result = await generateCertificate("123");
+
+    expect(result.mimeType).toBe("application/pdf");
+  });
+
+  it("should reject customer user", async () => {
     mockAuth.mockResolvedValue({
       user: { accessToken: "token", role: "customer" },
     });
@@ -128,6 +120,24 @@ describe("generateCertificate", () => {
     mockAuth.mockResolvedValue({ user: null });
 
     await expect(generateCertificate("123")).rejects.toThrow("Unauthorized");
+  });
+
+  it("should use company from input parameter", async () => {
+    const uberDetail = { ...mockDetail, companies: ["uber", "lyft"] };
+    mockFetchInspection.mockResolvedValue(uberDetail);
+
+    await generateCertificate("123", { company: "uber" });
+
+    expect(mockBuildCertificateData).toHaveBeenCalledWith(uberDetail, "uber", {});
+  });
+
+  it("should use first company from inspection if not specified", async () => {
+    const uberLyftDetail = { ...mockDetail, companies: ["uber", "lyft"] };
+    mockFetchInspection.mockResolvedValue(uberLyftDetail);
+
+    await generateCertificate("123");
+
+    expect(mockBuildCertificateData).toHaveBeenCalledWith(uberLyftDetail, "uber", {});
   });
 
   it("should pass seed to engine", async () => {

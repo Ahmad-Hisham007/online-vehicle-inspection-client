@@ -27,7 +27,11 @@ export interface CertificatePreview {
  * - Renders PDF via pdf-lib engine
  * - Returns data-URL suitable for preview or download
  *
- * Input: inspectionDatabaseId (the WP database ID, e.g. "123")
+ * @param inspectionDatabaseId - The WP database ID of the inspection
+ * @param input - Optional parameters
+ * @param input.company - The company to generate certificate for (required; inspection.companies[0] if not provided)
+ * @param input.seed - Seed for deterministic PDF layout (defaults to Date.now())
+ *
  * Output: { previewUrl: "data:application/pdf;base64,..." }
  *
  * Production note: The rendered bytes are then uploaded to Bunny CDN
@@ -35,9 +39,9 @@ export interface CertificatePreview {
  */
 export async function generateCertificate(
   inspectionDatabaseId: string,
-  options?: {
-    /** Override template key (rarely needed, resolver handles fallbacks). */
-    templateKey?: string;
+  input?: {
+    /** Company to generate certificate for (e.g., "lyft", "uber", "turo"). */
+    company?: string;
     /** Seed for deterministic PDF layout. Defaults to Date.now(). */
     seed?: number;
   },
@@ -53,21 +57,29 @@ export async function generateCertificate(
   }
   assertSessionActive(session.error);
 
-  // Lazy-load engine to keep cold-start low for other actions
+  // Lazy-load dependencies to keep cold-start low for other actions
+  const { fetchInspection } = await import("@/app/actions/inspections");
   const { renderCertificate } = await import("@/app/lib/pdf/engine");
+  const { getTemplateMapper } = await import("@/app/lib/pdf/resolver");
+
+  // Fetch the inspection detail
+  const detail = (await fetchInspection(inspectionDatabaseId)) as InspectionDetail;
+
+  // Determine company - use provided company or first one from inspection
+  const company = input?.company ?? detail.companies[0] ?? "lyft";
+
+  // Resolve template
+  const mapper = await getTemplateMapper({
+    company,
+    country: detail.country,
+    state: detail.state,
+  });
 
   // Build certificate data from the inspection
-  // We need the full detail for this - fetch it lazily to avoid circular deps
-  const { fetchInspection } = await import("@/app/actions/inspections");
-  const detail = await fetchInspection(inspectionDatabaseId);
-
-  const certData: CertificateData = buildCertificateData(
-    detail as InspectionDetail,
-    options?.templateKey,
-  );
+  const certData: CertificateData = buildCertificateData(detail, company, {});
 
   // Render with seeded RNG for deterministic layout
-  const seed = options?.seed ?? Date.now();
+  const seed = input?.seed ?? Date.now();
   const pdfBytes = await renderCertificate(certData, seed);
 
   // Convert to data-URL for preview
