@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/**": ["./app/lib/pdf/**", "./app/lib/pdf-assets/**"],
+  },
   images: {
     remotePatterns: [
       {
