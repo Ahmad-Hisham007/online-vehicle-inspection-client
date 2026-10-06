@@ -106,18 +106,14 @@ export function getStatusPillStyle(status: InspectionStatus): StatusPillStyle {
 }
 
 const APPROVABLE_STATUSES: InspectionStatus[] = ["paid", "in_progress"];
-const NON_REJECTABLE_STATUSES: InspectionStatus[] = [
-  "paid",
-  "in_progress",
-  "approved",
-];
+const NON_REJECTABLE_STATUSES: InspectionStatus[] = ["in_progress", "approved"];
 
 /** Admin may approve only paid or in-progress inspections. */
 export function canApproveInspection(status: InspectionStatus): boolean {
   return APPROVABLE_STATUSES.includes(status);
 }
 
-/** Admin may reject any inspection except paid / in-progress / already-approved. */
+/** Admin may reject any inspection except in-progress / already-approved. */
 export function canRejectInspection(status: InspectionStatus): boolean {
   return !NON_REJECTABLE_STATUSES.includes(status);
 }

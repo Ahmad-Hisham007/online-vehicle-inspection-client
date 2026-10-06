@@ -86,9 +86,10 @@ describe("CertificatesPanel admin actions", () => {
     }
   });
 
-  it("enables Reject for every status except paid/in_progress/approved", () => {
+  it("enables Reject for every status except in_progress/approved", () => {
     for (const status of [
       "pending",
+      "paid",
       "payment_failed",
       "rejected",
       "cancelled",
@@ -101,7 +102,6 @@ describe("CertificatesPanel admin actions", () => {
     }
 
     for (const status of [
-      "paid",
       "in_progress",
       "approved",
     ] as InspectionStatus[]) {

@@ -84,7 +84,7 @@ describe("canApproveInspection / canRejectInspection", () => {
 
   const REJECTABLE: Record<string, boolean> = {
     pending: true,
-    paid: false,
+    paid: true,
     payment_failed: true,
     in_progress: false,
     approved: false,
@@ -106,12 +106,12 @@ describe("canApproveInspection / canRejectInspection", () => {
     expect(canApproveInspection("pending")).toBe(false);
   });
 
-  it("allows reject for everything except paid/in_progress/approved", () => {
+  it("allows reject for everything except in_progress/approved", () => {
     expect(canRejectInspection("pending")).toBe(true);
     expect(canRejectInspection("payment_failed")).toBe(true);
     expect(canRejectInspection("rejected")).toBe(true);
     expect(canRejectInspection("cancelled")).toBe(true);
-    expect(canRejectInspection("paid")).toBe(false);
+    expect(canRejectInspection("paid")).toBe(true);
     expect(canRejectInspection("in_progress")).toBe(false);
     expect(canRejectInspection("approved")).toBe(false);
   });
