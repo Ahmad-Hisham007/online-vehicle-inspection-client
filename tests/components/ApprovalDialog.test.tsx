@@ -29,6 +29,8 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     hostName: "Test User",
     hostEmail: "test@example.com",
     hostPhoneNumber: "555-0100",
+    driverName: "Test User",
+    driverEmail: "test@example.com",
     media: { general: [], interior: [], exterior: [], tires: [] },
     certificates: {},
     orderSubtotal: "63",

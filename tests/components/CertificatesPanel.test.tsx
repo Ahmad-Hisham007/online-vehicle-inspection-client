@@ -45,6 +45,8 @@ function detail(
     hostName: "Test User",
     hostEmail: "test@example.com",
     hostPhoneNumber: "555-0100",
+    driverName: "Test User",
+    driverEmail: "test@example.com",
     media: { general: [], interior: [], exterior: [], tires: [] },
     certificates: {},
     orderSubtotal: "24",

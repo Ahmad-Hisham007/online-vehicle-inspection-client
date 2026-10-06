@@ -230,6 +230,8 @@ function mapDetail(node: InspectionNode): InspectionDetail {
     hostName: details.hostName,
     hostEmail: details.hostEmail,
     hostPhoneNumber: details.hostPhoneNumber,
+    driverName: node.author?.node.name ?? node.author?.node.displayName ?? "",
+    driverEmail: node.author?.node.email ?? "",
     media: mapMedia(details),
     certificates: {
       lyft: details.lyftCertificate || undefined,

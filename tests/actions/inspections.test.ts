@@ -366,4 +366,43 @@ describe("fetchInspection", () => {
     expect(query).toContain("handlerSignature");
     expect(query).toContain("hasRegistrationSticker");
   });
+
+  it("maps driver identity from the post author", async () => {
+    mockWpFetch.mockResolvedValue({ inspection: detailNode(1) });
+
+    const result = await fetchInspection("1");
+
+    expect(result.driverName).toBe("Test User");
+    expect(result.driverEmail).toBe("test@example.com");
+  });
+
+  it("falls back to displayName when the author has no name", async () => {
+    mockWpFetch.mockResolvedValue({
+      inspection: {
+        ...detailNode(1),
+        author: { node: { databaseId: 11, displayName: "Fallback Name" } },
+      },
+    });
+
+    const result = await fetchInspection("1");
+
+    expect(result.driverName).toBe("Fallback Name");
+    expect(result.driverEmail).toBe("");
+  });
+
+  it("defaults driver identity to empty when the author is null", async () => {
+    // administrator session — a null author would fail the owner gate otherwise
+    mockAuth.mockResolvedValue({
+      ...SESSION,
+      user: { ...SESSION.user, role: "administrator" },
+    });
+    mockWpFetch.mockResolvedValue({
+      inspection: { ...detailNode(1), author: null },
+    });
+
+    const result = await fetchInspection("1");
+
+    expect(result.driverName).toBe("");
+    expect(result.driverEmail).toBe("");
+  });
 });
