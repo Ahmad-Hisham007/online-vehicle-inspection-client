@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/Button";
 import RejectDialog from "@/app/components/InspectionDetailView/RejectDialog";
 import ApprovalDialog from "@/app/components/InspectionDetailView/ApprovalDialog";
-import {
-  canApproveInspection,
-  canRejectInspection,
-} from "@/app/lib/status";
+import { canApproveInspection, canRejectInspection } from "@/app/lib/status";
 import type { InspectionDetail } from "@/app/lib/types";
 
 interface CertificatesPanelProps {
@@ -16,7 +13,10 @@ interface CertificatesPanelProps {
   role: "customer" | "admin";
 }
 
-const CERTIFICATE_LABELS: { key: keyof InspectionDetail["certificates"]; label: string }[] = [
+const CERTIFICATE_LABELS: {
+  key: keyof InspectionDetail["certificates"];
+  label: string;
+}[] = [
   { key: "lyft", label: "Lyft" },
   { key: "uber", label: "Uber" },
   { key: "turo", label: "Turo" },
@@ -52,7 +52,7 @@ export default function CertificatesPanel({
   }
 
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-3">
       <div className="min-w-0 flex-1">
         <p className="text-sm font-bold text-foreground">Certificates</p>
         {isApproved && availableCertificates.length > 0 ? (
@@ -81,7 +81,7 @@ export default function CertificatesPanel({
           <Button
             variant="primary"
             size="sm"
-            className="!w-auto !px-6 shrink-0"
+            className="w-full! px-6! shrink-0"
             onClick={() =>
               router.push(`/dashboard/customer/pay/${inspection.id}`)
             }
@@ -90,11 +90,11 @@ export default function CertificatesPanel({
           </Button>
         )
       ) : (
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 grow gap-2 [&_button]:w-full">
           <Button
             variant="primary"
             size="sm"
-            className="!w-auto !px-5"
+            className="px-5!"
             type="button"
             disabled={!canApprove}
             onClick={() => setApproveOpen(true)}
@@ -104,7 +104,7 @@ export default function CertificatesPanel({
           <Button
             variant="secondary"
             size="sm"
-            className="!w-auto !px-5"
+            className=" px-5!"
             type="button"
             disabled={!canReject}
             onClick={() => setRejectOpen(true)}

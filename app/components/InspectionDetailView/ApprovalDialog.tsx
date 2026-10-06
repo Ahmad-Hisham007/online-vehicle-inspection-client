@@ -53,8 +53,8 @@ export default function ApprovalDialog({
             Approve inspection
           </DialogTitle>
           <DialogDescription className="text-center sm:text-center">
-            Review each company&apos;s details, generate the certificate and save
-            it before approving.
+            Review each company&apos;s details, generate the certificate and
+            save it before approving.
           </DialogDescription>
         </DialogHeader>
 
@@ -69,7 +69,11 @@ export default function ApprovalDialog({
             className="space-y-3"
           >
             {companies.map((company) => (
-              <AccordionItem key={company} value={company}>
+              <AccordionItem
+                className="border border-stone-200"
+                key={company}
+                value={company}
+              >
                 <AccordionTrigger>
                   {APPROVAL_COMPANY_LABELS[company] ?? company}
                 </AccordionTrigger>

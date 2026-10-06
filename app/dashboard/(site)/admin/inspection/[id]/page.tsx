@@ -67,7 +67,7 @@ export default function AdminInspectionDetailPage() {
               <Button
                 variant="secondary"
                 size="sm"
-                className="!w-auto !px-6"
+                className="w-auto! px-6!"
                 type="button"
                 onClick={load}
               >
