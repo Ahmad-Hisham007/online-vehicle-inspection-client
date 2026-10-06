@@ -90,6 +90,7 @@ type Props = {
   className?: string;
   duration?: number;
   staggerChildren?: number;
+  customView?: { once: boolean; amount: number; margin: string };
 };
 
 export const AnimateOnScroll = ({
@@ -98,13 +99,14 @@ export const AnimateOnScroll = ({
   delay = 0,
   className,
   duration,
+  customView,
 }: Props) => {
   return (
     <motion.div
       variants={variants}
       initial="hidden"
       whileInView="visible"
-      viewport={VIEWPORT}
+      viewport={customView ? customView : VIEWPORT}
       className={`${className} transform-gpu`}
       transition={{
         duration: 0.95,

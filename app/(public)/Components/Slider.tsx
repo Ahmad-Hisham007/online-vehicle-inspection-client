@@ -48,6 +48,7 @@ const Slider = () => {
       <AnimateOnScroll
         variants={slideFromRight}
         className="max-w-185 flex md:flex-row flex-col md:items-stretch items-center md:text-left text-center md:divide-x md:divide-y-0 divide-y divide-x-0 divide-black/80 md:gap-10 gap-5 p-12.5 bg-primary z-39! ml-auto md:-mt-30 relative"
+        customView={{ once: true, amount: 0.7, margin: "-10px" }}
       >
         <div className="md:pr-10 pr-0 md:pb-0 pb-5">
           <h2 className="font-extrabold md:text-7xl text-4xl text-black/80">
