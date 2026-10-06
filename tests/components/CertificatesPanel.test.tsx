@@ -27,6 +27,7 @@ function detail(
 ): InspectionDetail {
   return {
     id: "234",
+    databaseId: 234,
     licensePlate: "ABC123",
     dateCreated: "2026-08-15T17:14:00",
     inspectionStatus: status,
@@ -47,9 +48,11 @@ function detail(
     hostPhoneNumber: "555-0100",
     driverName: "Test User",
     driverEmail: "test@example.com",
+    driverPhoneNumber: "+15550100",
     media: { general: [], interior: [], exterior: [], tires: [] },
     certificates: {},
     orderSubtotal: "24",
+    assignedInspector: null,
     approvalFields: {},
     ...overrides,
   };
