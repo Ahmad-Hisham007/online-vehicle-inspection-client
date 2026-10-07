@@ -34,7 +34,7 @@ repomix-output.xml
 opencode.jsonc
 AGENTS.md
 CLAUDE.md
-docs/*
+docs/implementation-plan.md
 
 # case studies (personal content, never pushed)
 /case-studies/
