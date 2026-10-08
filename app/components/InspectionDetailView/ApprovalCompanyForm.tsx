@@ -14,6 +14,7 @@ import {
   type ApprovalFieldContext,
   type ApprovalFieldDef,
 } from "@/app/lib/approval-fields";
+import type { InspectionDetail } from "@/app/lib/types";
 
 const INPUT_CLASS =
   "h-12 w-full rounded-md border-0 bg-gray-50 px-4 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-100 transition-all placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary";
@@ -99,6 +100,8 @@ interface ApprovalCompanyFormProps {
   companyLabel: string;
   country: "USA" | "Canada";
   initialValues: Record<string, string>;
+  inspection: InspectionDetail;
+  templateKey: string;
 }
 
 export default function ApprovalCompanyForm({
@@ -106,6 +109,8 @@ export default function ApprovalCompanyForm({
   companyLabel,
   country,
   initialValues,
+  inspection,
+  templateKey,
 }: ApprovalCompanyFormProps) {
   const [values, setValues] = useState<Record<string, string>>(initialValues);
   const [generated, setGenerated] = useState(false);
@@ -117,19 +122,47 @@ export default function ApprovalCompanyForm({
     setValues((prev) => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleGenerate = () => {
-    setGenerated(true);
-    // TODO(phase 6.4): replace with real PDF generation.
-    const doc = window.open("", "_blank");
-    if (doc) {
-      doc.document.write(
-        `<html><head><title>${companyLabel} certificate preview</title></head><body><h1>${companyLabel} certificate preview</h1><pre>${JSON.stringify(
-          values,
-          null,
-          2,
-        )}</pre></body></html>`,
+  /**
+   * Generate a certificate PDF and open it in a new tab.
+   * Calls the server action and renders the Blob URL.
+   */
+  const handleGenerate = async () => {
+    setGenerated(true); // Optimistic UI - show Save button immediately
+    try {
+      // Import and call the server action
+      const { generateCertificate } = await import(
+        "@/app/actions/certificate"
       );
-      doc.document.close();
+
+      // Build overrides from form values (whitelisted fields)
+      const overrides: Record<string, string> = {};
+      for (const [key, value] of Object.entries(values)) {
+        if (value) overrides[key] = value;
+      }
+
+      const result = await generateCertificate(inspection.id, {
+        company,
+        seed: Date.now(), // Add a seed for random but reproducible layout
+        overrides,
+      });
+
+      // Open the PDF in a new tab using the previewUrl (which is a data-URL)
+      if (result.previewUrl) {
+        const newWindow = window.open(result.previewUrl, "_blank", "noopener,noreferrer");
+        if (!newWindow) {
+          // Popup blocked - show the data URL in a new tab via navigation
+          window.location.href = result.previewUrl;
+        }
+      }
+    } catch (err) {
+      console.error("Certificate generation failed:", err);
+      // Reset generated state on error so user can retry
+      setGenerated(false);
+      alert(
+        err instanceof Error
+          ? `Failed to generate certificate: ${err.message}`
+          : "Failed to generate certificate. Please try again.",
+      );
     }
   };
 

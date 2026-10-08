@@ -46,7 +46,13 @@ export async function createInspectionDraft(
     throw new Error("Unauthorized");
   }
 
-  const { vehicleInfo, vinInfo, inspectionScope, uploadFields, reviewAgreement } = formData;
+  const {
+    vehicleInfo,
+    vinInfo,
+    inspectionScope,
+    uploadFields,
+    reviewAgreement,
+  } = formData;
 
   if (!vehicleInfo || !vinInfo || !inspectionScope) {
     throw new Error("Required form data missing");
@@ -74,7 +80,7 @@ export async function createInspectionDraft(
   const inspectionDetails: Record<string, unknown> = {
     licensePlateNumber: vehicleInfo.licensePlate,
     vehicleMileage: String(vehicleInfo.mileage),
-    tncLicesnePlatesLast4Digit: vehicleInfo.licensePlate.slice(-4),
+    tncLicensePlatesLast4Digit: vehicleInfo.licensePlate.slice(-4),
 
     vin: vinInfo.vin,
     vehicleMake: vinInfo.make,
@@ -85,12 +91,19 @@ export async function createInspectionDraft(
     inspectionCountry: inspectionScope.country.toUpperCase(),
     ...(inspectionScope.country === "usa"
       ? { inspectionStateUsa: inspectionScope.state, inspectionStateCanada: "" }
-      : { inspectionStateCanada: inspectionScope.state, inspectionStateUsa: "" }),
+      : {
+          inspectionStateCanada: inspectionScope.state,
+          inspectionStateUsa: "",
+        }),
     inspectionCompanies: inspectionScope.companies.join(", "),
 
     tiresOlderThan6Years: String(inspectionScope.tiresOlderThan6Years ?? false),
-    batteryOlderThan5Years: String(inspectionScope.batteryOlderThan5Years ?? false),
-    voltageGreaterThan12_1V: String(inspectionScope.voltageGreaterThan12_1V ?? false),
+    batteryOlderThan5Years: String(
+      inspectionScope.batteryOlderThan5Years ?? false,
+    ),
+    voltageGreaterThan12_1V: String(
+      inspectionScope.voltageGreaterThan12_1V ?? false,
+    ),
 
     inspectionDate: now.toISOString().split("T")[0],
     inspectionMonth: String(now.getMonth() + 1),

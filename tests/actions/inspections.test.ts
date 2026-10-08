@@ -49,7 +49,9 @@ function detailNode(id: number, overrides: Record<string, unknown> = {}) {
     databaseId: id,
     title: `Inspection #${id}`,
     date: "2026-08-15T17:14:00",
-    author: { node: { databaseId: 11, name: "Test User", email: "test@example.com" } },
+    author: {
+      node: { databaseId: 11, name: "Test User", email: "test@example.com" },
+    },
     inspectionDetails: {
       licensePlateNumber: "ABC123",
       vin: "1HGCM82633A004352",
@@ -73,7 +75,7 @@ function detailNode(id: number, overrides: Record<string, unknown> = {}) {
       paymentStatus: "pending",
       numberOfDoors: "4",
       numberOfSeatbelts: "5",
-      tncLicesnePlatesLast4Digit: "4352",
+      tncLicensePlatesLast4Digit: "4352",
       hasRegistrationSticker: "pass",
       registrationStickerMonthyear: "08/2026",
       zip: "90001",
@@ -285,7 +287,9 @@ describe("fetchInspection", () => {
   it("throws when inspection is not found", async () => {
     mockWpFetch.mockResolvedValue({ inspection: null });
 
-    await expect(fetchInspection("999")).rejects.toThrow("Inspection not found");
+    await expect(fetchInspection("999")).rejects.toThrow(
+      "Inspection not found",
+    );
   });
 
   it("maps full detail with media grouping and companies", async () => {

@@ -54,7 +54,7 @@ interface InspectionDetailsNode {
   paymentStatus: string | string[];
   numberOfDoors: string;
   numberOfSeatbelts: string;
-  tncLicesnePlatesLast4Digit: string;
+  tncLicensePlatesLast4Digit: string;
   hasRegistrationSticker: string;
   registrationStickerMonthyear: string;
   zip: string;
@@ -130,18 +130,49 @@ const DEFAULT_PER_PAGE = 8;
 const LIST_CACHE_REVALIDATE = 300; // seconds (5 min — list freshness)
 const DETAIL_CACHE_REVALIDATE = 86400; // seconds (24h — detail is immutable after approval)
 
-const MEDIA_GROUPS: Record<MediaTab, { field: keyof InspectionDetailsNode; label: string; type: "image" | "video" }[]> = {
+const MEDIA_GROUPS: Record<
+  MediaTab,
+  {
+    field: keyof InspectionDetailsNode;
+    label: string;
+    type: "image" | "video";
+  }[]
+> = {
   general: [
-    { field: "registrationCardPhoto", label: "Registration Card", type: "image" },
+    {
+      field: "registrationCardPhoto",
+      label: "Registration Card",
+      type: "image",
+    },
     { field: "odometerPhoto", label: "Odometer", type: "image" },
     { field: "hornVideo", label: "Horn", type: "video" },
   ],
   interior: [
-    { field: "interiorDriverSidePhoto", label: "Interior Driver Side", type: "image" },
-    { field: "driverSeatAdjustmentPhoto", label: "Driver Seat Adjustment", type: "image" },
-    { field: "interiorPassengerSidePhoto", label: "Interior Passenger Side", type: "image" },
-    { field: "passengerSeatAdjustmentPhoto", label: "Passenger Seat Adjustment", type: "image" },
-    { field: "interiorBackseatPhoto", label: "Interior Backseat", type: "image" },
+    {
+      field: "interiorDriverSidePhoto",
+      label: "Interior Driver Side",
+      type: "image",
+    },
+    {
+      field: "driverSeatAdjustmentPhoto",
+      label: "Driver Seat Adjustment",
+      type: "image",
+    },
+    {
+      field: "interiorPassengerSidePhoto",
+      label: "Interior Passenger Side",
+      type: "image",
+    },
+    {
+      field: "passengerSeatAdjustmentPhoto",
+      label: "Passenger Seat Adjustment",
+      type: "image",
+    },
+    {
+      field: "interiorBackseatPhoto",
+      label: "Interior Backseat",
+      type: "image",
+    },
   ],
   exterior: [
     { field: "exteriorLeftPhoto", label: "Exterior Left", type: "image" },
@@ -157,7 +188,9 @@ const MEDIA_GROUPS: Record<MediaTab, { field: keyof InspectionDetailsNode; label
   ],
 };
 
-function mapMedia(details: InspectionDetailsNode): Record<MediaTab, MediaItem[]> {
+function mapMedia(
+  details: InspectionDetailsNode,
+): Record<MediaTab, MediaItem[]> {
   const media: Record<MediaTab, MediaItem[]> = {
     general: [],
     interior: [],
@@ -201,8 +234,12 @@ function mapSummary(node: InspectionNode): InspectionSummary {
     id: node.databaseId.toString(),
     licensePlate: node.inspectionDetails.licensePlateNumber,
     dateCreated: node.date,
-    inspectionStatus: asString(node.inspectionDetails.inspectionStatus) as InspectionStatus,
-    paymentStatus: asString(node.inspectionDetails.paymentStatus) as PaymentStatus,
+    inspectionStatus: asString(
+      node.inspectionDetails.inspectionStatus,
+    ) as InspectionStatus,
+    paymentStatus: asString(
+      node.inspectionDetails.paymentStatus,
+    ) as PaymentStatus,
   };
 }
 
@@ -210,7 +247,9 @@ function mapDetail(node: InspectionNode): InspectionDetail {
   const details = node.inspectionDetails;
   const country = details.inspectionCountry.toUpperCase();
   const isUsa = country === "USA";
-  const stateCode = isUsa ? details.inspectionStateUsa : details.inspectionStateCanada;
+  const stateCode = isUsa
+    ? details.inspectionStateUsa
+    : details.inspectionStateCanada;
 
   return {
     ...mapSummary(node),
@@ -223,7 +262,10 @@ function mapDetail(node: InspectionNode): InspectionDetail {
     color: details.vehicleColor,
     location: { country, state: stateCode },
     companies: details.inspectionCompanies
-      ? details.inspectionCompanies.split(",").map((c) => c.trim()).filter(Boolean)
+      ? details.inspectionCompanies
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean)
       : [],
     inspectionDate: details.inspectionDate,
     expiryDate: details.expiryDate,
@@ -325,7 +367,7 @@ const DETAIL_QUERY = `
         paymentStatus
         numberOfDoors
         numberOfSeatbelts
-        tncLicesnePlatesLast4Digit
+        tncLicensePlatesLast4Digit
         hasRegistrationSticker
         registrationStickerMonthyear
         zip

@@ -27,6 +27,34 @@ interface ApprovalDialogProps {
   inspection: InspectionDetail;
 }
 
+/**
+ * Normalize state for template key generation.
+ * - Chicago -> il_chicago
+ * - CA, AL, NV, SC, NC -> lowercase state code
+ * - Turo uses "all" (all-states template)
+ */
+function normalizeStateForTemplate(
+  company: string,
+  state: string,
+  country: string,
+): string {
+  const stateUpper = state.toUpperCase();
+  const companyLower = company.toLowerCase();
+
+  // Chicago special case
+  if (companyLower === "lyft" && stateUpper === "IL") {
+    return "il_chicago";
+  }
+
+  // Turo uses all-states template
+  if (companyLower === "turo") {
+    return "all";
+  }
+
+  // For other companies, return the state code
+  return stateUpper;
+}
+
 export default function ApprovalDialog({
   open,
   onOpenChange,
@@ -36,6 +64,19 @@ export default function ApprovalDialog({
   const companies = inspection.companies.filter((company) =>
     APPROVAL_CERTIFICATE_COMPANIES.includes(company),
   );
+
+  /**
+   * Compute the template key for a company.
+   * Format: company_country_state (e.g., "lyft_usa_il_chicago")
+   */
+  const getTemplateKey = (company: string): string => {
+    const stateKey = normalizeStateForTemplate(
+      company,
+      inspection.location.state,
+      country,
+    );
+    return `${company.toLowerCase()}_${country.toLowerCase()}_${stateKey}`;
+  };
 
   const companyValues = (): Record<string, string> => {
     const values: Record<string, string> = { ...inspection.approvalFields };
@@ -83,6 +124,8 @@ export default function ApprovalDialog({
                     companyLabel={APPROVAL_COMPANY_LABELS[company] ?? company}
                     country={country}
                     initialValues={companyValues()}
+                    inspection={inspection}
+                    templateKey={getTemplateKey(company)}
                   />
                 </AccordionContent>
               </AccordionItem>

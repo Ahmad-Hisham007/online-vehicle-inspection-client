@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+
+// Mock the server action for certificate generation
+const mockGenerateCertificate = vi.fn().mockResolvedValue({
+  previewUrl: "data:application/pdf;base64,test",
+  mimeType: "application/pdf",
+  contentDisposition: 'attachment; filename="certificate-123.pdf"',
+});
+
+vi.mock("@/app/actions/certificate", () => ({
+  generateCertificate: mockGenerateCertificate,
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -58,6 +69,11 @@ beforeEach(() => {
   openSpy = vi.spyOn(window, "open").mockReturnValue({
     document: { write: vi.fn(), close: vi.fn() },
   } as unknown as Window);
+  mockGenerateCertificate.mockResolvedValue({
+    previewUrl: "data:application/pdf;base64,test",
+    mimeType: "application/pdf",
+    contentDisposition: 'attachment; filename="certificate-123.pdf"',
+  });
 });
 
 afterEach(() => {
@@ -102,7 +118,7 @@ describe("ApprovalDialog", () => {
     expect(screen.queryByText("State (USA)")).not.toBeInTheDocument();
   });
 
-  it("toggles the Generate icon and opens a preview tab", () => {
+  it("toggles the Generate icon and opens a preview tab", async () => {
     renderDialog();
 
     const generateButtons = screen.getAllByRole("button", {
@@ -112,17 +128,23 @@ describe("ApprovalDialog", () => {
 
     fireEvent.click(first);
 
+    // Generate creates the certificate asynchronously
+    await waitFor(() => {
+      expect(mockGenerateCertificate).toHaveBeenCalled();
+    });
+
     expect(openSpy).toHaveBeenCalled();
   });
 
-  it("reveals Save only after Generate and disables it once saved", () => {
+  it("reveals Save only after Generate and disables it once saved", async () => {
     renderDialog();
 
     expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole("button", { name: /Generate/ })[0]);
 
-    const save = screen.getByRole("button", { name: "Save" });
+    // Generate creates the certificate asynchronously, so wait for Save to appear
+    const save = await screen.findByRole("button", { name: "Save" });
     expect(save).toBeEnabled();
 
     fireEvent.click(save);

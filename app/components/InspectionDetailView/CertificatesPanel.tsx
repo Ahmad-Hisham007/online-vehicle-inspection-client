@@ -22,21 +22,6 @@ const CERTIFICATE_LABELS: {
   { key: "turo", label: "Turo" },
 ];
 
-// Locations/states where we have ready-to-render PDF templates for Lyft
-const LYFT_PREVIEWABLE_STATES = ["CA", "AL", "IL"] as const;
-
-/**
- * Check if certificate preview is available for this inspection.
- * Returns true only if:
- * - Company is Lyft
- * - State is CA, AL, or IL (our calibrated templates)
- */
-function canPreviewCertificate(inspection: InspectionDetail): boolean {
-  const hasLyft = inspection.companies.includes("lyft");
-  const state = inspection.location.state.toUpperCase();
-  return hasLyft && LYFT_PREVIEWABLE_STATES.includes(state as typeof LYFT_PREVIEWABLE_STATES[number]);
-}
-
 export default function CertificatesPanel({
   inspection,
   role,
@@ -44,7 +29,6 @@ export default function CertificatesPanel({
   const router = useRouter();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
-  const [previewing, setPreviewing] = useState(false);
   const isApproved = inspection.inspectionStatus === "approved";
   const isPaid =
     inspection.paymentStatus === "succeeded" ||
@@ -56,7 +40,6 @@ export default function CertificatesPanel({
     ({ key }) => inspection.certificates[key],
   );
 
-  const canPreview = canPreviewCertificate(inspection);
   let message: string;
   if (isApproved && availableCertificates.length === 0) {
     message = "No certificates available.";
@@ -66,34 +49,6 @@ export default function CertificatesPanel({
     message = "Payment received. Certificates will be available once approved.";
   } else {
     message = "This inspection requires payment.";
-  }
-
-  /** Generate and open preview in new tab */
-  async function handlePreview() {
-    if (!canPreview) return;
-
-    setPreviewing(true);
-    try {
-      // Lazy-load the server action
-      const { generateCertificate } = await import(
-        "@/app/actions/certificate"
-      );
-      const result = await generateCertificate(inspection.id, {
-        company: "lyft",
-      });
-
-      // Open the data URL in a new tab
-      window.open(result.previewUrl, "_blank", "noopener,noreferrer");
-    } catch (err) {
-      console.error("Certificate preview failed:", err);
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Failed to generate certificate preview",
-      );
-    } finally {
-      setPreviewing(false);
-    }
   }
 
   return (
@@ -136,18 +91,6 @@ export default function CertificatesPanel({
         )
       ) : (
         <div className="flex shrink-0 grow gap-2 [&_button]:w-full">
-          {canPreview && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="px-5!"
-              type="button"
-              disabled={previewing}
-              onClick={handlePreview}
-            >
-              {previewing ? "Generating…" : "Preview Certificate"}
-            </Button>
-          )}
           <Button
             variant="primary"
             size="sm"

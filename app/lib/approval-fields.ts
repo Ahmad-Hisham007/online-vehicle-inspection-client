@@ -72,14 +72,48 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
     id: "vehicle",
     label: "Vehicle",
     fields: [
-      { name: "vehicleMake", label: "Make", type: "text", placeholder: "E.g. Toyota" },
-      { name: "vehicleModel", label: "Model", type: "text", placeholder: "E.g. Camry" },
-      { name: "vehicleYear", label: "Year", type: "number", placeholder: "E.g. 2020" },
-      { name: "vehicleColor", label: "Color", type: "text", placeholder: "E.g. Silver" },
-      { name: "vehicleMileage", label: "Mileage", type: "number", placeholder: "E.g. 50000" },
-      { name: "vin", label: "VIN", type: "text", placeholder: "17-character VIN" },
+      {
+        name: "vehicleMake",
+        label: "Make",
+        type: "text",
+        placeholder: "E.g. Toyota",
+      },
+      {
+        name: "vehicleModel",
+        label: "Model",
+        type: "text",
+        placeholder: "E.g. Camry",
+      },
+      {
+        name: "vehicleYear",
+        label: "Year",
+        type: "number",
+        placeholder: "E.g. 2020",
+      },
+      {
+        name: "vehicleColor",
+        label: "Color",
+        type: "text",
+        placeholder: "E.g. Silver",
+      },
+      {
+        name: "vehicleMileage",
+        label: "Mileage",
+        type: "number",
+        placeholder: "E.g. 50000",
+      },
+      {
+        name: "vin",
+        label: "VIN",
+        type: "text",
+        placeholder: "17-character VIN",
+      },
       { name: "numberOfDoors", label: "Number of doors", type: "number" },
-      { name: "numberOfSeatbelts", label: "Number of seatbelts", type: "number" },
+      {
+        name: "numberOfSeatbelts",
+        label: "Number of seatbelts",
+        type: "number",
+      },
       {
         name: "fuelType",
         label: "Fuel type",
@@ -99,7 +133,7 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
         placeholder: "E.g. ABC123",
       },
       {
-        name: "tncLicesnePlatesLast4Digit",
+        name: "tncLicensePlatesLast4Digit",
         label: "TNC (last 4 of plate)",
         type: "text",
         placeholder: "E.g. 1234",
@@ -115,7 +149,12 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
         type: "text",
         placeholder: "MM/YYYY",
       },
-      { name: "zip", label: "Zip", type: "text", placeholder: "ZIP / postal code" },
+      {
+        name: "zip",
+        label: "Zip",
+        type: "text",
+        placeholder: "ZIP / postal code",
+      },
     ],
   },
   {
@@ -163,10 +202,26 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
     id: "tires",
     label: "Tires",
     fields: [
-      { name: "tireRightFrontDepth", label: "Tire right front depth", type: "number" },
-      { name: "tireLeftFrontDepth", label: "Tire left front depth", type: "number" },
-      { name: "tireRightRearDepth", label: "Tire right rear depth", type: "number" },
-      { name: "tireLeftRearDepth", label: "Tire left rear depth", type: "number" },
+      {
+        name: "tireRightFrontDepth",
+        label: "Tire right front depth",
+        type: "number",
+      },
+      {
+        name: "tireLeftFrontDepth",
+        label: "Tire left front depth",
+        type: "number",
+      },
+      {
+        name: "tireRightRearDepth",
+        label: "Tire right rear depth",
+        type: "number",
+      },
+      {
+        name: "tireLeftRearDepth",
+        label: "Tire left rear depth",
+        type: "number",
+      },
     ],
   },
   {
@@ -214,8 +269,18 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
     label: "Host",
     fields: [
       { name: "hostName", label: "Host name", type: "text" },
-      { name: "hostEmail", label: "Host email", type: "email", placeholder: "host@example.com" },
-      { name: "hostPhoneNumber", label: "Host phone", type: "tel", placeholder: "(555) 555-5555" },
+      {
+        name: "hostEmail",
+        label: "Host email",
+        type: "email",
+        placeholder: "host@example.com",
+      },
+      {
+        name: "hostPhoneNumber",
+        label: "Host phone",
+        type: "tel",
+        placeholder: "(555) 555-5555",
+      },
     ],
   },
 ];

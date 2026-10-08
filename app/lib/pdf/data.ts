@@ -137,7 +137,7 @@ export function buildCertificateData(
     },
     registration: {
       licensePlate: v("licensePlateNumber") || detail.licensePlate,
-      tncLast4: v("tncLicesnePlatesLast4Digit"),
+      tncLast4: v("tncLicensePlatesLast4Digit"),
       hasSticker: passFail("hasRegistrationSticker"),
       stickerMonthYear: v("registrationStickerMonthyear"),
       zip: v("zip"),

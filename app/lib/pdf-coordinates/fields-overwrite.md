@@ -12,7 +12,7 @@ This document serves as the master reference for all template-specific, non-stan
    - `partnerEmail` / `hostEmail` $\rightarrow$ Mapped from `driverEmail` (`author.node.email`).
    - `partnerPhone` / `hostPhone` $\rightarrow$ Mapped from `phoneNumber` in custom field of inspector author.
    - `partnerSignature` / `hostSignature` $\rightarrow$ Digitally rendered in handwriting font using the driver's full name / for now this is not existing so we will skip it, and will add a note , we will do it this way, the user will upload his signature image.
-3. **Typo Key Preservation:** Always preserve exact WP ACF typo keys verbatim: `tncLicesnePlatesLast4Digit`, `registrationStickerMonthyear`, and `voltageGreaterThan12_1V`[cite: 9, 10].
+3. **Typo Key Preservation:** Always preserve exact WP ACF typo keys verbatim: `tncLicensePlatesLast4Digit`, `registrationStickerMonthyear`, and `voltageGreaterThan12_1V`[cite: 9, 10].
 
 ---
 
@@ -41,7 +41,7 @@ This document serves as the master reference for all template-specific, non-stan
 
 - **`numberOfDoors`**: Total doors count (e.g., `"4"`).
 - **`numberOfSeatbelts`**: Total seatbelts count (e.g., `"5"`).
-- **`tncLicesnePlatesLast4Digit`**: Last 4 digits of license plate.
+- **`tncLicensePlatesLast4Digit`**: Last 4 digits of license plate.
 - **`interiorCleanliness`** & **`exteriorCleanliness`**: Checklist items 20 & 21.
 - **`bodyDamage`**: Checklist item 23.
 

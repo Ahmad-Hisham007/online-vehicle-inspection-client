@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Use vi.hoisted to create mocks at the top level (hoisted by vitest)
-const mockRenderCertificate = vi.hoisted(() => vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])));
+const mockRenderCertificate = vi.hoisted(() =>
+  vi.fn().mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46])),
+);
 const mockFetchInspection = vi.hoisted(() => vi.fn());
 const mockAuth = vi.hoisted(() => vi.fn());
 const mockAssertSessionActive = vi.hoisted(() => vi.fn());
@@ -38,7 +40,7 @@ describe("generateCertificate", () => {
     id: "node123",
     licensePlateNumber: "ABC123",
     vehicleMileage: "15000",
-    tncLicesnePlatesLast4Digit: "1234",
+    tncLicensePlatesLast4Digit: "1234",
     vin: "1HGBH41JXMN109186",
     vehicleMake: "Toyota",
     vehicleModel: "Prius",
@@ -70,24 +72,71 @@ describe("generateCertificate", () => {
     country: "USA" as const,
     state: "CA",
     driver: { name: "John Doe", email: "john@example.com" },
-    host: { name: "Rideshare Inspection", email: "certs@ride.com", phone: "555-0100" },
-    vehicle: { make: "Toyota", model: "Prius", year: "2022", color: "Blue", mileage: "15000", vin: "1HGBH41JXMN109186", doors: "4", seatbelts: "5", fuelType: "hybrid" },
-    registration: { licensePlate: "ABC123", tncLast4: "1234", hasSticker: "pass" as const, stickerMonthYear: "01/26", zip: "90001" },
-    condition: { tiresOlderThan6Years: "no" as const, batteryOlderThan5Years: "no" as const, voltageGreaterThan12_1V: "yes" as const },
-    brakes: { minFront: "0.00", minRear: "0.00", frontLeft: "pass" as const, frontRight: "pass" as const, rearLeft: "pass" as const, rearRight: "pass" as const },
-    tires: { rightFront: "0/32", leftFront: "0/32", rightRear: "0/32", leftRear: "0/32" },
-    inspection: { date: "10/06/2026", expiryDate: "10/06/2027", companiesLabel: "Lyft" },
+    host: {
+      name: "Rideshare Inspection",
+      email: "certs@ride.com",
+      phone: "555-0100",
+    },
+    vehicle: {
+      make: "Toyota",
+      model: "Prius",
+      year: "2022",
+      color: "Blue",
+      mileage: "15000",
+      vin: "1HGBH41JXMN109186",
+      doors: "4",
+      seatbelts: "5",
+      fuelType: "hybrid",
+    },
+    registration: {
+      licensePlate: "ABC123",
+      tncLast4: "1234",
+      hasSticker: "pass" as const,
+      stickerMonthYear: "01/26",
+      zip: "90001",
+    },
+    condition: {
+      tiresOlderThan6Years: "no" as const,
+      batteryOlderThan5Years: "no" as const,
+      voltageGreaterThan12_1V: "yes" as const,
+    },
+    brakes: {
+      minFront: "0.00",
+      minRear: "0.00",
+      frontLeft: "pass" as const,
+      frontRight: "pass" as const,
+      rearLeft: "pass" as const,
+      rearRight: "pass" as const,
+    },
+    tires: {
+      rightFront: "0/32",
+      leftFront: "0/32",
+      rightRear: "0/32",
+      leftRear: "0/32",
+    },
+    inspection: {
+      date: "10/06/2026",
+      expiryDate: "10/06/2027",
+      companiesLabel: "Lyft",
+    },
     handler: { name: "Inspector Smith", signature: "inspector-signature-id" },
     arn: "ARD-00000002",
-    facility: { name: "RideShare Inspection Center", address: "1234 Inspection Blvd, Los Angeles, CA 90001" },
+    facility: {
+      name: "RideShare Inspection Center",
+      address: "1234 Inspection Blvd, Los Angeles, CA 90001",
+    },
   } as CertificateData;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAuth.mockResolvedValue({ user: { accessToken: "token", role: "administrator" } });
+    mockAuth.mockResolvedValue({
+      user: { accessToken: "token", role: "administrator" },
+    });
     mockFetchInspection.mockResolvedValue(mockDetail);
     mockBuildCertificateData.mockReturnValue(mockCertData);
-    mockRenderCertificate.mockResolvedValue(new Uint8Array([0x25, 0x50, 0x44, 0x46]));
+    mockRenderCertificate.mockResolvedValue(
+      new Uint8Array([0x25, 0x50, 0x44, 0x46]),
+    );
   });
 
   it("should render certificate for admin user", async () => {
@@ -96,12 +145,21 @@ describe("generateCertificate", () => {
     expect(result.mimeType).toBe("application/pdf");
     expect(result.previewUrl).toContain("data:application/pdf;base64,");
     expect(mockFetchInspection).toHaveBeenCalledWith("123");
-    expect(mockRenderCertificate).toHaveBeenCalledWith(mockCertData, expect.any(Number));
-    expect(mockBuildCertificateData).toHaveBeenCalledWith(mockDetail, "lyft", {});
+    expect(mockRenderCertificate).toHaveBeenCalledWith(
+      mockCertData,
+      expect.any(Number),
+    );
+    expect(mockBuildCertificateData).toHaveBeenCalledWith(
+      mockDetail,
+      "lyft",
+      {},
+    );
   });
 
   it("should render certificate for inspector user", async () => {
-    mockAuth.mockResolvedValue({ user: { accessToken: "token", role: "inspector" } });
+    mockAuth.mockResolvedValue({
+      user: { accessToken: "token", role: "inspector" },
+    });
 
     const result = await generateCertificate("123");
 
@@ -128,7 +186,11 @@ describe("generateCertificate", () => {
 
     await generateCertificate("123", { company: "uber" });
 
-    expect(mockBuildCertificateData).toHaveBeenCalledWith(uberDetail, "uber", {});
+    expect(mockBuildCertificateData).toHaveBeenCalledWith(
+      uberDetail,
+      "uber",
+      {},
+    );
   });
 
   it("should use first company from inspection if not specified", async () => {
@@ -137,16 +199,17 @@ describe("generateCertificate", () => {
 
     await generateCertificate("123");
 
-    expect(mockBuildCertificateData).toHaveBeenCalledWith(uberLyftDetail, "uber", {});
+    expect(mockBuildCertificateData).toHaveBeenCalledWith(
+      uberLyftDetail,
+      "uber",
+      {},
+    );
   });
 
   it("should pass seed to engine", async () => {
     await generateCertificate("123", { seed: 42 });
 
-    expect(mockRenderCertificate).toHaveBeenCalledWith(
-      mockCertData,
-      42,
-    );
+    expect(mockRenderCertificate).toHaveBeenCalledWith(mockCertData, 42);
   });
 
   it("should return correct content disposition", async () => {

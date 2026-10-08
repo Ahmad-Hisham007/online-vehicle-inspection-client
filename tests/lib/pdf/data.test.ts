@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  buildCertificateData,
-  computeExpiryIso,
-} from "@/app/lib/pdf/data";
+import { buildCertificateData, computeExpiryIso } from "@/app/lib/pdf/data";
 import type { InspectionDetail } from "@/app/lib/types";
 
 function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
@@ -73,7 +70,7 @@ describe("buildCertificateData — defaults", () => {
     const data = buildCertificateData(
       detail({
         approvalFields: {
-          tncLicesnePlatesLast4Digit: "BC12",
+          tncLicensePlatesLast4Digit: "BC12",
           registrationStickerMonthyear: "08/2026",
           voltageGreaterThan12_1V: "yes",
         },
@@ -184,14 +181,17 @@ describe("computeExpiryIso", () => {
 
 describe("buildCertificateData — misc", () => {
   it("groups mileage thousands and passes non-numerics through", () => {
-    expect(buildCertificateData(detail({ mileage: "50000" }), "uber").vehicle.mileage).toBe("50,000");
+    expect(
+      buildCertificateData(detail({ mileage: "50000" }), "uber").vehicle
+        .mileage,
+    ).toBe("50,000");
     expect(
       buildCertificateData(detail(), "uber", { vehicleMileage: "1234567" })
         .vehicle.mileage,
     ).toBe("1,234,567");
     expect(
-      buildCertificateData(detail(), "uber", { vehicleMileage: "low" })
-        .vehicle.mileage,
+      buildCertificateData(detail(), "uber", { vehicleMileage: "low" }).vehicle
+        .mileage,
     ).toBe("low");
   });
 

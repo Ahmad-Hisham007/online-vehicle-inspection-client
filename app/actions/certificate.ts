@@ -27,10 +27,11 @@ export interface CertificatePreview {
  * - Renders PDF via pdf-lib engine
  * - Returns data-URL suitable for preview or download
  *
- * @param inspectionDatabaseId - The WP database ID of the inspection
+ * @param inspectionId - The WP database ID of the inspection
  * @param input - Optional parameters
  * @param input.company - The company to generate certificate for (required; inspection.companies[0] if not provided)
  * @param input.seed - Seed for deterministic PDF layout (defaults to Date.now())
+ * @param input.overrides - Field overrides for manual values (whitelisted by getVisibleFields)
  *
  * Output: { previewUrl: "data:application/pdf;base64,..." }
  *
@@ -38,12 +39,14 @@ export interface CertificatePreview {
  * via `prepareCertificateUpload` (T7), but preview happens via data-URL.
  */
 export async function generateCertificate(
-  inspectionDatabaseId: string,
+  inspectionId: string,
   input?: {
     /** Company to generate certificate for (e.g., "lyft", "uber", "turo"). */
     company?: string;
     /** Seed for deterministic PDF layout. Defaults to Date.now(). */
     seed?: number;
+    /** Field overrides for manual values (whitelisted by getVisibleFields). */
+    overrides?: Record<string, string>;
   },
 ): Promise<CertificatePreview> {
   const session = await auth();
@@ -62,13 +65,13 @@ export async function generateCertificate(
   const { renderCertificate } = await import("@/app/lib/pdf/engine");
 
   // Fetch the inspection detail
-  const detail = (await fetchInspection(inspectionDatabaseId)) as InspectionDetail;
+  const detail = (await fetchInspection(inspectionId)) as InspectionDetail;
 
   // Determine company - use provided company or first one from inspection
   const company = input?.company ?? detail.companies[0] ?? "lyft";
 
-  // Build certificate data from the inspection
-  const certData: CertificateData = buildCertificateData(detail, company, {});
+  // Build certificate data from the inspection with overrides
+  const certData: CertificateData = buildCertificateData(detail, company, input?.overrides ?? {});
 
   // Render with seeded RNG for deterministic layout
   const seed = input?.seed ?? Date.now();
@@ -81,6 +84,6 @@ export async function generateCertificate(
   return {
     previewUrl,
     mimeType: "application/pdf",
-    contentDisposition: `attachment; filename="certificate-${inspectionDatabaseId}.pdf"`,
+    contentDisposition: `attachment; filename="certificate-${inspectionId}.pdf"`,
   };
 }
