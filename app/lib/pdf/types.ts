@@ -21,7 +21,7 @@ export interface CertificateData {
   company: string;
   country: CertCountry;
   state: string;
-  driver: { name: string; email: string; phone?: string };
+  driver: { name: string; email: string; phone: string };
   host: { name: string; email: string; phone: string };
   vehicle: {
     make: string;
@@ -60,7 +60,16 @@ export interface CertificateData {
     rightRear: string;
     leftRear: string;
   };
-  inspection: { date: string; expiryDate: string; companiesLabel: string };
+  inspection: {
+    date: string;
+    expiryDate: string;
+    companiesLabel: string;
+    /** New fields for certificate generation */
+    inspectionCompany?: string;
+    inspectionLocation?: string;
+    streetAddress?: string;
+    ardAse?: string;
+  };
   handler: { name: string; signature: string };
   arn: string;
   facility: { name: string; address: string };

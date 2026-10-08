@@ -1,13 +1,13 @@
 import type { TemplateMapper } from "../../types";
 
 /**
- * Lyft certificate template for Illinois (Chicago).
- *
- * Coordinates source: `app/lib/pdf-coordinates/lyft_usa_il_chicago.json`
+ * Lyft certificate template for Illinois (Chicago area).
+ * 
+ * PROOF OF CONCEPT: Uses existing PDF layout.
  */
-export const lyft_il_chicago: TemplateMapper = {
-  key: "lyft_usa_il_chicago",
-  blankPdfPath: "lyft_usa_il_chicago.pdf",
+export const lyft_il: TemplateMapper = {
+  key: "lyft_usa_il",
+  blankPdfPath: "lyft_us_il.pdf",
   page: 0,
   placements: [
     // Driver info

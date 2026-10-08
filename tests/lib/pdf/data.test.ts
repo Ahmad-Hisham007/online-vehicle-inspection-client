@@ -222,12 +222,18 @@ describe("buildCertificateData — misc", () => {
     expect(data.state).toBe("ON");
   });
 
-  it("carries driver identity from the detail", () => {
+  it("carries driver identity from the detail (host IS driver)", () => {
     const data = buildCertificateData(detail(), "uber");
 
     expect(data.driver).toEqual({
-      name: "John Doe",
-      email: "john@example.com",
+      name: "Host Person",
+      email: "host@example.com",
+      phone: "555-0100",
+    });
+    expect(data.host).toEqual({
+      name: "Host Person",
+      email: "host@example.com",
+      phone: "555-0100",
     });
   });
 

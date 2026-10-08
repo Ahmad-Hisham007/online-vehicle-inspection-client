@@ -41,7 +41,7 @@ export const TEMPLATE_COVERAGE: Record<string, () => Promise<TemplateMapper>> = 
   // Lyft coverage
   "lyft_usa_ca": () => import("./templates/lyft/california").then((m) => m.lyft_ca),
   "lyft_usa_al": () => import("./templates/lyft/alabama").then((m) => m.lyft_al),
-  "lyft_usa_il_chicago": () => import("./templates/lyft/illinois").then((m) => m.lyft_il_chicago),
+  "lyft_usa_il": () => import("./templates/lyft/illinois").then((m) => m.lyft_il),
   "lyft_usa_nv": () => import("./templates/lyft/nevada").then((m) => m.lyft_nv),
   "lyft_usa_sc": () => import("./templates/lyft/south-carolina").then((m) => m.lyft_sc),
 
@@ -65,7 +65,7 @@ export async function getTemplateMapper(input: {
   country: string;
   state: string;
 }): Promise<TemplateMapper> {
-  // Normalize key: lowercase, USA -> usa, and handle Turo's all-states special case
+  // Normalize key: lowercase, USA -> usa
   const companyLower = input.company.toLowerCase();
   const countryLower = input.country.toLowerCase();
   const stateNormalized = input.state.toLowerCase();

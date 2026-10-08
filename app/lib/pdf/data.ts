@@ -114,10 +114,11 @@ export function buildCertificateData(
     company,
     country,
     state: detail.location.state,
+    // Host IS the driver - use host details for driver fields in PDF
     driver: { 
-      name: detail.driverName, 
-      email: detail.driverEmail,
-      phone: v("driverPhoneNumber") || detail.driverPhoneNumber || undefined,
+      name: v("hostName") || detail.hostName, 
+      email: v("hostEmail") || detail.hostEmail,
+      phone: v("hostPhoneNumber") || detail.hostPhoneNumber,
     },
     host: {
       name: v("hostName") || detail.hostName,
@@ -169,6 +170,11 @@ export function buildCertificateData(
         detail.companies
           .map((c) => APPROVAL_COMPANY_LABELS[c] ?? c)
           .join(", "),
+      // New fields with defaults
+      inspectionCompany: v("inspectionCompany") || "INSVE",
+      inspectionLocation: v("inspectionLocation") || detail.location.state,
+      streetAddress: v("streetAddress") || "417 J St, Sacramento, CA 95816",
+      ardAse: v("ardAse") || constants.arn,
     },
     handler: {
       name: v("handlerName"),

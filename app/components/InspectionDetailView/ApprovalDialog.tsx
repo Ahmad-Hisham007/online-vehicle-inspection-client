@@ -29,9 +29,11 @@ interface ApprovalDialogProps {
 
 /**
  * Normalize state for template key generation.
- * - Chicago -> il_chicago
- * - CA, AL, NV, SC, NC -> lowercase state code
- * - Turo uses "all" (all-states template)
+ * - For IL (Chicago): returns "il" (non-chicago key won't exist until we create a proper IL template)
+ * - For other states: returns uppercase state code
+ * - For Turo: returns "all" (all-states template)
+ * 
+ * TODO: Create proper il template for non-chicago IL inspections
  */
 function normalizeStateForTemplate(
   company: string,
@@ -41,17 +43,13 @@ function normalizeStateForTemplate(
   const stateUpper = state.toUpperCase();
   const companyLower = company.toLowerCase();
 
-  // Chicago special case
-  if (companyLower === "lyft" && stateUpper === "IL") {
-    return "il_chicago";
-  }
-
   // Turo uses all-states template
   if (companyLower === "turo") {
     return "all";
   }
 
-  // For other companies, return the state code
+  // For other companies, return the state code uppercase
+  // Note: IL specifically needs 'il' for the template key
   return stateUpper;
 }
 
@@ -67,15 +65,14 @@ export default function ApprovalDialog({
 
   /**
    * Compute the template key for a company.
-   * Format: company_country_state (e.g., "lyft_usa_il_chicago")
+   * Format: company_country_state (e.g., "lyft_usa_il")
    */
   const getTemplateKey = (company: string): string => {
-    const stateKey = normalizeStateForTemplate(
-      company,
-      inspection.location.state,
-      country,
-    );
-    return `${company.toLowerCase()}_${country.toLowerCase()}_${stateKey}`;
+    // For non-Canada countries, treat as USA
+    const countryLower = country.toLowerCase();
+    const stateKey = inspection.location.state.toUpperCase();
+
+    return `${company.toLowerCase()}_${countryLower}_${stateKey}`;
   };
 
   const companyValues = (): Record<string, string> => {

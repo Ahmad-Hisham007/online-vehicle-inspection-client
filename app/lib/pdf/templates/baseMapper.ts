@@ -123,18 +123,27 @@ export function readPath(data: CertificateData, path: string): string {
   for (const segment of path.split(".")) {
     if (
       typeof cursor !== "object" ||
-      cursor === null ||
-      !(segment in cursor)
+      cursor === null
     ) {
       throw new Error(
         `CertificateData has no path "${path}" (failed at "${segment}")`,
       );
     }
-    cursor = (cursor as Record<string, unknown>)[segment];
+    const obj = cursor as Record<string, unknown>;
+    if (!(segment in obj)) {
+      throw new Error(
+        `CertificateData has no path "${path}" (failed at "${segment}")`,
+      );
+    }
+    cursor = obj[segment];
   }
   if (typeof cursor === "string") return cursor;
   if (typeof cursor === "number" || typeof cursor === "boolean") {
     return String(cursor);
+  }
+  // Handle undefined and null gracefully - return empty string
+  if (cursor === undefined || cursor === null) {
+    return "";
   }
   throw new Error(
     `CertificateData path "${path}" does not resolve to a scalar`,
