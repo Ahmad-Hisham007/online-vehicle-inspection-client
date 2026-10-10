@@ -171,10 +171,12 @@ export default function ApprovalCompanyForm({
 
           // Open with Blob URL (instant tab opening)
           const newWindow = window.open(blobUrl, "_blank", "noopener,noreferrer");
-          
-          // If popup blocked, navigate to blob URL
+          // If popup is blocked, show an alert to the user
           if (!newWindow) {
-            window.location.href = blobUrl;
+            alert("Popup blocked! Please allow popups for this site and click Generate again.");
+          } else {
+            // Revoke the Blob URL after a delay to free memory
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
           }
         } catch (convertError) {
           // Fallback to direct data URL if Blob conversion fails
