@@ -124,7 +124,7 @@ export default function ApprovalCompanyForm({
 
   /**
    * Generate a certificate PDF and open it in a new tab.
-   * Calls the server action and renders the Blob URL.
+   * Uses Blob URL for efficient PDF preview (faster than data URL).
    */
   const handleGenerate = async () => {
     setGenerated(true); // Optimistic UI - show Save button immediately
@@ -146,12 +146,40 @@ export default function ApprovalCompanyForm({
         overrides,
       });
 
-      // Open the PDF in a new tab using the previewUrl (which is a data-URL)
+      // Convert data URL to Blob URL for faster loading
+      // This avoids the overhead of passing massive base64 strings through window.open()
       if (result.previewUrl) {
-        const newWindow = window.open(result.previewUrl, "_blank", "noopener,noreferrer");
-        if (!newWindow) {
-          // Popup blocked - show the data URL in a new tab via navigation
-          window.location.href = result.previewUrl;
+        try {
+          // Extract base64 data after the comma
+          const base64Data = result.previewUrl.split(',')[1];
+          if (!base64Data) {
+            // Fallback: try opening directly if not a data URL
+            window.open(result.previewUrl, "_blank", "noopener,noreferrer");
+            return;
+          }
+
+          // Decode base64 to binary string
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+
+          // Create Blob and Blob URL
+          const blob = new Blob([bytes], { type: 'application/pdf' });
+          const blobUrl = URL.createObjectURL(blob);
+
+          // Open with Blob URL (instant tab opening)
+          const newWindow = window.open(blobUrl, "_blank", "noopener,noreferrer");
+          
+          // If popup blocked, navigate to blob URL
+          if (!newWindow) {
+            window.location.href = blobUrl;
+          }
+        } catch (convertError) {
+          // Fallback to direct data URL if Blob conversion fails
+          console.warn("Blob conversion failed, falling back to data URL:", convertError);
+          window.open(result.previewUrl, "_blank", "noopener,noreferrer");
         }
       }
     } catch (err) {

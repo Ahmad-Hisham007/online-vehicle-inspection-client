@@ -1,8 +1,9 @@
-import { PDFDocument, rgb, StandardFonts, type RGB } from "pdf-lib";
+import { PDFDocument, rgb, type RGB } from "pdf-lib";
+import * as fontkit from "@pdf-lib/fontkit";
 import { mulberry32 } from "./rng";
 import { applyPlacements } from "./templates/baseMapper";
 import { getTemplateMapper } from "./resolver";
-import { readAsset } from "./file-utils";
+import { readFont, readAsset } from "./file-utils";
 import type { CertificateData, DrawContext } from "./types";
 
 /**
@@ -24,17 +25,18 @@ export async function renderCertificate(
     state: data.state,
   });
 
-  // 2. Load the blank PDF
-  const blankPdfBytes = await readAsset(mapper.blankPdfPath);
+  // 2. Load the blank PDF and the font concurrently
+  const [blankPdfBytes, fontBytes] = await Promise.all([
+    readAsset(mapper.blankPdfPath),
+    readFont(),
+  ]);
 
-  // 3. Parse the PDF
+  // 3. Parse the PDF and register fontkit for custom font embedding
   const pdfDoc = await PDFDocument.load(blankPdfBytes, {
     updateMetadata: false,
   });
-  
-  // Use built-in Helvetica font to avoid fontkit native dependency issues
-  // StandardFonts.Helvetica is a built-in PDF font (no embedding needed)
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  pdfDoc.registerFontkit(fontkit);
+  const font = await pdfDoc.embedFont(fontBytes, { subset: true });
 
   // 4. Get the target page (default is page 0 or 1)
   const page = pdfDoc.getPages()[mapper.page ?? 0];
