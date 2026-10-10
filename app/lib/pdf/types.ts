@@ -83,7 +83,19 @@ export interface DrawContext {
   rand: () => number;
 }
 
-export type PlacementKind = "text" | "checkmark" | "passCircle" | "signature";
+export type PlacementKind = "text" | "checkmark" | "passCircle" | "signature" | "vinBoxes";
+
+/** Configuration for VIN letter-boxed fields */
+export interface VinPlacementConfig {
+  /** Starting x position for the first letter */
+  xStart: number;
+  /** Spacing between letters in points */
+  spacing: number;
+  /** Fixed y position for all letters */
+  y: number;
+  /** Font size for each letter */
+  size: number;
+}
 
 /** One field position on a blank template (spec §5.2). */
 export interface Placement {
@@ -95,8 +107,13 @@ export interface Placement {
   y: number;
   /** Text size in pt, or radius for `passCircle`. */
   size?: number;
+  /** Format function for text values */
   format?: (value: string, data: CertificateData) => string;
+  /** Condition to skip this placement */
   when?: (data: CertificateData) => boolean;
+  /** VIN letter-boxed field configuration (when kind="vinBoxes") */
+  xStart?: number;
+  spacing?: number;
 }
 
 /** Calibrated mapping for one blank template (spec §5.2). */

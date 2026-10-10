@@ -117,6 +117,75 @@ export function drawSignature(
   });
 }
 
+/**
+ * Map VIN letters to individual positions for boxed field display.
+ * Each letter gets its own x position, shared y position.
+ */
+export interface VinLetterPlacement {
+  letter: string;
+  x: number;
+  y: number;
+}
+
+/**
+ * Split a VIN number and calculate positions for each letter.
+ * Used for templates with boxed letter fields.
+ * 
+ * @param vin - The VIN string to split
+ * @param xStart - Starting x position for first letter
+ * @param spacing - Distance between consecutive letters
+ * @param y - Fixed y position for all letters
+ * @param size - Font size for each letter
+ * @returns Array of {letter, x, y} positions
+ */
+export function mapVinToPositions(
+  vin: string,
+  xStart: number,
+  spacing: number,
+  y: number,
+  size: number = 14
+): VinLetterPlacement[] {
+  if (!vin) return [];
+  
+  return Array.from(vin).map((letter, index) => ({
+    letter,
+    x: xStart + (index * spacing),
+    y,
+    size,
+  }));
+}
+
+/**
+ * Draw VIN letters in individual boxes.
+ */
+export function drawVinBoxes(
+  ctx: DrawContext,
+  text: string,
+  o: { 
+    x: number;  // Legacy: x position (not used when xStart/spacing given)
+    y: number; 
+    size?: number;
+    xStart?: number;  // Starting position for first letter (required for VIN boxes)
+    spacing?: number; // Distance between letters (defaults to 12 if not provided)
+  }
+): void {
+  // Skip if no VIN or missing required config
+  if (!text.trim() || !o.xStart || !o.spacing) return;
+  
+  const size = o.size ?? 14;
+  const xStart = o.xStart;
+  const spacing = o.spacing;
+  const y = o.y;
+  
+  // Map each letter to its position
+  const letters = mapVinToPositions(text, xStart, spacing, y, size);
+  
+  // Draw each letter at its calculated position
+  letters.forEach(({ letter, x, y, size }) => {
+    drawHandwrittenText(ctx, letter, { x, y, size });
+  });
+}
+
 /** Resolve a dotted path against {@link CertificateData}; throws on bad paths. */
 export function readPath(data: CertificateData, path: string): string {
   let cursor: unknown = data;
@@ -184,6 +253,16 @@ export function applyPlacements(
       }
       case "signature":
         drawSignature(ctx, value, { x: placement.x, y: placement.y });
+        break;
+      case "vinBoxes":
+        // VIN letter-boxed fields - each letter gets its own x position
+        drawVinBoxes(ctx, value, {
+          x: placement.x,
+          y: placement.y,
+          size: placement.size,
+          xStart: placement.xStart ?? placement.x,
+          spacing: placement.spacing ?? 12,
+        });
         break;
       default:
         drawHandwrittenText(ctx, value, {
