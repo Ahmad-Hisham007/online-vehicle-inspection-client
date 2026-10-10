@@ -8,6 +8,39 @@ import ApprovalDialog from "@/app/components/InspectionDetailView/ApprovalDialog
 import { canApproveInspection, canRejectInspection } from "@/app/lib/status";
 import type { InspectionDetail } from "@/app/lib/types";
 
+/**
+ * Download a PDF URL as a proper file.
+ * Handles both regular URLs and data URLs.
+ */
+function downloadPdf(url: string, filename: string): void {
+  // If it's a data URL, we need to convert it to a Blob for download
+  if (url.startsWith('data:application/pdf')) {
+    const byteString = atob(url.split(',')[1]);
+    const bytes = new Uint8Array(byteString.length);
+    for (let i = 0; i < byteString.length; i++) {
+      bytes[i] = byteString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  } else {
+    // For regular URLs, create a hidden download link
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+}
+
 interface CertificatesPanelProps {
   inspection: InspectionDetail;
   role: "customer" | "admin";
@@ -57,17 +90,20 @@ export default function CertificatesPanel({
         <p className="text-sm font-bold text-foreground">Certificates</p>
         {isApproved && availableCertificates.length > 0 ? (
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-            {availableCertificates.map(({ key, label }) => (
-              <a
-                key={key}
-                href={inspection.certificates[key]}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Download {label} certificate (PDF)
-              </a>
-            ))}
+            {availableCertificates.map(({ key, label }) => {
+              const url = inspection.certificates[key];
+              if (!url) return null;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => downloadPdf(url, `certificate-${inspection.id}-${key}.pdf`)}
+                  className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Download {label} certificate (PDF)
+                </button>
+              );
+            })}
           </div>
         ) : (
           message && (
