@@ -97,6 +97,15 @@ export interface VinPlacementConfig {
   size: number;
 }
 
+/** Facility information for certificates */
+export interface FacilityInfo {
+  facilityName?: string;
+  facilityAddress?: string;
+  street?: string;
+  location?: string;
+  state?: string;
+}
+
 /** One field position on a blank template (spec §5.2). */
 export interface Placement {
   /** Default "text". */

@@ -125,12 +125,13 @@ export interface VinLetterPlacement {
   letter: string;
   x: number;
   y: number;
+  size?: number;
 }
 
 /**
  * Split a VIN number and calculate positions for each letter.
  * Used for templates with boxed letter fields.
- * 
+ *
  * @param vin - The VIN string to split
  * @param xStart - Starting x position for first letter
  * @param spacing - Distance between consecutive letters
@@ -143,13 +144,13 @@ export function mapVinToPositions(
   xStart: number,
   spacing: number,
   y: number,
-  size: number = 14
+  size: number = 14,
 ): VinLetterPlacement[] {
   if (!vin) return [];
-  
+
   return Array.from(vin).map((letter, index) => ({
     letter,
-    x: xStart + (index * spacing),
+    x: xStart + index * spacing,
     y,
     size,
   }));
@@ -161,25 +162,25 @@ export function mapVinToPositions(
 export function drawVinBoxes(
   ctx: DrawContext,
   text: string,
-  o: { 
-    x: number;  // Legacy: x position (not used when xStart/spacing given)
-    y: number; 
+  o: {
+    x: number; // Legacy: x position (not used when xStart/spacing given)
+    y: number;
     size?: number;
-    xStart?: number;  // Starting position for first letter (required for VIN boxes)
+    xStart?: number; // Starting position for first letter (required for VIN boxes)
     spacing?: number; // Distance between letters (defaults to 12 if not provided)
-  }
+  },
 ): void {
   // Skip if no VIN or missing required config
   if (!text.trim() || !o.xStart || !o.spacing) return;
-  
+
   const size = o.size ?? 14;
   const xStart = o.xStart;
   const spacing = o.spacing;
   const y = o.y;
-  
+
   // Map each letter to its position
   const letters = mapVinToPositions(text, xStart, spacing, y, size);
-  
+
   // Draw each letter at its calculated position
   letters.forEach(({ letter, x, y, size }) => {
     drawHandwrittenText(ctx, letter, { x, y, size });
@@ -190,10 +191,7 @@ export function drawVinBoxes(
 export function readPath(data: CertificateData, path: string): string {
   let cursor: unknown = data;
   for (const segment of path.split(".")) {
-    if (
-      typeof cursor !== "object" ||
-      cursor === null
-    ) {
+    if (typeof cursor !== "object" || cursor === null) {
       throw new Error(
         `CertificateData has no path "${path}" (failed at "${segment}")`,
       );

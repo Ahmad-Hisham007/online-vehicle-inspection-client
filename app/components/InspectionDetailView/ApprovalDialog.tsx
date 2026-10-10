@@ -32,7 +32,7 @@ interface ApprovalDialogProps {
  * - For IL (Chicago): returns "il" (non-chicago key won't exist until we create a proper IL template)
  * - For other states: returns uppercase state code
  * - For Turo: returns "all" (all-states template)
- * 
+ *
  * TODO: Create proper il template for non-chicago IL inspections
  */
 function normalizeStateForTemplate(
@@ -123,6 +123,7 @@ export default function ApprovalDialog({
                     initialValues={companyValues()}
                     inspection={inspection}
                     templateKey={getTemplateKey(company)}
+                    mapVin={getTemplateKey(company).includes("il")}
                   />
                 </AccordionContent>
               </AccordionItem>
