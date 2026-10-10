@@ -19,7 +19,7 @@ export function drawHandwrittenText(
   o: { x: number; y: number; size?: number },
 ): void {
   if (!text.trim()) return;
-  const size = o.size ?? 11;
+  const size = o.size ?? 14; // 3px larger than previous 11pt default
   ctx.page.drawText(text, {
     x: o.x + (ctx.rand() - 0.5) * JITTER.pos,
     y: o.y + (ctx.rand() - 0.5) * JITTER.pos,
