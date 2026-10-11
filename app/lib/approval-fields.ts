@@ -205,22 +205,26 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
       {
         name: "tireRightFrontDepth",
         label: "Tire right front depth",
-        type: "number",
+        type: "text",
+        placeholder: "6/32",
       },
       {
         name: "tireLeftFrontDepth",
         label: "Tire left front depth",
-        type: "number",
+        type: "text",
+        placeholder: "6/32",
       },
       {
         name: "tireRightRearDepth",
         label: "Tire right rear depth",
-        type: "number",
+        type: "text",
+        placeholder: "6/32",
       },
       {
         name: "tireLeftRearDepth",
         label: "Tire left rear depth",
-        type: "number",
+        type: "text",
+        placeholder: "6/32",
       },
     ],
   },
@@ -257,11 +261,47 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
     ],
   },
   {
+    id: "facility",
+    label: "Facility Information",
+    fields: [
+      {
+        name: "facilityName",
+        label: "Facility Name",
+        type: "text",
+        placeholder: "INSVE",
+      },
+      {
+        name: "facilityAddress",
+        label: "Facility Address",
+        type: "text",
+        placeholder: "417 J St, Sacramento, CA 95816",
+      },
+      {
+        name: "street",
+        label: "Street No",
+        type: "text",
+        placeholder: "417 J St",
+      },
+      {
+        name: "location",
+        label: "Location",
+        type: "text",
+        placeholder: "Sacramento",
+      },
+      {
+        name: "state",
+        label: "State",
+        type: "text",
+        placeholder: "California",
+      },
+    ],
+  },
+  {
     id: "handler",
     label: "Handler",
     fields: [
-      { name: "handlerName", label: "Handler name", type: "text" },
-      { name: "handlerSignature", label: "Handler signature", type: "text" },
+      { name: "handlerName", label: "Handler name", type: "readonly" },
+      { name: "handlerSignature", label: "Handler signature", type: "readonly" },
     ],
   },
   {

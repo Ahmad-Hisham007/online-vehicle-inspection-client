@@ -97,11 +97,11 @@ export interface VinPlacementConfig {
   size: number;
 }
 
-/** Facility information for certificates */
+/** Facility information for certificates - extended with optional fields */
 export interface FacilityInfo {
-  facilityName?: string;
-  facilityAddress?: string;
-  street?: string;
+  name: string;
+  address: string;
+  streetAddress?: string;
   location?: string;
   state?: string;
 }

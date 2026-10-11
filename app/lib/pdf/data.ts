@@ -182,8 +182,11 @@ export function buildCertificateData(
     },
     arn: overrides.arn ?? constants.arn,
     facility: {
-      name: overrides.facilityName ?? constants.facility.name,
-      address: overrides.facilityAddress ?? constants.facility.address,
+      name: overrides.facilityName ?? "INSVE",
+      address: overrides.facilityAddress ?? "417 J St, Sacramento, CA 95816",
+      streetAddress: overrides.street ?? "417 J St",
+      location: overrides.location ?? "Sacramento",
+      state: overrides.state ?? "California",
     },
   };
 }
