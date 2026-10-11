@@ -102,6 +102,7 @@ interface ApprovalCompanyFormProps {
   initialValues: Record<string, string>;
   inspection: InspectionDetail;
   templateKey: string;
+  mapVin?: boolean; // ← ADD THIS LINE
 }
 
 export default function ApprovalCompanyForm({
