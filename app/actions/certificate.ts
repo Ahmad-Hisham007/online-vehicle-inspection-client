@@ -81,6 +81,19 @@ export async function generateCertificate(
   const base64 = Buffer.from(pdfBytes).toString("base64");
   const previewUrl = `data:application/pdf;base64,${base64}`;
 
+  // NEW: Update WordPress with certificate data and overrides
+  try {
+    const { updateInspectionCertificate } = await import("@/app/actions/inspections");
+    await updateInspectionCertificate(inspectionId, {
+      company,
+      overrides: input?.overrides ?? {},
+      facilityInfo: certData.facility,
+    });
+  } catch (error) {
+    console.warn("Failed to update WordPress certificate data:", error);
+    // Don't fail the whole operation if WP update fails
+  }
+
   return {
     previewUrl,
     mimeType: "application/pdf",

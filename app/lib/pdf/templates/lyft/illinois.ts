@@ -28,7 +28,7 @@ export const lyft_il: TemplateMapper = {
     { path: "vehicle.year", x: 502, y: 652, size: 12 },
 
     // Handler signature
-    { path: "handler.signature", x: 62, y: 594, size: 12, kind: "signature" },
+    { path: "handler.signature", x: 62, y: 625, size: 12, kind: "signature" },
     { path: "host.phone", x: 272, y: 625, size: 11 },
 
     // Checklist pass marks

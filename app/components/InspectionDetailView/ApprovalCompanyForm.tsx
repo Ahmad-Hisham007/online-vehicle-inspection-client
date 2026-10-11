@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Tick02Icon } from "@hugeicons/core-free-icons";
 
@@ -15,6 +16,17 @@ import {
   type ApprovalFieldDef,
 } from "@/app/lib/approval-fields";
 import type { InspectionDetail } from "@/app/lib/types";
+
+// Define default values for facility and tire fields
+const DEFAULT_FACILITY_VALUES = {
+  facilityName: "INSVE",
+  facilityAddress: "417 J St, Sacramento, CA 95816",
+  street: "417 J St",
+  location: "Sacramento",
+  state: "California",
+};
+
+const DEFAULT_TIRE_VALUES = "6/32";
 
 const INPUT_CLASS =
   "h-12 w-full rounded-md border-0 bg-gray-50 px-4 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-100 transition-all placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary";
@@ -113,7 +125,54 @@ export default function ApprovalCompanyForm({
   inspection,
   templateKey,
 }: ApprovalCompanyFormProps) {
-  const [values, setValues] = useState<Record<string, string>>(initialValues);
+  // Get current user from session for pre-filling handler fields
+  const { data: session } = useSession();
+  const user = session?.user;
+
+  // Build default values from session and configured defaults
+  const getDefaultValue = (key: string): string => {
+    // First, use the provided initial value
+    if (initialValues[key]) {
+      return initialValues[key];
+    }
+
+    // Handler fields from session user
+    if (key === "handlerName" || key === "handlerSignature") {
+      return user?.name || "";
+    }
+
+    // Facility field defaults
+    if (key in DEFAULT_FACILITY_VALUES) {
+      return (DEFAULT_FACILITY_VALUES as Record<string, string>)[key];
+    }
+
+    // Tire depth defaults
+    if (key.includes("tireDepth")) {
+      return DEFAULT_TIRE_VALUES;
+    }
+
+    return "";
+  };
+
+  // Build initial values with defaults
+  const getInitialValues = (): Record<string, string> => {
+    const allFieldNames = APPROVAL_GROUPS.flatMap((g) => g.fields.map((f) => f.name));
+    const values: Record<string, string> = {};
+
+    allFieldNames.forEach((name) => {
+      values[name] = initialValues[name] || getDefaultValue(name);
+    });
+
+    // Ensure handler fields are pre-filled from session (but still editable)
+    if (user?.name) {
+      values.handlerName = user.name;
+      values.handlerSignature = user.name;
+    }
+
+    return values;
+  };
+
+  const [values, setValues] = useState<Record<string, string>>(() => getInitialValues());
   const [generated, setGenerated] = useState(false);
   const [saved, setSaved] = useState(false);
 

@@ -520,3 +520,101 @@ export async function fetchInspection(id: string): Promise<InspectionDetail> {
 
   return mapDetail(node);
 }
+
+/**
+ * Update inspection certificate data in WordPress after PDF generation.
+ * Saves facility info, overrides, and certificate metadata.
+ */
+export async function updateInspectionCertificate(
+  inspectionId: string,
+  data: {
+    company?: string;
+    overrides?: Record<string, string>;
+    facilityInfo?: {
+      name?: string;
+      address?: string;
+      streetAddress?: string;
+      location?: string;
+      state?: string;
+    };
+  },
+): Promise<{ success: boolean }> {
+  const session = await auth();
+  if (!session?.user?.accessToken) {
+    throw new Error("Unauthorized");
+  }
+
+  // Build the mutation
+  const fieldsToUpdate = data.overrides || {};
+  
+  // Add facility info
+  if (data.facilityInfo?.name) {
+    fieldsToUpdate.facilityName = data.facilityInfo.name;
+  }
+  if (data.facilityInfo?.address) {
+    fieldsToUpdate.facilityAddress = data.facilityInfo.address;
+  }
+
+  // If no fields to update, return early
+  if (Object.keys(fieldsToUpdate).length === 0) {
+    return { success: true };
+  }
+
+  // Build WPGraphQL mutation
+  const fieldEntries = Object.entries(fieldsToUpdate)
+    .map(([key, value]) => `${key}: "${String(value).replace(/"/g, '\\"')}"`)
+    .join(", ");
+
+  const mutation = `
+    mutation UpdateInspectionCertificate($id: ID!, $fields: [String!], $values: [String!]) {
+      updateInspection(id: $id, idType: DATABASE_ID, input: {}) {
+        status
+      }
+    }
+  `;
+
+  // Actually, let's use a simpler approach with meta or custom fields
+  const simpleMutation = `
+    mutation UpdateInspectionMeta($id: ID!, $name: String, $value: String) {
+      updateMetadata(
+        id: $id
+        name: $name
+        value: $value
+      ) {
+        success
+      }
+    }
+  `;
+
+  try {
+    const results = await Promise.all(
+      Object.entries(fieldsToUpdate).map(async ([key, value]) => {
+        const result = await wpFetch<{ updateMetadata: { success: boolean } }>(
+          "/graphql",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.user.accessToken}`,
+            },
+            body: JSON.stringify({
+              query: simpleMutation,
+              variables: {
+                id: inspectionId,
+                name: `certificate_${data.company || "lyft"}_${key}`,
+                value: String(value),
+              },
+            }),
+          },
+        );
+        return result;
+      }),
+    );
+
+    const allSuccess = results.every((r) => r?.updateMetadata?.success !== false);
+    return { success: allSuccess };
+  } catch (error) {
+    console.error("Failed to update inspection certificate:", error);
+    return { success: false };
+  }
+}

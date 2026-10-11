@@ -1,5 +1,5 @@
 import { PDFDocument, rgb, type RGB } from "pdf-lib";
-import * as fontkit from "@pdf-lib/fontkit";
+import fontkit from "@pdf-lib/fontkit";
 import { mulberry32 } from "./rng";
 import { applyPlacements } from "./templates/baseMapper";
 import { getTemplateMapper } from "./resolver";
