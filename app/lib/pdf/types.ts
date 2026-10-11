@@ -72,7 +72,13 @@ export interface CertificateData {
   };
   handler: { name: string; signature: string };
   arn: string;
-  facility: { name: string; address: string };
+  facility: {
+    name: string;
+    address: string;
+    streetAddress?: string;
+    location?: string;
+    state?: string;
+  };
 }
 
 /** Everything a draw helper needs: target page, embedded font, ink, RNG. */
@@ -83,7 +89,12 @@ export interface DrawContext {
   rand: () => number;
 }
 
-export type PlacementKind = "text" | "checkmark" | "passCircle" | "signature" | "vinBoxes";
+export type PlacementKind =
+  | "text"
+  | "checkmark"
+  | "passCircle"
+  | "signature"
+  | "vinBoxes";
 
 /** Configuration for VIN letter-boxed fields */
 export interface VinPlacementConfig {
@@ -99,8 +110,8 @@ export interface VinPlacementConfig {
 
 /** Facility information for certificates - extended with optional fields */
 export interface FacilityInfo {
-  name: string;
-  address: string;
+  name?: string;
+  address?: string;
   streetAddress?: string;
   location?: string;
   state?: string;
