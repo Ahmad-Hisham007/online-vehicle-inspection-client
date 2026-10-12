@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { toast } from "react-hot-toast";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/app/components/Button";
@@ -172,14 +173,13 @@ export default function ApprovalCompanyForm({
   const { approvalCardState, setApprovalCardState } = useInspectionStore();
 
   const inspectionKey = inspection.id;
-  const existingCardState =
-    approvalCardState[inspectionKey] || {
-      inspectionId: inspection.id,
-      mergedOverrides: {},
-      certificates: {},
-      generatedBy: { lyft: false, uber: false, turo: false },
-      savedBy: { lyft: false, uber: false, turo: false },
-    };
+  const existingCardState = approvalCardState[inspectionKey] || {
+    inspectionId: inspection.id,
+    mergedOverrides: {},
+    certificates: {},
+    generatedBy: { lyft: false, uber: false, turo: false },
+    savedBy: { lyft: false, uber: false, turo: false },
+  };
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -242,17 +242,23 @@ export default function ApprovalCompanyForm({
   const [saved, setSaved] = useState(
     existingCardState.savedBy[company as "lyft" | "uber" | "turo"] || false,
   );
+  // Local state for certificate URL (data URL during generation, CDN URL after save)
+  const [certificateData, setCertificateData] = useState<string | null>(() => {
+    const state = approvalCardState[inspectionKey];
+    return state?.certificates?.[company as "lyft" | "uber" | "turo"] || null;
+  });
+  const [saving, setSaving] = useState(false);
 
   const updateField = (fieldName: string, value: string) => {
     setValues((prev) => ({ ...prev, [fieldName]: value }));
   };
 
   const handleGenerate = async () => {
+    // Reset saved state when regenerating
+    setSaved(false);
     setGenerated(true);
     try {
-      const { generateCertificate } = await import(
-        "@/app/actions/certificate"
-      );
+      const { generateCertificate } = await import("@/app/actions/certificate");
 
       const overrides: Record<string, string> = {};
       for (const [key, value] of Object.entries(values)) {
@@ -307,11 +313,14 @@ export default function ApprovalCompanyForm({
         overrides: values,
         certificateUrl: result.previewUrl,
         generated: true,
+        saved: false,
       });
+      // Store locally for save operation
+      setCertificateData(result.previewUrl);
     } catch (err) {
       console.error("Certificate generation failed:", err);
       setGenerated(false);
-      alert(
+      toast.error(
         err instanceof Error
           ? `Failed to generate certificate: ${err.message}`
           : "Failed to generate certificate. Please try again.",
@@ -320,45 +329,40 @@ export default function ApprovalCompanyForm({
   };
 
   const handleSave = async () => {
-    if (!generated || !values) return;
-    
-    try {
-      const { saveCertificateToCDN } = await import(
-        "@/app/actions/certificate"
-      );
+    if (!generated || !certificateData) return;
 
-      const currentState = approvalCardState[inspectionKey];
-      const certificateData = 
-        currentState.certificates?.[company as "lyft" | "uber" | "turo"];
-      
-      if (!certificateData) {
-        throw new Error("No certificate generated");
-      }
+    setSaving(true);
+    try {
+      const { saveCertificateToCDN } =
+        await import("@/app/actions/certificate");
 
       // Upload to Bunny CDN
       const { publicUrl } = await saveCertificateToCDN(
         certificateData,
         company as "lyft" | "uber" | "turo",
-        inspectionKey
+        inspectionKey,
       );
 
       // Update Zustand with CDN URL
       setApprovalCardState(inspectionKey, company as "lyft" | "uber" | "turo", {
         certificates: {
-          ...currentState.certificates,
           [company as "lyft" | "uber" | "turo"]: publicUrl,
         },
         saved: true,
       });
 
       setSaved(true);
+      setCertificateData(publicUrl);
+      toast.success("Certificate saved to CDN successfully");
     } catch (err) {
       console.error("Failed to save certificate:", err);
-      alert(
+      toast.error(
         err instanceof Error
-          ? "Failed to save certificate: " + err.message
-          : "Failed to save certificate. Please try again."
+          ? `Failed to save certificate: ${err.message}`
+          : "Failed to save certificate. Please try again.",
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -367,9 +371,7 @@ export default function ApprovalCompanyForm({
 
   // Filter main fields (exclude Country and Companies)
   const mainFields = allFields.filter(
-    (f) =>
-      MAIN_FIELDS.includes(f.name) &&
-      !REMOVED_FIELDS.includes(f.name),
+    (f) => MAIN_FIELDS.includes(f.name) && !REMOVED_FIELDS.includes(f.name),
   );
 
   // Filter advanced fields (exclude removed fields)
@@ -406,15 +408,10 @@ export default function ApprovalCompanyForm({
             "vehicleColor",
             "vehicleMileage",
           ]
-            .map((name) =>
-              allFields.find((f) => f.name === name),
-            )
+            .map((name) => allFields.find((f) => f.name === name))
             .filter(Boolean)
             .map((field) => (
-              <div
-                key={field!.name}
-                className="flex flex-col gap-1"
-              >
+              <div key={field!.name} className="flex flex-col gap-1">
                 <label
                   htmlFor={`${company}-${field!.name}`}
                   className="text-sm font-semibold text-gray-700"
@@ -440,9 +437,7 @@ export default function ApprovalCompanyForm({
           className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
         >
           <span>Advanced Settings</span>
-          <span className="text-gray-500">
-            {showAdvanced ? "▲" : "▼"}
-          </span>
+          <span className="text-gray-500">{showAdvanced ? "▲" : "▼"}</span>
         </button>
 
         {showAdvanced && (
@@ -481,7 +476,7 @@ export default function ApprovalCompanyForm({
           className="!w-auto !px-6"
           onClick={handleGenerate}
         >
-          {generated ? (
+          {saved ? (
             <span className="mr-2 text-emerald-600">✓</span>
           ) : (
             <span
@@ -499,9 +494,15 @@ export default function ApprovalCompanyForm({
             size="sm"
             className="!w-auto !px-6"
             onClick={handleSave}
-            disabled={saved}
+            disabled={saved || saving}
           >
-            {saved ? "Saved" : "Save"}
+            {saved ? (
+              "Saved"
+            ) : saving ? (
+              "Saving..."
+            ) : (
+              "Save"
+            )}
           </Button>
         )}
       </div>

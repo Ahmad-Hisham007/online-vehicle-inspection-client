@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "react-hot-toast";
+
 import {
   Dialog,
   DialogContent,
@@ -19,6 +21,7 @@ import {
   APPROVAL_CERTIFICATE_COMPANIES,
   APPROVAL_COMPANY_LABELS,
 } from "@/app/lib/approval-fields";
+import { useInspectionStore } from "@/app/store/inspectionStore";
 import type { InspectionDetail } from "@/app/lib/types";
 
 interface ApprovalDialogProps {
@@ -83,6 +86,52 @@ export default function ApprovalDialog({
     return values;
   };
 
+  // Get all certificate URLs from Zustand store
+  const { approvalCardState } = useInspectionStore();
+  const inspectionKey = inspection.id;
+  const approvalState = approvalCardState[inspectionKey];
+  const certificateUrls = approvalState?.certificates || {};
+  const isAllSaved = companies.every(
+    (c) => approvalState?.savedBy?.[c as "lyft" | "uber" | "turo"],
+  );
+  const hasAnyCertificate = companies.some((c) => 
+    c === "lyft" && !!certificateUrls.lyft ||
+    c === "uber" && !!certificateUrls.uber ||
+    c === "turo" && !!certificateUrls.turo
+  );
+
+  const handleApprove = async () => {
+    // Collect all certificate URLs
+    const urls: Record<string, string> = {};
+    companies.forEach((company) => {
+      const url = certificateUrls[
+        company as "lyft" | "uber" | "turo"
+      ] as string | undefined;
+      if (url) {
+        urls[company] = url;
+      }
+    });
+
+    if (Object.keys(urls).length === 0) {
+      toast.error("No certificates found to approve");
+      return;
+    }
+
+    try {
+      const { approveInspection } = await import("@/app/actions/admin");
+      await approveInspection(inspection.id, urls);
+      toast.success("Inspection approved successfully!");
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Failed to approve inspection:", err);
+      toast.error(
+        err instanceof Error
+          ? `Failed to approve inspection: ${err.message}`
+          : "Failed to approve inspection. Please try again.",
+      );
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
@@ -101,45 +150,72 @@ export default function ApprovalDialog({
             No certificate companies on this inspection.
           </p>
         ) : (
-          <Accordion
-            type="multiple"
-            defaultValue={companies}
-            className="space-y-3"
-          >
-            {companies.map((company) => (
-              <AccordionItem
-                className="border border-stone-200"
-                key={company}
-                value={company}
-              >
-                <AccordionTrigger>
-                  {APPROVAL_COMPANY_LABELS[company] ?? company}
-                </AccordionTrigger>
-                <AccordionContent>
-                  <ApprovalCompanyForm
-                    company={company}
-                    companyLabel={APPROVAL_COMPANY_LABELS[company] ?? company}
-                    country={country}
-                    initialValues={companyValues()}
-                    inspection={inspection}
-                    templateKey={getTemplateKey(company)}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <>
+            <Accordion
+              type="multiple"
+              defaultValue={companies}
+              className="space-y-3"
+            >
+              {companies.map((company) => (
+                <AccordionItem
+                  className="border border-stone-200"
+                  key={company}
+                  value={company}
+                >
+                  <AccordionTrigger>
+                    {APPROVAL_COMPANY_LABELS[company] ?? company}
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ApprovalCompanyForm
+                      company={company}
+                      companyLabel={APPROVAL_COMPANY_LABELS[company] ?? company}
+                      country={country}
+                      initialValues={companyValues()}
+                      inspection={inspection}
+                      templateKey={getTemplateKey(company)}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+
+            {/* Sticky Approve Button Footer */}
+            <div className="mt-4 flex flex-col items-center gap-3 pt-2 border-t border-stone-200">
+              {!isAllSaved && !hasAnyCertificate ? (
+                <p className="text-sm text-muted-foreground">
+                  Generate and save certificates for all companies before approving
+                </p>
+              ) : !isAllSaved ? (
+                <p className="text-sm text-amber-600">
+                  All certificates generated. Save them before approving.
+                </p>
+              ) : null}
+            </div>
+          </>
         )}
 
-        <div className="flex justify-center pt-2">
+        {/* Sticky Footer with Approve and Close buttons */}
+        <div className="flex justify-end gap-3 pt-3 border-t border-stone-200">
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            className="!w-auto !px-8"
+            className="!w-auto !px-6"
             onClick={() => onOpenChange(false)}
           >
             Close
           </Button>
+          {isAllSaved && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className="!w-auto !px-6"
+              onClick={handleApprove}
+            >
+              Approve
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
