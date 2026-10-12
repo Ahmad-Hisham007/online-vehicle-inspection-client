@@ -82,6 +82,7 @@ interface InspectionState {
     updates: {
       overrides?: Record<string, string>;
       certificateUrl?: string;
+      certificates?: Record<string, string>;
       generated?: boolean;
       saved?: boolean;
     },
@@ -141,9 +142,15 @@ export const useInspectionStore = create<InspectionState>()(
             : newState.mergedOverrides;
 
           // Update certificate URL for this company
-          const certificates = existing
+          let certificates = existing
             ? { ...existing.certificates }
             : {};
+          
+          // Merge any passed certificates (for bulk updates)
+          if (updates.certificates) {
+            certificates = { ...certificates, ...updates.certificates };
+          }
+          
           if (updates.certificateUrl) {
             certificates[company] = updates.certificateUrl;
           }

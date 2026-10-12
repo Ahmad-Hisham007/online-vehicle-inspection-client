@@ -319,11 +319,47 @@ export default function ApprovalCompanyForm({
     }
   };
 
-  const handleSave = () => {
-    setSaved(true);
-    setApprovalCardState(inspectionKey, company as "lyft" | "uber" | "turo", {
-      saved: true,
-    });
+  const handleSave = async () => {
+    if (!generated || !values) return;
+    
+    try {
+      const { saveCertificateToCDN } = await import(
+        "@/app/actions/certificate"
+      );
+
+      const currentState = approvalCardState[inspectionKey];
+      const certificateData = 
+        currentState.certificates?.[company as "lyft" | "uber" | "turo"];
+      
+      if (!certificateData) {
+        throw new Error("No certificate generated");
+      }
+
+      // Upload to Bunny CDN
+      const { publicUrl } = await saveCertificateToCDN(
+        certificateData,
+        company as "lyft" | "uber" | "turo",
+        inspectionKey
+      );
+
+      // Update Zustand with CDN URL
+      setApprovalCardState(inspectionKey, company as "lyft" | "uber" | "turo", {
+        certificates: {
+          ...currentState.certificates,
+          [company as "lyft" | "uber" | "turo"]: publicUrl,
+        },
+        saved: true,
+      });
+
+      setSaved(true);
+    } catch (err) {
+      console.error("Failed to save certificate:", err);
+      alert(
+        err instanceof Error
+          ? "Failed to save certificate: " + err.message
+          : "Failed to save certificate. Please try again."
+      );
+    }
   };
 
   // Get all fields
