@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Tick02Icon } from "@hugeicons/core-free-icons";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/app/components/Button";
@@ -16,17 +14,7 @@ import {
   type ApprovalFieldDef,
 } from "@/app/lib/approval-fields";
 import type { InspectionDetail } from "@/app/lib/types";
-
-// Define default values for facility and tire fields
-const DEFAULT_FACILITY_VALUES = {
-  facilityName: "INSVE",
-  facilityAddress: "417 J St, Sacramento, CA 95816",
-  street: "417 J St",
-  location: "Sacramento",
-  state: "California",
-};
-
-const DEFAULT_TIRE_VALUES = "6/32";
+import { useInspectionStore } from "@/app/store/inspectionStore";
 
 const INPUT_CLASS =
   "h-12 w-full rounded-md border-0 bg-gray-50 px-4 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-100 transition-all placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary";
@@ -107,6 +95,60 @@ function FieldControl({ field, name, value, onChange }: FieldControlProps) {
   );
 }
 
+// Main fields that show prominently
+const MAIN_FIELDS = [
+  "hostName",
+  "hostEmail",
+  "hostPhoneNumber",
+  "inspectionDate",
+  "licensePlateNumber",
+  "vin",
+  "vehicleMake",
+  "vehicleModel",
+  "vehicleYear",
+  "vehicleColor",
+  "vehicleMileage",
+];
+
+// Advanced fields that go in the collapsible section
+const ADVANCED_FIELDS = [
+  "tncLicensePlatesLast4Digit",
+  "hasRegistrationSticker",
+  "registrationStickerMonthyear",
+  "zip",
+  "tiresOlderThan6Years",
+  "batteryOlderThan5Years",
+  "voltageGreaterThan12_1V",
+  "minPerManufacturerFront",
+  "minPerManufacturerRear",
+  "frontBrakeLeft",
+  "frontBrakeRight",
+  "rearBrakeLeft",
+  "rearBrakeRight",
+  "tireRightFrontDepth",
+  "tireLeftFrontDepth",
+  "tireRightRearDepth",
+  "tireLeftRearDepth",
+  "inspectionStateUsa",
+  "inspectionStateCanada",
+  "vehicleNumberofDoors",
+  "numberOfSeatbelts",
+  "fuelType",
+  "facilityName",
+  "facilityAddress",
+  "street",
+  "location",
+  "handlerName",
+  "handlerSignature",
+];
+
+// REMOVED FIELDS - Not needed for explicit company forms
+const REMOVED_FIELDS = [
+  "inspectionCountry", // Redundant - company form already knows the country
+  "inspectionCompanies", // Redundant - explicit by which form is open
+  "state", // Facility state - populated from WordPress defaults
+];
+
 interface ApprovalCompanyFormProps {
   company: string;
   companyLabel: string;
@@ -114,7 +156,6 @@ interface ApprovalCompanyFormProps {
   initialValues: Record<string, string>;
   inspection: InspectionDetail;
   templateKey: string;
-  mapVin?: boolean; // ← ADD THIS LINE
 }
 
 export default function ApprovalCompanyForm({
@@ -125,76 +166,94 @@ export default function ApprovalCompanyForm({
   inspection,
   templateKey,
 }: ApprovalCompanyFormProps) {
-  // Get current user from session for pre-filling handler fields
   const { data: session } = useSession();
   const user = session?.user;
 
-  // Build default values from session and configured defaults
-  const getDefaultValue = (key: string): string => {
-    // First, use the provided initial value
-    if (initialValues[key]) {
-      return initialValues[key];
-    }
+  const { approvalCardState, setApprovalCardState } = useInspectionStore();
 
-    // Handler fields from session user
-    if (key === "handlerName" || key === "handlerSignature") {
-      return user?.name || "";
-    }
+  const inspectionKey = inspection.id;
+  const existingCardState =
+    approvalCardState[inspectionKey] || {
+      inspectionId: inspection.id,
+      mergedOverrides: {},
+      certificates: {},
+      generatedBy: { lyft: false, uber: false, turo: false },
+      savedBy: { lyft: false, uber: false, turo: false },
+    };
 
-    // Facility field defaults
-    if (key in DEFAULT_FACILITY_VALUES) {
-      return (DEFAULT_FACILITY_VALUES as Record<string, string>)[key];
-    }
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-    // Tire depth defaults
-    if (key.includes("tireDepth")) {
-      return DEFAULT_TIRE_VALUES;
-    }
+  const fieldContext: ApprovalFieldContext = { country, company };
 
-    return "";
+  const defaultValueContext: ApprovalFieldContext & {
+    session?: { name?: string };
+  } = {
+    country,
+    company,
+    session: user ? { name: user.name || "" } : undefined,
   };
 
-  // Build initial values with defaults
+  const getDefaultValue = (field: ApprovalFieldDef): string => {
+    if (!existingCardState.mergedOverrides[field.name]) {
+      if (initialValues[field.name]) {
+        return initialValues[field.name];
+      }
+    }
+
+    if (existingCardState.mergedOverrides[field.name]) {
+      return existingCardState.mergedOverrides[field.name];
+    }
+
+    if (field.defaultValue !== undefined) {
+      return typeof field.defaultValue === "function"
+        ? field.defaultValue(defaultValueContext)
+        : field.defaultValue;
+    }
+
+    return field.placeholder || "";
+  };
+
   const getInitialValues = (): Record<string, string> => {
-    const allFieldNames = APPROVAL_GROUPS.flatMap((g) => g.fields.map((f) => f.name));
+    const allFieldNames = APPROVAL_GROUPS.flatMap((g) =>
+      g.fields.map((f) => f.name),
+    );
     const values: Record<string, string> = {};
 
     allFieldNames.forEach((name) => {
-      values[name] = initialValues[name] || getDefaultValue(name);
+      const field = APPROVAL_GROUPS.flatMap((g) => g.fields).find(
+        (f) => f.name === name,
+      );
+      if (field) {
+        values[name] = getDefaultValue(field);
+      } else {
+        values[name] = initialValues[name] || "";
+      }
     });
-
-    // Ensure handler fields are pre-filled from session (but still editable)
-    if (user?.name) {
-      values.handlerName = user.name;
-      values.handlerSignature = user.name;
-    }
 
     return values;
   };
 
-  const [values, setValues] = useState<Record<string, string>>(() => getInitialValues());
-  const [generated, setGenerated] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  const ctx: ApprovalFieldContext = { country, company };
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    getInitialValues(),
+  );
+  const [generated, setGenerated] = useState(
+    existingCardState.generatedBy[company as "lyft" | "uber" | "turo"] || false,
+  );
+  const [saved, setSaved] = useState(
+    existingCardState.savedBy[company as "lyft" | "uber" | "turo"] || false,
+  );
 
   const updateField = (fieldName: string, value: string) => {
     setValues((prev) => ({ ...prev, [fieldName]: value }));
   };
 
-  /**
-   * Generate a certificate PDF and open it in a new tab.
-   * Uses Blob URL for efficient PDF preview (faster than data URL).
-   */
   const handleGenerate = async () => {
-    setGenerated(true); // Optimistic UI - show Save button immediately
+    setGenerated(true);
     try {
-      // Import and call the server action
       const { generateCertificate } = await import(
         "@/app/actions/certificate"
       );
 
-      // Build overrides from form values (whitelisted fields)
       const overrides: Record<string, string> = {};
       for (const [key, value] of Object.entries(values)) {
         if (value) overrides[key] = value;
@@ -202,51 +261,55 @@ export default function ApprovalCompanyForm({
 
       const result = await generateCertificate(inspection.id, {
         company,
-        seed: Date.now(), // Add a seed for random but reproducible layout
+        seed: Date.now(),
         overrides,
       });
 
-      // Convert data URL to Blob URL for faster loading
-      // This avoids the overhead of passing massive base64 strings through window.open()
       if (result.previewUrl) {
         try {
-          // Extract base64 data after the comma
-          const base64Data = result.previewUrl.split(',')[1];
+          const base64Data = result.previewUrl.split(",")[1];
           if (!base64Data) {
-            // Fallback: try opening directly if not a data URL
             window.open(result.previewUrl, "_blank", "noopener,noreferrer");
             return;
           }
 
-          // Decode base64 to binary string
           const binaryString = atob(base64Data);
           const bytes = new Uint8Array(binaryString.length);
           for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
           }
 
-          // Create Blob and Blob URL
-          const blob = new Blob([bytes], { type: 'application/pdf' });
+          const blob = new Blob([bytes], { type: "application/pdf" });
           const blobUrl = URL.createObjectURL(blob);
 
-          // Open with Blob URL (instant tab opening)
-          const newWindow = window.open(blobUrl, "_blank", "noopener,noreferrer");
-          // If popup is blocked, show an alert to the user
+          const newWindow = window.open(
+            blobUrl,
+            "_blank",
+            "noopener,noreferrer",
+          );
           if (!newWindow) {
-            alert("Popup blocked! Please allow popups for this site and click Generate again.");
+            alert(
+              "Popup blocked! Please allow popups for this site and click Generate again.",
+            );
           } else {
-            // Revoke the Blob URL after a delay to free memory
             setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
           }
         } catch (convertError) {
-          // Fallback to direct data URL if Blob conversion fails
-          console.warn("Blob conversion failed, falling back to data URL:", convertError);
+          console.warn(
+            "Blob conversion failed, falling back to data URL:",
+            convertError,
+          );
           window.open(result.previewUrl, "_blank", "noopener,noreferrer");
         }
       }
+
+      setApprovalCardState(inspectionKey, company as "lyft" | "uber" | "turo", {
+        overrides: values,
+        certificateUrl: result.previewUrl,
+        generated: true,
+      });
     } catch (err) {
       console.error("Certificate generation failed:", err);
-      // Reset generated state on error so user can retry
       setGenerated(false);
       alert(
         err instanceof Error
@@ -257,50 +320,122 @@ export default function ApprovalCompanyForm({
   };
 
   const handleSave = () => {
-    // TODO(phase 6.4): persist the generated certificate to the inspection post.
     setSaved(true);
+    setApprovalCardState(inspectionKey, company as "lyft" | "uber" | "turo", {
+      saved: true,
+    });
   };
+
+  // Get all fields
+  const allFields = APPROVAL_GROUPS.flatMap((g) => g.fields);
+
+  // Filter main fields (exclude Country and Companies)
+  const mainFields = allFields.filter(
+    (f) =>
+      MAIN_FIELDS.includes(f.name) &&
+      !REMOVED_FIELDS.includes(f.name),
+  );
+
+  // Filter advanced fields (exclude removed fields)
+  const advancedFields = allFields.filter(
+    (f) => ADVANCED_FIELDS.includes(f.name) && !REMOVED_FIELDS.includes(f.name),
+  );
+
+  // Get visible fields based on context
+  const visibleMainFields = mainFields.filter(
+    (field) => !field.visibleFor || field.visibleFor(fieldContext),
+  );
+  const visibleAdvancedFields = advancedFields.filter(
+    (field) => !field.visibleFor || field.visibleFor(fieldContext),
+  );
 
   return (
     <div className="space-y-6">
-      {APPROVAL_GROUPS.map((group) => {
-        const fields = group.fields.filter(
-          (field) => !field.visibleFor || field.visibleFor(ctx),
-        );
-        if (fields.length === 0) return null;
-
-        return (
-          <section key={group.id} className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              {group.label}
-            </h4>
-            <div className="grid gap-4 md:grid-cols-2">
-              {fields.map((field) => (
-                <div
-                  key={field.name}
-                  className={cn(
-                    "flex flex-col gap-1",
-                    field.type === "readonly" && "md:col-span-2",
-                  )}
+      {/* Main Fields Section */}
+      <section className="space-y-3">
+        <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          Inspection Details
+        </h4>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            "hostName",
+            "hostEmail",
+            "hostPhoneNumber",
+            "inspectionDate",
+            "licensePlateNumber",
+            "vin",
+            "vehicleMake",
+            "vehicleModel",
+            "vehicleYear",
+            "vehicleColor",
+            "vehicleMileage",
+          ]
+            .map((name) =>
+              allFields.find((f) => f.name === name),
+            )
+            .filter(Boolean)
+            .map((field) => (
+              <div
+                key={field!.name}
+                className="flex flex-col gap-1"
+              >
+                <label
+                  htmlFor={`${company}-${field!.name}`}
+                  className="text-sm font-semibold text-gray-700"
                 >
-                  <label
-                    htmlFor={`${company}-${field.name}`}
-                    className="text-sm font-semibold text-gray-700"
-                  >
-                    {field.label}
-                  </label>
-                  <FieldControl
-                    field={field}
-                    name={`${company}-${field.name}`}
-                    value={values[field.name] ?? ""}
-                    onChange={(value) => updateField(field.name, value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+                  {field!.label}
+                </label>
+                <FieldControl
+                  field={field!}
+                  name={`${company}-${field!.name}`}
+                  value={values[field!.name] ?? ""}
+                  onChange={(newValue) => updateField(field!.name, newValue)}
+                />
+              </div>
+            ))}
+        </div>
+      </section>
+
+      {/* Advanced Fields Section */}
+      <section className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+        >
+          <span>Advanced Settings</span>
+          <span className="text-gray-500">
+            {showAdvanced ? "▲" : "▼"}
+          </span>
+        </button>
+
+        {showAdvanced && (
+          <div className="grid gap-4 md:grid-cols-2">
+            {visibleAdvancedFields.map((field) => (
+              <div
+                key={field.name}
+                className={cn(
+                  "flex flex-col gap-1",
+                  field.type === "readonly" && "md:col-span-2",
+                )}
+              >
+                <label
+                  htmlFor={`${company}-${field.name}`}
+                  className="text-sm font-semibold text-gray-700"
+                >
+                  {field.label}
+                </label>
+                <FieldControl
+                  field={field}
+                  name={`${company}-${field.name}`}
+                  value={values[field.name] ?? ""}
+                  onChange={(newValue) => updateField(field.name, newValue)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="flex flex-wrap items-center gap-3 pt-2">
         <Button
@@ -311,14 +446,11 @@ export default function ApprovalCompanyForm({
           onClick={handleGenerate}
         >
           {generated ? (
-            <HugeiconsIcon
-              icon={Tick02Icon}
-              className="size-4 text-emerald-200"
-            />
+            <span className="mr-2 text-emerald-600">✓</span>
           ) : (
             <span
               aria-hidden
-              className="size-4 rounded-full border-2 border-white/70"
+              className="size-4 rounded-full border-2 border-white/70 mr-2"
             />
           )}
           Generate

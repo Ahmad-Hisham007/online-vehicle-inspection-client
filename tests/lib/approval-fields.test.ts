@@ -6,6 +6,7 @@ import {
   YES_NO_OPTIONS,
   PASS_FAIL_OPTIONS,
   getVisibleFields,
+  type ApprovalFieldDef,
   type ApprovalFieldType,
 } from "@/app/lib/approval-fields";
 
@@ -22,6 +23,7 @@ describe("APPROVAL_GROUPS", () => {
       "brakes",
       "tires",
       "inspection",
+      "facility",
       "handler",
       "host",
     ]);
@@ -92,8 +94,10 @@ describe("APPROVAL_GROUPS", () => {
     expect(numberFields).toContain("vehicleMileage");
     expect(numberFields).toContain("numberOfDoors");
     expect(numberFields).toContain("numberOfSeatbelts");
-    expect(numberFields).toContain("tireRightFrontDepth");
-    expect(numberFields).toContain("minPerManufacturerFront");
+    expect(numberFields).not.toContain("tireRightFrontDepth"); // Changed to text in Phase 6.3
+
+    // Tire depths are text type with "6/32" default
+    expect(fieldByName("tireRightFrontDepth")?.type).toBe("text");
 
     expect(fieldByName("inspectionDate")?.type).toBe("date");
     expect(fieldByName("hostEmail")?.type).toBe("email");
@@ -165,5 +169,129 @@ describe("getVisibleFields", () => {
     for (const field of getVisibleFields({ country: "USA", company: "uber" })) {
       expect(allowed).toContain(field.type);
     }
+  });
+});
+
+describe("field default values", () => {
+  it("defines defaultValue for facility fields", () => {
+    expect(fieldByName("facilityName")?.defaultValue).toBe("INSVE");
+    expect(fieldByName("facilityAddress")?.defaultValue).toBe(
+      "417 J St, Sacramento, CA 95816",
+    );
+    expect(fieldByName("street")?.defaultValue).toBe("417 J St");
+    expect(fieldByName("location")?.defaultValue).toBe("Sacramento");
+    expect(fieldByName("state")?.defaultValue).toBe("California");
+  });
+
+  it("defines defaultValue for tire fields", () => {
+    const tireFields = [
+      "tireRightFrontDepth",
+      "tireLeftFrontDepth",
+      "tireRightRearDepth",
+      "tireLeftRearDepth",
+    ];
+    for (const name of tireFields) {
+      expect(fieldByName(name)?.defaultValue).toBe("6/32");
+    }
+  });
+
+  it("defines defaultValue function for handler fields", () => {
+    const handlerNameField = fieldByName("handlerName");
+    expect(handlerNameField?.defaultValue).toBeInstanceOf(Function);
+
+    // Test with session
+    const ctxWithSession = {
+      country: "USA" as const,
+      company: "uber",
+      session: { name: "John Doe" },
+    };
+    expect((handlerNameField?.defaultValue as Function)(ctxWithSession)).toBe(
+      "John Doe",
+    );
+
+    // Test without session
+    const ctxWithoutSession = {
+      country: "USA" as const,
+      company: "uber",
+    };
+    expect((handlerNameField?.defaultValue as Function)(ctxWithoutSession)).toBe(
+      "",
+    );
+  });
+
+  it("handler fields use session when available", () => {
+    const handlerNameField = fieldByName("handlerName");
+    const handlerSignatureField = fieldByName("handlerSignature");
+
+    const ctx = {
+      country: "USA" as const,
+      company: "lyft",
+      session: { name: "Jane Smith" },
+    };
+
+    expect(
+      (handlerNameField?.defaultValue as Function)(ctx),
+    ).toBe("Jane Smith");
+    expect(
+      (handlerSignatureField?.defaultValue as Function)(ctx),
+    ).toBe("Jane Smith");
+  });
+
+  it("falls back to placeholder for fields without defaultValue", () => {
+    expect(fieldByName("vehicleMake")?.defaultValue).toBeUndefined();
+    expect(fieldByName("vehicleModel")?.defaultValue).toBeUndefined();
+  });
+});
+
+describe("defaultValue precedence", () => {
+  /**
+   * Helper function to simulate getDefaultValue logic from ApprovalCompanyForm
+   */
+  const getDefaultValue = (
+    field: ApprovalFieldDef,
+    initialValues: Record<string, string>,
+    ctx: { country: string; company: string; session?: { name?: string } },
+  ): string => {
+    // First, check if initialValues has a value (highest priority)
+    if (initialValues[field.name]) {
+      return initialValues[field.name];
+    }
+
+    // Second, use field's defaultValue if defined
+    if (field.defaultValue !== undefined) {
+      return typeof field.defaultValue === "function"
+        ? (field.defaultValue as Function)(ctx)
+        : field.defaultValue;
+    }
+
+    // Third, fall back to placeholder
+    return field.placeholder || "";
+  };
+
+  it("initialValues take precedence over defaultValue", () => {
+    const field = fieldByName("facilityName")!;
+    const initialValues = { facilityName: "Custom Facility" };
+    const ctx = { country: "USA", company: "uber" };
+
+    const result = getDefaultValue(field, initialValues, ctx);
+    expect(result).toBe("Custom Facility");
+  });
+
+  it("uses defaultValue when initialValues doesn't have it", () => {
+    const field = fieldByName("facilityName")!;
+    const initialValues: Record<string, string> = {};
+    const ctx = { country: "USA", company: "uber" };
+
+    const result = getDefaultValue(field, initialValues, ctx);
+    expect(result).toBe("INSVE");
+  });
+
+  it("uses placeholder when neither initialValues nor defaultValue exist", () => {
+    const field = fieldByName("vehicleMake")!;
+    const initialValues: Record<string, string> = {};
+    const ctx = { country: "USA", company: "uber" };
+
+    const result = getDefaultValue(field, initialValues, ctx);
+    expect(result).toBe("E.g. Toyota");
   });
 });

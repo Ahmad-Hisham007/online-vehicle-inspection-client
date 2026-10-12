@@ -524,6 +524,11 @@ export async function fetchInspection(id: string): Promise<InspectionDetail> {
 /**
  * Update inspection certificate data in WordPress after PDF generation.
  * Saves facility info, overrides, and certificate metadata.
+ * 
+ * NOTE: This function has been deprecated and replaced with Zustand store pattern.
+ * Temporary form state is now persisted to sessionStorage via useInspectionStore
+ * instead of making WordPress mutations. This is more robust and doesn't require
+ * network calls for temporary data.
  */
 export async function updateInspectionCertificate(
   inspectionId: string,
@@ -539,82 +544,11 @@ export async function updateInspectionCertificate(
     };
   },
 ): Promise<{ success: boolean }> {
-  const session = await auth();
-  if (!session?.user?.accessToken) {
-    throw new Error("Unauthorized");
-  }
-
-  // Build the mutation
-  const fieldsToUpdate = data.overrides || {};
-  
-  // Add facility info
-  if (data.facilityInfo?.name) {
-    fieldsToUpdate.facilityName = data.facilityInfo.name;
-  }
-  if (data.facilityInfo?.address) {
-    fieldsToUpdate.facilityAddress = data.facilityInfo.address;
-  }
-
-  // If no fields to update, return early
-  if (Object.keys(fieldsToUpdate).length === 0) {
-    return { success: true };
-  }
-
-  // Build WPGraphQL mutation
-  const fieldEntries = Object.entries(fieldsToUpdate)
-    .map(([key, value]) => `${key}: "${String(value).replace(/"/g, '\\"')}"`)
-    .join(", ");
-
-  const mutation = `
-    mutation UpdateInspectionCertificate($id: ID!, $fields: [String!], $values: [String!]) {
-      updateInspection(id: $id, idType: DATABASE_ID, input: {}) {
-        status
-      }
-    }
-  `;
-
-  // Actually, let's use a simpler approach with meta or custom fields
-  const simpleMutation = `
-    mutation UpdateInspectionMeta($id: ID!, $name: String, $value: String) {
-      updateMetadata(
-        id: $id
-        name: $name
-        value: $value
-      ) {
-        success
-      }
-    }
-  `;
-
-  try {
-    const results = await Promise.all(
-      Object.entries(fieldsToUpdate).map(async ([key, value]) => {
-        const result = await wpFetch<{ updateMetadata: { success: boolean } }>(
-          "/graphql",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.user.accessToken}`,
-            },
-            body: JSON.stringify({
-              query: simpleMutation,
-              variables: {
-                id: inspectionId,
-                name: `certificate_${data.company || "lyft"}_${key}`,
-                value: String(value),
-              },
-            }),
-          },
-        );
-        return result;
-      }),
-    );
-
-    const allSuccess = results.every((r) => r?.updateMetadata?.success !== false);
-    return { success: allSuccess };
-  } catch (error) {
-    console.error("Failed to update inspection certificate:", error);
-    return { success: false };
-  }
+  // This function is deprecated - form state is now managed by Zustand store
+  // When the approval mutation is fully implemented in Phase 6.4, this will be replaced
+  // with proper server-side handling of certificate generation and storage.
+  console.warn(
+    "updateInspectionCertificate is deprecated. Use Zustand store pattern instead.",
+  );
+  return { success: true };
 }

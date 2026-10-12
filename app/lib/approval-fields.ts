@@ -23,6 +23,8 @@ export interface ApprovalFieldDef {
   type: ApprovalFieldType;
   options?: readonly { value: string; label: string }[];
   placeholder?: string;
+  /** Default value for the field - can be a string or a function receiving context (including optional session). */
+  defaultValue?: string | ((ctx: ApprovalFieldContext & { session?: { name?: string } }) => string);
   /** Per-company / per-location visibility. Default: visible everywhere. */
   visibleFor?: (ctx: ApprovalFieldContext) => boolean;
 }
@@ -207,24 +209,28 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
         label: "Tire right front depth",
         type: "text",
         placeholder: "6/32",
+        defaultValue: "6/32",
       },
       {
         name: "tireLeftFrontDepth",
         label: "Tire left front depth",
         type: "text",
         placeholder: "6/32",
+        defaultValue: "6/32",
       },
       {
         name: "tireRightRearDepth",
         label: "Tire right rear depth",
         type: "text",
         placeholder: "6/32",
+        defaultValue: "6/32",
       },
       {
         name: "tireLeftRearDepth",
         label: "Tire left rear depth",
         type: "text",
         placeholder: "6/32",
+        defaultValue: "6/32",
       },
     ],
   },
@@ -269,30 +275,35 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
         label: "Facility Name",
         type: "text",
         placeholder: "INSVE",
+        defaultValue: "INSVE",
       },
       {
         name: "facilityAddress",
         label: "Facility Address",
         type: "text",
         placeholder: "417 J St, Sacramento, CA 95816",
+        defaultValue: "417 J St, Sacramento, CA 95816",
       },
       {
         name: "street",
         label: "Street No",
         type: "text",
         placeholder: "417 J St",
+        defaultValue: "417 J St",
       },
       {
         name: "location",
         label: "Location",
         type: "text",
         placeholder: "Sacramento",
+        defaultValue: "Sacramento",
       },
       {
         name: "state",
         label: "State",
         type: "text",
         placeholder: "California",
+        defaultValue: "California",
       },
     ],
   },
@@ -300,8 +311,18 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
     id: "handler",
     label: "Handler",
     fields: [
-      { name: "handlerName", label: "Handler name", type: "readonly" },
-      { name: "handlerSignature", label: "Handler signature", type: "readonly" },
+      {
+        name: "handlerName",
+        label: "Handler name",
+        type: "readonly",
+        defaultValue: (ctx) => ctx.session?.name || "",
+      },
+      {
+        name: "handlerSignature",
+        label: "Handler signature",
+        type: "readonly",
+        defaultValue: (ctx) => ctx.session?.name || "",
+      },
     ],
   },
   {

@@ -123,7 +123,6 @@ export default function ApprovalDialog({
                     initialValues={companyValues()}
                     inspection={inspection}
                     templateKey={getTemplateKey(company)}
-                    mapVin={getTemplateKey(company).includes("il")}
                   />
                 </AccordionContent>
               </AccordionItem>
