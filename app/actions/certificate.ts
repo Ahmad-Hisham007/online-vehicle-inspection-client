@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { assertSessionActive } from "@/app/lib/refresh-token";
+import { generateUploadUrl } from "@/app/actions/upload";
 import type { InspectionDetail } from "@/app/lib/types";
 import { buildCertificateData } from "@/app/lib/pdf/data";
 import type { CertificateData } from "@/app/lib/pdf/types";
@@ -81,22 +82,48 @@ export async function generateCertificate(
   const base64 = Buffer.from(pdfBytes).toString("base64");
   const previewUrl = `data:application/pdf;base64,${base64}`;
 
-  // NEW: Update WordPress with certificate data and overrides
-  try {
-    const { updateInspectionCertificate } = await import("@/app/actions/inspections");
-    await updateInspectionCertificate(inspectionId, {
-      company,
-      overrides: input?.overrides ?? {},
-      facilityInfo: certData.facility,
-    });
-  } catch (error) {
-    console.warn("Failed to update WordPress certificate data:", error);
-    // Don't fail the whole operation if WP update fails
-  }
+  // NOTE: WordPress mutation removed - form state is now persisted via Zustand store
+  // The previewUrl is stored in Zustand store (sessionStorage) in ApprovalCompanyForm.tsx
 
   return {
     previewUrl,
     mimeType: "application/pdf",
     contentDisposition: `attachment; filename="certificate-${inspectionId}.pdf"`,
   };
+}
+/**
+ * Upload certificate PDF to Bunny CDN.
+ * Takes a data URL, extracts the base64 PDF, and uploads directly to Bunny Storage.
+ */
+export async function saveCertificateToCDN(
+  pdfDataUrl: string,
+  company: string,
+  inspectionId: string,
+): Promise<{ publicUrl: string }> {
+  // Extract the base64 data from data URL
+  const base64Data = pdfDataUrl.split(",")[1];
+  if (!base64Data) {
+    throw new Error("Invalid PDF data URL");
+  }
+
+  // Convert base64 to Buffer
+  const pdfBytes = Buffer.from(base64Data, "base64");
+  const fileType = "application/pdf";
+
+  // Generate upload URL from Bunny CDN
+  const { uploadUrl, publicUrl } = await generateUploadUrl(
+    fileType,
+    pdfBytes.length,
+  );
+
+  // Upload PDF directly to Bunny CDN
+  await fetch(uploadUrl, {
+    method: "PUT",
+    body: pdfBytes,
+    headers: {
+      "Content-Type": fileType,
+    },
+  });
+
+  return { publicUrl };
 }
