@@ -52,18 +52,24 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
 // persists generated certificates and populates expiryDate (PDF phase).
 
 /**
- * Approve an inspection with certificate URLs.
+ * Approve an inspection with certificate URLs and all field overrides.
  * This function:
  * 1. Marks the inspection as "approved"
- * 2. Saves certificate URLs for each company
- * 3. Populates expiry dates
+ * 2. Saves all form field overrides from Zustand
+ * 3. Saves certificate URLs for each company
+ * 4. Populates expiry dates
  * 
  * @param inspectionId - The WordPress ID of the inspection
- * @param certificateUrls - Map of company name to certificate URL (Bunny CDN public URL)
+ * @param data - Full inspection data payload
+ * @param data.mergedOverrides - All field values from form
+ * @param data.certificates - Certificate URLs by company
  */
 export async function approveInspection(
   inspectionId: string,
-  certificateUrls: Record<string, string>,
+  data: {
+    mergedOverrides: Record<string, string>;
+    certificates: Record<string, string>;
+  },
 ): Promise<void> {
   const session = await auth();
   const role = session?.user?.role;
@@ -72,38 +78,40 @@ export async function approveInspection(
   }
   assertSessionActive(session.error);
 
-  // Build inspection details with certificates
+  // Build inspection details - start with status
   const inspectionDetails: Record<string, unknown> = {
     inspectionStatus: "approved",
   };
 
-  // Add certificate URLs for each company type
+  // Merge all form field overrides
+  const { mergedOverrides, certificates } = data;
+  Object.assign(inspectionDetails, mergedOverrides);
+
+  // Add certificate URLs and expiry dates for each company
   const certificateFieldMap: Record<string, string> = {
     lyft: "lyftCertificate",
     uber: "uberCertificate",
     turo: "turoCertificate",
   };
 
-  // Add certificate URLs and expiry dates
-  for (const [company, url] of Object.entries(certificateUrls)) {
+  for (const [company, url] of Object.entries(certificates)) {
     const fieldName = certificateFieldMap[company];
     if (fieldName && url) {
       inspectionDetails[fieldName] = url;
       
-      // Calculate expiry date (1 year from inspection date - assumed to be 1 year validity)
-      // In production, this would come from the certificate itself or be calculated properly
+      // Calculate expiry date (1 year from now)
       inspectionDetails[`${fieldName}ExpiryDate`] = calculateExpiryDate();
     }
   }
 
-  const data = await wpFetch<UpdateInspectionResponse>(UPDATE_STATUS_MUTATION, {
+  const response = await wpFetch<UpdateInspectionResponse>(UPDATE_STATUS_MUTATION, {
     input: {
       id: inspectionId,
       inspectionDetails,
     },
   });
 
-  if (!data.updateInspection?.inspection) {
+  if (!response.updateInspection?.inspection) {
     throw new Error("Failed to approve inspection");
   }
 

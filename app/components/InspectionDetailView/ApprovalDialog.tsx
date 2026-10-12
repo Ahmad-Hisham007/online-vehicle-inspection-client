@@ -101,25 +101,32 @@ export default function ApprovalDialog({
   );
 
   const handleApprove = async () => {
-    // Collect all certificate URLs
-    const urls: Record<string, string> = {};
-    companies.forEach((company) => {
-      const url = certificateUrls[
-        company as "lyft" | "uber" | "turo"
-      ] as string | undefined;
-      if (url) {
-        urls[company] = url;
-      }
-    });
+    // Get merged overrides from Zustand state
+    const mergedOverrides = approvalState?.mergedOverrides || {};
+    const certificates = certificateUrls;
 
-    if (Object.keys(urls).length === 0) {
-      toast.error("No certificates found to approve");
+    // Check if all required companies have certificates
+    const missingCertificates = companies.filter(
+      (c) => !certificates[c as "lyft" | "uber" | "turo"]
+    );
+
+    if (missingCertificates.length > 0) {
+      const names = missingCertificates.map(c => APPROVAL_COMPANY_LABELS[c]).join(", ");
+      toast.error(`Missing certificates for: ${names}`);
+      return;
+    }
+
+    if (Object.keys(mergedOverrides).length === 0) {
+      toast.error("No inspection data to approve");
       return;
     }
 
     try {
       const { approveInspection } = await import("@/app/actions/admin");
-      await approveInspection(inspection.id, urls);
+      await approveInspection(inspection.id, {
+        mergedOverrides,
+        certificates,
+      });
       toast.success("Inspection approved successfully!");
       onOpenChange(false);
     } catch (err) {
