@@ -136,10 +136,31 @@ export const useInspectionStore = create<InspectionState>()(
             savedBy: { lyft: false, uber: false, turo: false },
           };
 
-          // Merge overrides (from form)
-          const mergedOverrides = updates.overrides
-            ? { ...newState.mergedOverrides, ...updates.overrides }
-            : newState.mergedOverrides;
+          // Field name migration: convert old facility field names to new WP-compatible names
+          const FIELD_MIGRATIONS: Record<string, string> = {
+            street: "facilityStreetAddress",
+            location: "facilityLocationName",
+            state: "facilityState",
+          };
+
+          // Merge overrides (from form) and migrate field names
+          let mergedOverrides = newState.mergedOverrides;
+          if (updates.overrides) {
+            let newOverrides = { ...mergedOverrides, ...updates.overrides };
+            
+            // Apply field name migrations - remove old names, add new names
+            for (const [oldName, newName] of Object.entries(FIELD_MIGRATIONS)) {
+              if (oldName in newOverrides) {
+                // Only add new name if it doesn't already exist
+                if (!(newName in newOverrides)) {
+                  newOverrides[newName] = newOverrides[oldName];
+                }
+                // Remove old name
+                delete newOverrides[oldName];
+              }
+            }
+            mergedOverrides = newOverrides;
+          }
 
           // Update certificate URL for this company
           let certificates = existing
