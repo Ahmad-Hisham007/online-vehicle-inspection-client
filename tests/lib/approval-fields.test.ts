@@ -178,9 +178,9 @@ describe("field default values", () => {
     expect(fieldByName("facilityAddress")?.defaultValue).toBe(
       "417 J St, Sacramento, CA 95816",
     );
-    expect(fieldByName("street")?.defaultValue).toBe("417 J St");
-    expect(fieldByName("location")?.defaultValue).toBe("Sacramento");
-    expect(fieldByName("state")?.defaultValue).toBe("California");
+    expect(fieldByName("facilityStreetAddress")?.defaultValue).toBe("417 J St");
+    expect(fieldByName("facilityLocationName")?.defaultValue).toBe("Sacramento");
+    expect(fieldByName("facilityState")?.defaultValue).toBe("California");
   });
 
   it("defines defaultValue for tire fields", () => {

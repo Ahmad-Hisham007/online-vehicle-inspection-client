@@ -25,7 +25,10 @@ const UPDATE_STATUS_MUTATION = `
 export async function rejectInspection(inspectionId: string): Promise<void> {
   const session = await auth();
   const role = session?.user?.role;
-  if (!session?.user?.accessToken || (!isAdministrator(role) && !isInspector(role))) {
+  if (
+    !session?.user?.accessToken ||
+    (!isAdministrator(role) && !isInspector(role))
+  ) {
     throw new Error("Unauthorized");
   }
   assertSessionActive(session.error);
@@ -58,7 +61,7 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
  * 2. Saves all form field overrides from Zustand
  * 3. Saves certificate URLs for each company
  * 4. Populates expiry dates
- * 
+ *
  * @param inspectionId - The WordPress ID of the inspection
  * @param data - Full inspection data payload
  * @param data.mergedOverrides - All field values from form
@@ -73,7 +76,10 @@ export async function approveInspection(
 ): Promise<void> {
   const session = await auth();
   const role = session?.user?.role;
-  if (!session?.user?.accessToken || (!isAdministrator(role) && !isInspector(role))) {
+  if (
+    !session?.user?.accessToken ||
+    (!isAdministrator(role) && !isInspector(role))
+  ) {
     throw new Error("Unauthorized");
   }
   assertSessionActive(session.error);
@@ -94,22 +100,28 @@ export async function approveInspection(
     turo: "turoCertificate",
   };
 
+  // WP GraphQL maps all certificate expiry dates to a single 'expiryDate' field
+  // This override ensures the correct expiry date is used based on which company is being processed
+  const expiryDate = calculateExpiryDate();
+
   for (const [company, url] of Object.entries(certificates)) {
     const fieldName = certificateFieldMap[company];
     if (fieldName && url) {
       inspectionDetails[fieldName] = url;
-      
-      // Calculate expiry date (1 year from now)
-      inspectionDetails[`${fieldName}ExpiryDate`] = calculateExpiryDate();
+      // Map expiry date - WordPress expects 'expiryDate' field
+      inspectionDetails["expiryDate"] = expiryDate;
     }
   }
 
-  const response = await wpFetch<UpdateInspectionResponse>(UPDATE_STATUS_MUTATION, {
-    input: {
-      id: inspectionId,
-      inspectionDetails,
+  const response = await wpFetch<UpdateInspectionResponse>(
+    UPDATE_STATUS_MUTATION,
+    {
+      input: {
+        id: inspectionId,
+        inspectionDetails,
+      },
     },
-  });
+  );
 
   if (!response.updateInspection?.inspection) {
     throw new Error("Failed to approve inspection");

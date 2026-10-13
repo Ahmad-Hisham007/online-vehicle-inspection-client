@@ -137,8 +137,9 @@ const ADVANCED_FIELDS = [
   "fuelType",
   "facilityName",
   "facilityAddress",
-  "street",
-  "location",
+  "facilityStreetAddress",
+  "facilityLocationName",
+  "facilityState",
   "handlerName",
   "handlerSignature",
 ];
@@ -147,7 +148,6 @@ const ADVANCED_FIELDS = [
 const REMOVED_FIELDS = [
   "inspectionCountry", // Redundant - company form already knows the country
   "inspectionCompanies", // Redundant - explicit by which form is open
-  "state", // Facility state - populated from WordPress defaults
 ];
 
 interface ApprovalCompanyFormProps {
