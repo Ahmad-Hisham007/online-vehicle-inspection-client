@@ -21,6 +21,7 @@ export const RequestsListing = async ({ searchParams }: RequestsProps) => {
     listRequests({ page, perPage: 8, status, search }),
   ]);
   const canAssign = isAdministrator(session?.user?.role);
+  console.log(session);
   const rows = data.items;
   return (
     <AdminPageShell title="Requests">

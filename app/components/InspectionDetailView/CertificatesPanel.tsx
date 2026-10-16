@@ -14,15 +14,15 @@ import type { InspectionDetail } from "@/app/lib/types";
  */
 function downloadPdf(url: string, filename: string): void {
   // If it's a data URL, we need to convert it to a Blob for download
-  if (url.startsWith('data:application/pdf')) {
-    const byteString = atob(url.split(',')[1]);
+  if (url.startsWith("data:application/pdf")) {
+    const byteString = atob(url.split(",")[1]);
     const bytes = new Uint8Array(byteString.length);
     for (let i = 0; i < byteString.length; i++) {
       bytes[i] = byteString.charCodeAt(i);
     }
-    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const blob = new Blob([bytes], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = blobUrl;
     link.download = filename;
     document.body.appendChild(link);
@@ -31,10 +31,10 @@ function downloadPdf(url: string, filename: string): void {
     URL.revokeObjectURL(blobUrl);
   } else {
     // For regular URLs, create a hidden download link
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = filename;
-    link.target = '_blank';
+    link.target = "_blank";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -85,9 +85,9 @@ export default function CertificatesPanel({
   }
 
   return (
-    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-3">
+    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-6 bg-gray-50">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-foreground">Certificates</p>
+        <p className="text-lg font-bold text-foreground">Certificates</p>
         {isApproved && availableCertificates.length > 0 ? (
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
             {availableCertificates.map(({ key, label }) => {
@@ -97,8 +97,10 @@ export default function CertificatesPanel({
                 <button
                   key={key}
                   type="button"
-                  onClick={() => downloadPdf(url, `certificate-${inspection.id}-${key}.pdf`)}
-                  className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() =>
+                    downloadPdf(url, `certificate-${inspection.id}-${key}.pdf`)
+                  }
+                  className="font-medium text-primary underline-offset-4 hover:underline"
                 >
                   Download {label} certificate (PDF)
                 </button>
@@ -106,9 +108,7 @@ export default function CertificatesPanel({
             })}
           </div>
         ) : (
-          message && (
-            <p className="mt-1 text-xs text-muted-foreground">{message}</p>
-          )
+          message && <p className="mt-1 text-muted-foreground">{message}</p>
         )}
       </div>
 
@@ -117,7 +117,7 @@ export default function CertificatesPanel({
           <Button
             variant="primary"
             size="sm"
-            className="w-full! px-6! shrink-0"
+            className="px-6! shrink-0 w-auto min-w-22"
             onClick={() =>
               router.push(`/dashboard/customer/pay/${inspection.id}`)
             }

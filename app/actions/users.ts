@@ -174,6 +174,7 @@ interface UserDetailNode {
   email: string;
   firstName?: string | null;
   lastName?: string | null;
+  displayName?: string | null;
   registeredDate?: string | null;
   roles?: { nodes: { name: string }[] } | null;
   userFields?: userField;
@@ -190,6 +191,7 @@ const USER_DETAIL_QUERY = `
       email
       firstName
       lastName
+      displayName
       registeredDate
       roles {
         nodes {
@@ -254,6 +256,41 @@ interface UpdateUserResponse {
   } | null;
 }
 
+export interface CurrentUser {
+  displayName?: string | null;
+  email: string;
+  phone: string;
+}
+//------------------//
+// Get Current USER //
+//----------------- //
+export const getCurrentUser = async (id: string): Promise<CurrentUser> => {
+  const session = await auth();
+  if (!session?.user?.accessToken) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+  const data = await wpFetch<GetUserResponse>(
+    USER_DETAIL_QUERY,
+    { id },
+    { accessToken: session.user.accessToken },
+  );
+
+  const node = data.user;
+  if (!node) {
+    throw new Error("User not found");
+  }
+
+  return {
+    displayName: node.displayName,
+    email: node.email,
+    phone:
+      node.userFields?.phoneNumber != null
+        ? String(node.userFields.phoneNumber)
+        : "",
+  };
+};
+
 const UPDATE_USER_MUTATION = `
   mutation UpdateUser($input: UpdateUserInput!) {
     updateUser(input: $input) {
@@ -282,7 +319,7 @@ export async function updateUser(
   }
   assertSessionActive(session.error);
 
-const input: Record<string, unknown> = {
+  const input: Record<string, unknown> = {
     id,
     email: payload.email,
     firstName: payload.firstName,
@@ -297,7 +334,7 @@ const input: Record<string, unknown> = {
     input,
   });
 
-if (!data.updateUser?.user) {
+  if (!data.updateUser?.user) {
     throw new Error("Failed to update user");
   }
 
@@ -328,12 +365,15 @@ export async function updateUserPassword(
   }
   assertSessionActive(session.error);
 
-  const data = await wpFetch<UpdateUserResponse>(UPDATE_USER_PASSWORD_MUTATION, {
-    input: {
-      id,
-      password,
+  const data = await wpFetch<UpdateUserResponse>(
+    UPDATE_USER_PASSWORD_MUTATION,
+    {
+      input: {
+        id,
+        password,
+      },
     },
-  });
+  );
 
   if (!data.updateUser?.user) {
     throw new Error("Failed to update password");

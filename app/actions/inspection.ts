@@ -11,6 +11,8 @@ import type {
   UploadFields,
   ReviewAgreement,
 } from "@/app/lib/schemas";
+import { CurrentUser, getCurrentUser } from "./users";
+import { AdminUserDetail } from "../lib/types";
 
 export interface InspectionFormData {
   vehicleInfo: VehicleInfo | null;
@@ -45,7 +47,10 @@ export async function createInspectionDraft(
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
-
+  const currentUser: CurrentUser = await getCurrentUser(
+    String(session?.user.wpId),
+  );
+  console.log(currentUser);
   const {
     vehicleInfo,
     vinInfo,
@@ -119,6 +124,9 @@ export async function createInspectionDraft(
 
     paymentStatus: "pending",
     inspectionStatus: "pending",
+    hostName: currentUser.displayName,
+    hostEmail: currentUser.email,
+    hostPhoneNumber: currentUser.phone,
   };
 
   const mutation = `

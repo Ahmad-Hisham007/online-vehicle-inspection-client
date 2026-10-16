@@ -126,8 +126,28 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
   const handleRetry = useCallback(() => {
     setClientSecret(null);
     setReturnUrl(null);
+    setPaymentId(null);
     startPayment();
   }, [startPayment]);
+
+  const handleCancel = useCallback(() => {
+    // Clear payment state
+    setClientSecret(null);
+    setPaymentId(null);
+    setReturnUrl(null);
+    setPhase("review");
+    
+    // Clear inspection ID from store to prevent duplicate creation
+    setInspectionId("");
+    
+    // Reset all form data
+    reset();
+    
+    // Navigate to dashboard
+    router.push("/dashboard/customer");
+    
+    toast.success("Inspection cancelled. You can start a new one when ready.");
+  }, [reset, router, setInspectionId, setPhase, toast]);
 
   const companies = inspectionScope?.companies ?? [];
 
@@ -156,6 +176,7 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
           paymentId={paymentId!}
           onSuccess={handlePaymentSuccess}
           onRetry={handleRetry}
+          onCancel={handleCancel}
         />
       </div>
     );
