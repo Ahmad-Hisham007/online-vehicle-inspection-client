@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { calculatePrice } from "@/app/lib/constants";
 import { wpFetch } from "@/app/lib/wp-auth";
@@ -145,10 +145,10 @@ export async function createInspectionDraft(
   // Granular cache invalidation for specific inspection
   revalidatePath(`/dashboard/customer/inspection/${databaseId}`);
   revalidatePath(`/dashboard/admin/inspection/${databaseId}`);
-  revalidateTag("inspection-list");
-  revalidateTag("request-admin");
-  revalidateTag("archive-admin");
-  revalidateTag(`inspection:${databaseId}`);
+  revalidateTag("inspection-list", "max");
+  revalidateTag("request-admin", "max");
+  revalidateTag("archive-admin", "max");
+  revalidateTag(`inspection:${databaseId}`, "max");
 
   return { inspectionId: databaseId };
 }

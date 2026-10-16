@@ -9,6 +9,7 @@ import {
   createInspectionDraft,
   type InspectionFormData,
 } from "@/app/actions/inspection";
+import { fetchInspection } from "@/app/actions/inspections";
 import type { InspectionDetail } from "@/app/lib/types";
 
 function formatTimestamp(date: Date): string {
@@ -129,10 +130,10 @@ export async function confirmInspectionPayment(
   // Granular cache invalidation with dynamic tags
   revalidatePath("/dashboard/customer");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
-  revalidateTag("inspection-list");
-  revalidateTag("request-admin");
-  revalidateTag("archive-admin");
-  revalidateTag(`inspection:${inspectionId}`);
+  revalidateTag("inspection-list", "max");
+  revalidateTag("request-admin", "max");
+  revalidateTag("archive-admin", "max");
+  revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
 interface GetInspectionForPaymentResponse {

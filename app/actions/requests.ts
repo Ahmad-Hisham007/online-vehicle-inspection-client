@@ -140,7 +140,7 @@ interface RequestsPageParams {
 /**
  * Wrapper function that creates a cached function with dynamic tags based on admin list parameters.
  */
-export function createGetRequestsPageCached(
+function createGetRequestsPageCached(
   page: number,
   status?: InspectionStatus | null,
   search?: string

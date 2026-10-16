@@ -419,11 +419,16 @@ interface InspectionsPageParams {
   sortDir: SortDir;
 }
 
+interface InspectionDetailParams {
+  token: string;
+  id: string;
+}
+
 /**
  * Wrapper function that creates a cached function with dynamic tags based on parameters.
  * This ensures cache invalidation targets only specific items, pages, and filters.
  */
-export function createGetInspectionsPageCached(
+function createGetInspectionsPageCached(
   author: number,
   page: number,
   status?: InspectionStatus | null,
@@ -472,7 +477,7 @@ export function createGetInspectionsPageCached(
  * Wrapper function for fetching a single inspection detail with dynamic cache tags.
  * Links the detail to its parent list for proper cache invalidation.
  */
-export function createGetInspectionDetailCached(id: string, author: number) {
+function createGetInspectionDetailCached(id: string, author: number) {
   return unstable_cache(
     async (params: InspectionDetailParams): Promise<InspectionNode> => {
       const data = await wpFetch<GetInspectionResponse>(

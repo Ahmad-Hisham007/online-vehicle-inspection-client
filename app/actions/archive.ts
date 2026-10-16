@@ -148,7 +148,7 @@ interface ArchivePageParams {
 /**
  * Wrapper function that creates a cached function with dynamic tags based on admin archive parameters.
  */
-export function createGetArchivePageCached(
+function createGetArchivePageCached(
   page: number,
   status?: InspectionStatus | null,
   search?: string

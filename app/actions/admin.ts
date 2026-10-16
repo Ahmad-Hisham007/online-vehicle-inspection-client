@@ -47,11 +47,11 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
   }
 
   // Revalidate list caches after rejection
-  revalidateTag("request-admin");
-  revalidateTag("archive-admin");
-  revalidateTag("inspection-list");
+  revalidateTag("request-admin", "max");
+  revalidateTag("archive-admin", "max");
+  revalidateTag("inspection-list", "max");
   // Granular cache invalidation for this specific inspection
-  revalidateTag(`inspection:${inspectionId}`);
+  revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
 // TODO(phase 6.4): approveInspection(id) — sets inspectionStatus "approved",
@@ -131,11 +131,11 @@ export async function approveInspection(
   }
 
   // Revalidate list caches after approval
-  revalidateTag("request-admin");
-  revalidateTag("archive-admin");
-  revalidateTag("inspection-list");
+  revalidateTag("request-admin", "max");
+  revalidateTag("archive-admin", "max");
+  revalidateTag("inspection-list", "max");
   // Granular cache invalidation for this specific inspection
-  revalidateTag(`inspection:${inspectionId}`);
+  revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
 /**

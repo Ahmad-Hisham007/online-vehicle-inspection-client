@@ -106,10 +106,10 @@ describe("rejectInspection", () => {
 
     await rejectInspection("234");
 
-    expect(mockRevalidateTag).toHaveBeenCalledWith("request-admin");
-    expect(mockRevalidateTag).toHaveBeenCalledWith("archive-admin");
-    expect(mockRevalidateTag).toHaveBeenCalledWith("inspection-list");
-    expect(mockRevalidateTag).toHaveBeenCalledWith("inspection:234");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("request-admin", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("archive-admin", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("inspection-list", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("inspection:234", "max");
   });
 
   it("throws when the mutation returns no inspection", async () => {
