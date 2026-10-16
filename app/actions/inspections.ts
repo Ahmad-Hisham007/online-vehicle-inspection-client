@@ -419,53 +419,87 @@ interface InspectionsPageParams {
   sortDir: SortDir;
 }
 
-const getInspectionsPageCached = unstable_cache(
-  async (params: InspectionsPageParams) => {
-    const { token, author, page, perPage, status, sortDir } = params;
+/**
+ * Wrapper function that creates a cached function with dynamic tags based on parameters.
+ * This ensures cache invalidation targets only specific items, pages, and filters.
+ */
+export function createGetInspectionsPageCached(
+  author: number,
+  page: number,
+  status?: InspectionStatus | null,
+  sortDir?: SortDir
+) {
+  return unstable_cache(
+    async (params: InspectionsPageParams) => {
+      const { token, page, perPage, status, sortDir } = params;
 
-    const data = await wpFetch<ListInspectionsResponse>(
-      LIST_QUERY,
-      {
-        author,
-        inspectionStatus: status ?? null,
-        order: sortDir === "oldest" ? "ASC" : "DESC",
-        limit: perPage,
-        offset: (page - 1) * perPage,
-      },
-      { accessToken: token },
-    );
+      const data = await wpFetch<ListInspectionsResponse>(
+        LIST_QUERY,
+        {
+          author,
+          inspectionStatus: status ?? null,
+          order: sortDir === "oldest" ? "ASC" : "DESC",
+          limit: perPage,
+          offset: (page - 1) * perPage,
+        },
+        { accessToken: token },
+      );
 
-    const nodes = data.inspections?.nodes ?? [];
-    const total = data.inspections?.pageInfo?.total ?? nodes.length;
+      const nodes = data.inspections?.nodes ?? [];
+      const total = data.inspections?.pageInfo?.total ?? nodes.length;
 
-    return { items: nodes.map(mapSummary), total };
-  },
-  ["inspections", "page"],
-  { revalidate: LIST_CACHE_REVALIDATE, tags: ["inspections"] },
-);
-
-interface InspectionDetailParams {
-  token: string;
-  id: string;
+      return { items: nodes.map(mapSummary), total };
+    },
+    [
+      `inspections-page`,
+      `inspections-author-${author}`,
+      `inspections-author-${author}-page-${page}`,
+      `inspections-author-${author}-status-${status || 'all'}`,
+    ],
+    {
+      revalidate: LIST_CACHE_REVALIDATE,
+      tags: [
+        `inspection-list:author:${author}`,
+        `inspection-list:author:${author}:page:${page}`,
+        `inspection-list:author:${author}:status:${status || 'all'}`,
+        `inspection-list:author:${author}:sort:${sortDir || 'newest'}`,
+      ],
+    },
+  );
 }
 
-const getInspectionDetailNodeCached = unstable_cache(
-  async (params: InspectionDetailParams): Promise<InspectionNode> => {
-    const data = await wpFetch<GetInspectionResponse>(
-      DETAIL_QUERY,
-      { id: params.id },
-      { accessToken: params.token },
-    );
+/**
+ * Wrapper function for fetching a single inspection detail with dynamic cache tags.
+ * Links the detail to its parent list for proper cache invalidation.
+ */
+export function createGetInspectionDetailCached(id: string, author: number) {
+  return unstable_cache(
+    async (params: InspectionDetailParams): Promise<InspectionNode> => {
+      const data = await wpFetch<GetInspectionResponse>(
+        DETAIL_QUERY,
+        { id: params.id },
+        { accessToken: params.token },
+      );
 
-    if (!data.inspection) {
-      throw new Error("Inspection not found");
-    }
+      if (!data.inspection) {
+        throw new Error("Inspection not found");
+      }
 
-    return data.inspection;
-  },
-  ["inspection", "detail", "by-id"],
-  { revalidate: DETAIL_CACHE_REVALIDATE, tags: ["inspection", "inspection:detail"] },
-);
+      return data.inspection;
+    },
+    [
+      `inspection-detail`,
+      `inspection-${id}`,
+    ],
+    {
+      revalidate: DETAIL_CACHE_REVALIDATE,
+      tags: [
+        `inspection:${id}`,
+        `inspection-list:author:${author}`,
+      ],
+    },
+  );
+}
 
 export async function listInspections(
   params: ListInspectionsParams = {},
@@ -476,12 +510,20 @@ export async function listInspections(
   }
   assertSessionActive(session.error);
 
+  const author = session.user.wpId;
   const page = Math.max(1, params.page ?? 1);
   const perPage = Math.max(1, params.perPage ?? DEFAULT_PER_PAGE);
 
-  const { items, total } = await getInspectionsPageCached({
+  const cachedFn = createGetInspectionsPageCached(
+    author,
+    page,
+    params.status ?? null,
+    params.sortDir ?? "newest"
+  );
+
+  const { items, total } = await cachedFn({
     token: session.user.accessToken,
-    author: session.user.wpId,
+    author,
     page,
     perPage,
     status: params.status ?? null,
@@ -501,7 +543,11 @@ export async function fetchInspection(id: string): Promise<InspectionDetail> {
   }
   assertSessionActive(session.error);
 
-  const node = await getInspectionDetailNodeCached({
+  const author = session.user.wpId;
+
+  const cachedFn = createGetInspectionDetailCached(id, author);
+
+  const node = await cachedFn({
     token: session.user.accessToken,
     id,
   });
