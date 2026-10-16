@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import NavLink from "@/app/components/NavLink";
 import StatusBadge from "@/app/components/StatusBadge";
+import { getPaymentStatusLabel } from "@/app/lib/status";
 import { formatInspectionDate } from "@/app/lib/format";
 import type { InspectionSummary } from "@/app/lib/types";
 
@@ -17,6 +18,9 @@ export default function InspectionCard({ inspection }: InspectionCardProps) {
   const isPaid =
     inspection.paymentStatus === "succeeded" ||
     inspection.inspectionStatus === "paid";
+
+  const hasPendingPayment = inspection.paymentStatus === "pending";
+  const hasFailedPayment = inspection.paymentStatus === "failed";
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -60,13 +64,26 @@ export default function InspectionCard({ inspection }: InspectionCardProps) {
 
       {isOpen && (
         <div className="flex flex-col items-center gap-3 pt-2 pb-4">
-          {!isPaid && (
+          {hasPendingPayment && (
             <NavLink
               href={`/dashboard/customer/pay/${inspection.id}`}
               className="text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
               Payment Link
             </NavLink>
+          )}
+          {hasFailedPayment && (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800">
+                {getPaymentStatusLabel(inspection.paymentStatus)}
+              </span>
+              <NavLink
+                href={`/dashboard/customer/pay/${inspection.id}`}
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Retry Payment
+              </NavLink>
+            </div>
           )}
           <NavLink
             href={`/dashboard/customer/inspection/${inspection.id}`}
