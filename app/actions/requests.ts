@@ -137,31 +137,53 @@ interface RequestsPageParams {
   assignedInspector: number | null;
 }
 
-const getRequestsPageCached = unstable_cache(
-  async (params: RequestsPageParams) => {
-    const { token, page, perPage, status, search, assignedInspector } = params;
+/**
+ * Wrapper function that creates a cached function with dynamic tags based on admin list parameters.
+ */
+export function createGetRequestsPageCached(
+  page: number,
+  status?: InspectionStatus | null,
+  search?: string
+) {
+  return unstable_cache(
+    async (params: RequestsPageParams) => {
+      const { token, page, perPage, status, search, assignedInspector } = params;
 
-    const data = await wpFetch<ListRequestsResponse>(
-      REQUESTS_LIST_QUERY,
-      {
-        inspectionStatus: status ?? null,
-        limit: perPage,
-        offset: (page - 1) * perPage,
-        search: search,
-        inspectionStatusNotIn: ["approved", "rejected", "cancelled"],
-        assignedInspector,
-      },
-      { accessToken: token },
-    );
+      const data = await wpFetch<ListRequestsResponse>(
+        REQUESTS_LIST_QUERY,
+        {
+          inspectionStatus: status ?? null,
+          limit: perPage,
+          offset: (page - 1) * perPage,
+          search: search,
+          inspectionStatusNotIn: ["approved", "rejected", "cancelled"],
+          assignedInspector,
+        },
+        { accessToken: token },
+      );
 
-    const nodes = data.inspections?.nodes ?? [];
-    const total = data.inspections?.pageInfo?.total ?? nodes.length;
+      const nodes = data.inspections?.nodes ?? [];
+      const total = data.inspections?.pageInfo?.total ?? nodes.length;
 
-    return { items: nodes.map(mapSummary), total };
-  },
-  ["requests", "page"],
-  { revalidate: LIST_CACHE_REVALIDATE, tags: ["requests"] },
-);
+      return { items: nodes.map(mapSummary), total };
+    },
+    [
+      `requests-page`,
+      `requests-page-${page}`,
+      `requests-status-${status || 'all'}`,
+      `requests-search-${search || 'none'}`,
+    ],
+    {
+      revalidate: LIST_CACHE_REVALIDATE,
+      tags: [
+        `request-admin`,
+        `request-admin:page:${page}`,
+        `request-admin:status:${status || 'all'}`,
+        `request-admin:search:${search || ''}`,
+      ],
+    },
+  );
+}
 
 export async function listRequests(
   params: AdminRequestsParams = {},
@@ -184,7 +206,13 @@ export async function listRequests(
     ? session.user.wpId
     : null;
 
-  const { items, total } = await getRequestsPageCached({
+  const cachedFn = createGetRequestsPageCached(
+    page,
+    params.status ?? null,
+    params.search
+  );
+
+  const { items, total } = await cachedFn({
     token: session.user.accessToken,
     page,
     perPage,
