@@ -46,11 +46,12 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
     throw new Error("Failed to reject inspection");
   }
 
-  revalidateTag("requests", "max");
-  revalidateTag("archive", "max");
-  revalidateTag("inspections", "max");
+  // Revalidate list caches after rejection
+  revalidateTag("request-admin");
+  revalidateTag("archive-admin");
+  revalidateTag("inspection-list");
   // Granular cache invalidation for this specific inspection
-  revalidateTag(`inspection:${inspectionId}`, "max");
+  revalidateTag(`inspection:${inspectionId}`);
 }
 
 // TODO(phase 6.4): approveInspection(id) — sets inspectionStatus "approved",
@@ -129,11 +130,12 @@ export async function approveInspection(
     throw new Error("Failed to approve inspection");
   }
 
-  revalidateTag("requests", "max");
-  revalidateTag("archive", "max");
-  revalidateTag("inspections", "max");
+  // Revalidate list caches after approval
+  revalidateTag("request-admin");
+  revalidateTag("archive-admin");
+  revalidateTag("inspection-list");
   // Granular cache invalidation for this specific inspection
-  revalidateTag(`inspection:${inspectionId}`, "max");
+  revalidateTag(`inspection:${inspectionId}`);
 }
 
 /**
