@@ -285,13 +285,34 @@ export async function getPaymentSetup(
 
 export async function createInspectionAndPaymentIntent(
   formData: InspectionFormData,
+  existingInspectionId?: string,
 ): Promise<{
   inspectionId: string;
   clientSecret: string;
   paymentId: string;
   returnUrl: string;
 }> {
-  const { inspectionId } = await createInspectionDraft(formData);
+  // Check if existing inspection can be reused
+  let inspectionId = existingInspectionId;
+  
+  if (inspectionId) {
+    try {
+      const existing = await fetchInspection(inspectionId);
+      // Reuse if payment is pending
+      if (existing.paymentStatus === "pending") {
+        const setup = await createPaymentIntent(inspectionId);
+        return { inspectionId, ...setup };
+      }
+    } catch {
+      // Existing inspection not found or error, will create new
+      inspectionId = undefined;
+    }
+  }
+  
+  // Create new inspection if none exists or existing one isn't pending
+  const { inspectionId: newId } = await createInspectionDraft(formData);
+  inspectionId = newId;
+  
   const setup = await createPaymentIntent(inspectionId);
   return { inspectionId, ...setup };
 }

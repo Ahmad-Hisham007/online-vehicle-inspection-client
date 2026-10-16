@@ -83,12 +83,13 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
         reviewAgreement,
       };
 
+      // Pass existing inspectionId to prevent duplicate creation
       const {
         inspectionId: createdInspectionId,
         clientSecret: nextSecret,
         paymentId: nextPaymentId,
         returnUrl: nextReturnUrl,
-      } = await createInspectionAndPaymentIntent(formData);
+      } = await createInspectionAndPaymentIntent(formData, inspectionId || undefined);
       setInspectionId(createdInspectionId);
 
       setClientSecret(nextSecret);
@@ -108,6 +109,7 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
     uploadFields,
     reviewAgreement,
     setInspectionId,
+    inspectionId,
   ]);
 
   const onSubmit = (data: StepInputs) => {
