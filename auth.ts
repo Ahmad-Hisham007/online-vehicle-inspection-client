@@ -124,6 +124,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               data.user.roles?.nodes?.map((r: { name: string }) => r.name) ||
               [];
             console.log(`[DEBUG] Current user role is ${roles}`);
+            
+            // Fetch phone number from WP
+            let phone: string | undefined;
+            try {
+              const wpRes = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
+                  Origin: SITE_ORIGIN,
+                },
+                body: JSON.stringify({
+                  query: `
+                    query GetUserPhone($id: ID!) {
+                      user(id: $id, idType: DATABASE_ID) {
+                        userFields {
+                          phoneNumber
+                        }
+                      }
+                    }
+                  `,
+                  variables: { id: data.user.databaseId },
+                }),
+              });
+              const wpJson = await wpRes.json();
+              if (wpJson.data?.user?.userFields?.phoneNumber) {
+                phone = String(wpJson.data.user.userFields.phoneNumber);
+              }
+            } catch (e) {
+              console.error("[DEBUG] Failed to fetch phone:", e);
+            }
+            
             return {
               id: data.user.id,
               wpId: data.user.databaseId,
@@ -135,6 +167,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               refreshTokenExpiration: data.refreshTokenExpiration,
               emailVerified: null,
               role: roles[0],
+              phone,
             };
           }
 
@@ -283,6 +316,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.refreshTokenExpiration = wpData.refreshTokenExpiration;
             user.wpId = wpData.user.databaseId;
             user.role = roles[0];
+            user.name = wpData.user.name;
+            
+            // Fetch phone number from WP
+            try {
+              const wpRes = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET!,
+                  Origin: SITE_ORIGIN,
+                },
+                body: JSON.stringify({
+                  query: `
+                    query GetUserPhone($id: ID!) {
+                      user(id: $id, idType: DATABASE_ID) {
+                        userFields {
+                          phoneNumber
+                        }
+                      }
+                    }
+                  `,
+                  variables: { id: wpData.user.databaseId },
+                }),
+              });
+              const wpJson = await wpRes.json();
+              if (wpJson.data?.user?.userFields?.phoneNumber) {
+                (user as any).phone = String(wpJson.data.user.userFields.phoneNumber);
+              }
+            } catch (e) {
+              console.error("[DEBUG] Failed to fetch phone in Google OAuth:", e);
+            }
+            
             console.log(user.role);
             return true; // লগিন ১০০% সাকসেসফুল!
           }

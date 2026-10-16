@@ -16,6 +16,7 @@ declare module "next-auth" {
     email: string;
     emailVerified: Date | null;
     role: string;
+    phone?: string;
   }
 
   /**
@@ -30,7 +31,7 @@ declare module "next-auth" {
 }
 
 declare module "next-auth/jwt" {
-  interface JWT {
+  export interface JWT {
     user: {
       id: string;
       wpId: number;
@@ -42,6 +43,7 @@ declare module "next-auth/jwt" {
       email: string;
       emailVerified: Date | null;
       role: string;
+      phone?: string;
     };
     /** Set to "RefreshAccessTokenError" when WordPress definitively rejects the refresh token. */
     error?: string;

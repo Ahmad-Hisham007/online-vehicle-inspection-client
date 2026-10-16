@@ -9,6 +9,8 @@ vi.mock("@/auth", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
 }));
 
 import { createInspectionDraft, type InspectionFormData } from "@/app/actions/inspection";

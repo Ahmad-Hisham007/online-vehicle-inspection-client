@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { calculatePrice } from "@/app/lib/constants";
 import { wpFetch } from "@/app/lib/wp-auth";
@@ -11,7 +11,6 @@ import type {
   UploadFields,
   ReviewAgreement,
 } from "@/app/lib/schemas";
-import { getCurrentUser, type CurrentUser } from "./users";
 
 export interface InspectionFormData {
   vehicleInfo: VehicleInfo | null;
@@ -30,15 +29,6 @@ interface CreateInspectionResponse {
   };
 }
 
-interface UpdateInspectionResponse {
-  updateInspection: {
-    inspection: {
-      id: string;
-      title: string;
-    };
-  };
-}
-
 export async function createInspectionDraft(
   formData: InspectionFormData,
 ): Promise<{ inspectionId: string }> {
@@ -49,9 +39,6 @@ export async function createInspectionDraft(
   if (!session?.user?.wpId) {
     throw new Error("User not authenticated properly");
   }
-  
-  // Get user info including phone number from WP
-  const currentUser = await getCurrentUser(String(session.user.wpId));
   
   const {
     vehicleInfo,
@@ -126,9 +113,9 @@ export async function createInspectionDraft(
 
     paymentStatus: "pending",
     inspectionStatus: "pending",
-    hostName: currentUser.displayName,
-    hostEmail: currentUser.email,
-    hostPhoneNumber: currentUser.phone,
+    hostName: session.user.name ?? "",
+    hostEmail: session.user.email,
+    hostPhoneNumber: session.user.phone ?? "",
   };
 
   const mutation = `
@@ -154,29 +141,14 @@ export async function createInspectionDraft(
 
   const databaseId = data.createInspection.inspection.databaseId.toString();
 
-  // Update title to include the inspection ID
-  const updateMutation = `
-    mutation UpdateInspection($input: UpdateInspectionInput!) {
-      updateInspection(input: $input) {
-        inspection { id title }
-      }
-    }
-  `;
-
-  await wpFetch<UpdateInspectionResponse>(updateMutation, {
-    input: {
-      id: databaseId,
-      title: `Inspection #${databaseId} - ${vehicleInfo.licensePlate}`,
-    },
-  });
-
   revalidatePath("/dashboard/customer");
   // Granular cache invalidation for specific inspection
   revalidatePath(`/dashboard/customer/inspection/${databaseId}`);
   revalidatePath(`/dashboard/admin/inspection/${databaseId}`);
-  revalidateTag("inspections", "max");
-  revalidateTag("requests", "max");
-  revalidateTag("archive", "max");
+  revalidateTag("inspection-list");
+  revalidateTag("request-admin");
+  revalidateTag("archive-admin");
+  revalidateTag(`inspection:${databaseId}`);
 
   return { inspectionId: databaseId };
 }

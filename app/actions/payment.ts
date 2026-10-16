@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { headers } from "next/headers";
 import Stripe from "stripe";
@@ -9,7 +9,6 @@ import {
   createInspectionDraft,
   type InspectionFormData,
 } from "@/app/actions/inspection";
-import { fetchInspection } from "@/app/actions/inspections";
 import type { InspectionDetail } from "@/app/lib/types";
 
 function formatTimestamp(date: Date): string {
@@ -24,7 +23,10 @@ interface UpdateInspectionPaymentResponse {
 
 interface UpdateInspectionResponse {
   updateInspection: {
-    inspection: { id: string };
+    inspection: {
+      id: string;
+      title: string;
+    };
   };
 }
 
@@ -99,28 +101,38 @@ export async function confirmInspectionPayment(
   const updateInspectionMutation = `
     mutation UpdateInspection($input: UpdateInspectionInput!) {
       updateInspection(input: $input) {
-        inspection { id }
+        inspection { id title }
       }
     }
   `;
 
   const inspectionStatus = status === "succeeded" ? "paid" : "payment_failed";
 
+  // Build inspection update with payment status and updated title
+  // Title is finalized after payment is confirmed
+  const inspectionDetails: Record<string, unknown> = {
+    paymentStatus: status,
+    inspectionStatus,
+    title: `Inspection #${inspectionId}`,
+  };
+
   await wpFetch<UpdateInspectionResponse>(
     updateInspectionMutation,
     {
       input: {
         id: inspectionId,
-        inspectionDetails: {
-          paymentStatus: status,
-          inspectionStatus,
-        },
+        inspectionDetails,
       },
     },
   );
 
+  // Granular cache invalidation with dynamic tags
   revalidatePath("/dashboard/customer");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidateTag("inspection-list");
+  revalidateTag("request-admin");
+  revalidateTag("archive-admin");
+  revalidateTag(`inspection:${inspectionId}`);
 }
 
 interface GetInspectionForPaymentResponse {

@@ -33,6 +33,7 @@ vi.mock("next/headers", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
   unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
 }));
 
