@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { calculatePrice } from "@/app/lib/constants";
 import { wpFetch } from "@/app/lib/wp-auth";
@@ -11,8 +11,7 @@ import type {
   UploadFields,
   ReviewAgreement,
 } from "@/app/lib/schemas";
-import { CurrentUser, getCurrentUser } from "./users";
-import { AdminUserDetail } from "../lib/types";
+import { getCurrentUser, type CurrentUser } from "./users";
 
 export interface InspectionFormData {
   vehicleInfo: VehicleInfo | null;
@@ -47,10 +46,10 @@ export async function createInspectionDraft(
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
-  const currentUser: CurrentUser = await getCurrentUser(
-    String(session?.user.wpId),
-  );
-  console.log(currentUser);
+  
+  // Get user info including phone number from WP
+  const currentUser = await getCurrentUser(String(session.user.wpId));
+  
   const {
     vehicleInfo,
     vinInfo,
@@ -169,6 +168,11 @@ export async function createInspectionDraft(
   });
 
   revalidatePath("/dashboard/customer");
+  // Use revalidateTag for more granular cache invalidation
+  if (data.createInspection.inspection.databaseId) {
+    revalidateTag(`inspection:${data.createInspection.inspection.databaseId}`, "max");
+    revalidateTag("inspections", "max");
+  }
 
   return { inspectionId: databaseId };
 }
