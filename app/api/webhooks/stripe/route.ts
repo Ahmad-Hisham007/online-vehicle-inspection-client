@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import Stripe from "stripe";
 import { SITE_ORIGIN } from "@/app/lib/site-origin";
 
@@ -148,6 +148,10 @@ async function handleSucceeded(pi: PaymentIntent) {
   await updatePaymentStatus(wpPaymentId, "succeeded");
   await updateInspectionStatus(inspectionId, "succeeded", "paid");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidateTag(`inspection:${inspectionId}`, "max");
+  revalidateTag("inspections", "max");
+  revalidateTag("requests", "max");
+  revalidateTag("archive", "max");
 }
 
 async function handleFailed(pi: PaymentIntent) {
@@ -159,6 +163,9 @@ async function handleFailed(pi: PaymentIntent) {
   await updatePaymentStatus(wpPaymentId, "failed", errorLog);
   await updateInspectionStatus(inspectionId, "failed", "payment_failed");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidateTag(`inspection:${inspectionId}`, "max");
+  revalidateTag("inspections", "max");
+  revalidateTag("archive", "max");
 }
 
 async function handleRequiresAction(pi: PaymentIntent) {
@@ -169,6 +176,7 @@ async function handleRequiresAction(pi: PaymentIntent) {
   await updatePaymentStatus(wpPaymentId, "requires_action");
   await updateInspectionStatus(inspectionId, "requires_action", "pending");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
 async function handleCanceled(pi: PaymentIntent) {
@@ -179,6 +187,9 @@ async function handleCanceled(pi: PaymentIntent) {
   await updatePaymentStatus(wpPaymentId, "refunded");
   await updateInspectionStatus(inspectionId, "refunded", "cancelled");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidateTag(`inspection:${inspectionId}`, "max");
+  revalidateTag("requests", "max");
+  revalidateTag("archive", "max");
 }
 
 export async function POST(req: Request) {

@@ -49,6 +49,8 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
   revalidateTag("requests", "max");
   revalidateTag("archive", "max");
   revalidateTag("inspections", "max");
+  // Granular cache invalidation for this specific inspection
+  revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
 // TODO(phase 6.4): approveInspection(id) — sets inspectionStatus "approved",
@@ -130,6 +132,8 @@ export async function approveInspection(
   revalidateTag("requests", "max");
   revalidateTag("archive", "max");
   revalidateTag("inspections", "max");
+  // Granular cache invalidation for this specific inspection
+  revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
 /**

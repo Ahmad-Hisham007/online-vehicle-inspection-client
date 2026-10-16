@@ -46,6 +46,9 @@ export async function createInspectionDraft(
   if (!session?.user?.accessToken) {
     throw new Error("Unauthorized");
   }
+  if (!session?.user?.wpId) {
+    throw new Error("User not authenticated properly");
+  }
   
   // Get user info including phone number from WP
   const currentUser = await getCurrentUser(String(session.user.wpId));
@@ -168,11 +171,12 @@ export async function createInspectionDraft(
   });
 
   revalidatePath("/dashboard/customer");
-  // Use revalidateTag for more granular cache invalidation
-  if (data.createInspection.inspection.databaseId) {
-    revalidateTag(`inspection:${data.createInspection.inspection.databaseId}`, "max");
-    revalidateTag("inspections", "max");
-  }
+  // Granular cache invalidation for specific inspection
+  revalidatePath(`/dashboard/customer/inspection/${databaseId}`);
+  revalidatePath(`/dashboard/admin/inspection/${databaseId}`);
+  revalidateTag("inspections", "max");
+  revalidateTag("requests", "max");
+  revalidateTag("archive", "max");
 
   return { inspectionId: databaseId };
 }

@@ -463,8 +463,8 @@ const getInspectionDetailNodeCached = unstable_cache(
 
     return data.inspection;
   },
-  ["inspection", "detail"],
-  { revalidate: DETAIL_CACHE_REVALIDATE, tags: ["inspection"] },
+  ["inspection", "detail", "by-id"],
+  { revalidate: DETAIL_CACHE_REVALIDATE, tags: ["inspection", "inspection:detail"] },
 );
 
 export async function listInspections(
