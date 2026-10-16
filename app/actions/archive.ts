@@ -145,31 +145,53 @@ interface ArchivePageParams {
   assignedInspector: number | null;
 }
 
-const getArchivePageCached = unstable_cache(
-  async (params: ArchivePageParams) => {
-    const { token, page, perPage, status, search, assignedInspector } = params;
+/**
+ * Wrapper function that creates a cached function with dynamic tags based on admin archive parameters.
+ */
+export function createGetArchivePageCached(
+  page: number,
+  status?: InspectionStatus | null,
+  search?: string
+) {
+  return unstable_cache(
+    async (params: ArchivePageParams) => {
+      const { token, page, perPage, status, search, assignedInspector } = params;
 
-    const data = await wpFetch<ListArchiveResponse>(
-      ARCHIVE_LIST_QUERY,
-      {
-        inspectionStatus: status ?? null,
-        inspectionStatusIn: ["approved", "rejected", "cancelled"],
-        limit: perPage,
-        offset: (page - 1) * perPage,
-        search: search,
-        assignedInspector,
-      },
-      { accessToken: token },
-    );
+      const data = await wpFetch<ListArchiveResponse>(
+        ARCHIVE_LIST_QUERY,
+        {
+          inspectionStatus: status ?? null,
+          inspectionStatusIn: ["approved", "rejected", "cancelled"],
+          limit: perPage,
+          offset: (page - 1) * perPage,
+          search: search,
+          assignedInspector,
+        },
+        { accessToken: token },
+      );
 
-    const nodes = data.inspections?.nodes ?? [];
-    const total = data.inspections?.pageInfo?.total ?? nodes.length;
+      const nodes = data.inspections?.nodes ?? [];
+      const total = data.inspections?.pageInfo?.total ?? nodes.length;
 
-    return { items: nodes.map(mapArchiveRow), total };
-  },
-  ["archive", "page"],
-  { revalidate: LIST_CACHE_REVALIDATE, tags: ["archive"] },
-);
+      return { items: nodes.map(mapArchiveRow), total };
+    },
+    [
+      `archive-page`,
+      `archive-page-${page}`,
+      `archive-status-${status || 'all'}`,
+      `archive-search-${search || 'none'}`,
+    ],
+    {
+      revalidate: LIST_CACHE_REVALIDATE,
+      tags: [
+        `archive-admin`,
+        `archive-admin:page:${page}`,
+        `archive-admin:status:${status || 'all'}`,
+        `archive-admin:search:${search || ''}`,
+      ],
+    },
+  );
+}
 
 export async function listArchivedInspections(
   params: AdminArchiveParams = {},
@@ -192,7 +214,13 @@ export async function listArchivedInspections(
     ? session.user.wpId
     : null;
 
-  const { items, total } = await getArchivePageCached({
+  const cachedFn = createGetArchivePageCached(
+    page,
+    params.status ?? null,
+    params.search
+  );
+
+  const { items, total } = await cachedFn({
     token: session.user.accessToken,
     page,
     perPage,
