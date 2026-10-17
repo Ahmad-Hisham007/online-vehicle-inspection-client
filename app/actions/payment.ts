@@ -128,9 +128,11 @@ export async function confirmInspectionPayment(
   );
 
   // Cache invalidation after payment confirmation
-  // Owner's list and detail page will update
+  // Owner's list needs updating since payment status may affect display
+  const authorId = session.user.wpId;
   revalidatePath("/dashboard/customer");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidateTag(`inspection-list:author:${authorId}`, "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
