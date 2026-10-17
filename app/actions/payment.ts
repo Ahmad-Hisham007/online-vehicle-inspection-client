@@ -109,8 +109,8 @@ export async function confirmInspectionPayment(
 
   const inspectionStatus = status === "succeeded" ? "paid" : "payment_failed";
 
-  // Build inspection update with payment status only
-  // Title was already set during creation via createInspectionDraft
+  // Build inspection update with payment status and title
+  // Title is finalized after payment is confirmed
   const inspectionDetails: Record<string, unknown> = {
     paymentStatus: status,
     inspectionStatus,
@@ -121,6 +121,7 @@ export async function confirmInspectionPayment(
     {
       input: {
         id: inspectionId,
+        title: `Inspection #${inspectionId}`,
         inspectionDetails,
       },
     },
