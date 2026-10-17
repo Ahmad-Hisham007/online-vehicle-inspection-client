@@ -131,8 +131,9 @@ export async function approveInspection(
   }
 
   // Revalidate relevant caches after approval
-  // Status changes in requests list (approved items may have different view)
+  // Item moves from requests to archive (approved status is excluded from requests, included in archive)
   revalidateTag("request-admin", "max");
+  revalidateTag("archive-admin", "max");
   // Granular cache invalidation for specific inspection detail page
   revalidateTag(`inspection:${inspectionId}`, "max");
 }

@@ -147,7 +147,9 @@ export async function createInspectionDraft(
   revalidatePath(`/dashboard/customer/inspection/${databaseId}`);
   revalidatePath(`/dashboard/admin/inspection/${databaseId}`);
   // Invalidate owner's inspection list and the specific inspection
+  // Also invalidate admin requests list since new pending inspections appear there
   revalidateTag(`inspection-list:author:${authorId}`, "max");
+  revalidateTag("request-admin", "max");
   revalidateTag(`inspection:${databaseId}`, "max");
 
   return { inspectionId: databaseId };
