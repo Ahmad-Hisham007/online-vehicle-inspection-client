@@ -132,6 +132,7 @@ export async function confirmInspectionPayment(
   const authorId = session.user.wpId;
   revalidatePath("/dashboard/customer");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidatePath(`/dashboard/admin/inspection/${inspectionId}`); // Admin may check payment status
   revalidateTag(`inspection-list:author:${authorId}`, "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
 import { assertSessionActive } from "@/app/lib/refresh-token";
@@ -50,7 +50,8 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
   // Item moves from requests to archive
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
-  // Granular cache invalidation for specific inspection detail page
+  // Granular cache invalidation for specific inspection detail pages
+  revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
@@ -134,7 +135,8 @@ export async function approveInspection(
   // Item moves from requests to archive (approved status is excluded from requests, included in archive)
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
-  // Granular cache invalidation for specific inspection detail page
+  // Granular cache invalidation for specific inspection detail pages
+  revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 

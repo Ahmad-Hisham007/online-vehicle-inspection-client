@@ -3,10 +3,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockAuth = vi.hoisted(() => vi.fn());
 const mockWpFetch = vi.hoisted(() => vi.fn());
 const mockRevalidateTag = vi.hoisted(() => vi.fn());
+const mockRevalidatePath = vi.hoisted(() => vi.fn());
 
 vi.mock("@/auth", () => ({ auth: mockAuth }));
 vi.mock("@/app/lib/wp-auth", () => ({ wpFetch: mockWpFetch }));
-vi.mock("next/cache", () => ({ revalidateTag: mockRevalidateTag }));
+vi.mock("next/cache", () => ({ revalidateTag: mockRevalidateTag, revalidatePath: mockRevalidatePath }));
 
 import { rejectInspection } from "@/app/actions/admin";
 import { SessionExpiredError } from "@/app/lib/refresh-token";
