@@ -109,12 +109,11 @@ export async function confirmInspectionPayment(
 
   const inspectionStatus = status === "succeeded" ? "paid" : "payment_failed";
 
-  // Build inspection update with payment status and updated title
-  // Title is finalized after payment is confirmed
+  // Build inspection update with payment status only
+  // Title was already set during creation via createInspectionDraft
   const inspectionDetails: Record<string, unknown> = {
     paymentStatus: status,
     inspectionStatus,
-    title: `Inspection #${inspectionId}`,
   };
 
   await wpFetch<UpdateInspectionResponse>(
