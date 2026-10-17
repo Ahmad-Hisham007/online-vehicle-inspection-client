@@ -47,11 +47,12 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
   }
 
   // Revalidate relevant caches after rejection
-  // Item moves from requests to archive
+  // Item moves from requests to archive, status changes in owner's list
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
-  // Granular cache invalidation for specific inspection detail pages
   revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
+  // Owner's list shows updated status on card
+  revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
@@ -132,11 +133,12 @@ export async function approveInspection(
   }
 
   // Revalidate relevant caches after approval
-  // Item moves from requests to archive (approved status is excluded from requests, included in archive)
+  // Item moves from requests to archive, status changes in owner's list
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
-  // Granular cache invalidation for specific inspection detail pages
   revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
+  // Owner's list shows updated status on card
+  revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
