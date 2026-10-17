@@ -46,11 +46,11 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
     throw new Error("Failed to reject inspection");
   }
 
-  // Revalidate list caches after rejection
+  // Revalidate relevant caches after rejection
+  // Item moves from requests to archive
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
-  revalidateTag("inspection-list", "max");
-  // Granular cache invalidation for this specific inspection
+  // Granular cache invalidation for specific inspection detail page
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
@@ -130,11 +130,10 @@ export async function approveInspection(
     throw new Error("Failed to approve inspection");
   }
 
-  // Revalidate list caches after approval
+  // Revalidate relevant caches after approval
+  // Status changes in requests list (approved items may have different view)
   revalidateTag("request-admin", "max");
-  revalidateTag("archive-admin", "max");
-  revalidateTag("inspection-list", "max");
-  // Granular cache invalidation for this specific inspection
+  // Granular cache invalidation for specific inspection detail page
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 

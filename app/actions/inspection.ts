@@ -140,14 +140,14 @@ export async function createInspectionDraft(
   const data = await wpFetch<CreateInspectionResponse>(mutation, variables);
 
   const databaseId = data.createInspection.inspection.databaseId.toString();
+  const authorId = session.user.wpId;
 
   revalidatePath("/dashboard/customer");
-  // Granular cache invalidation for specific inspection
+  // Granular cache invalidation for specific inspection and owner's list
   revalidatePath(`/dashboard/customer/inspection/${databaseId}`);
   revalidatePath(`/dashboard/admin/inspection/${databaseId}`);
-  revalidateTag("inspection-list", "max");
-  revalidateTag("request-admin", "max");
-  revalidateTag("archive-admin", "max");
+  // Invalidate owner's inspection list and the specific inspection
+  revalidateTag(`inspection-list:author:${authorId}`, "max");
   revalidateTag(`inspection:${databaseId}`, "max");
 
   return { inspectionId: databaseId };

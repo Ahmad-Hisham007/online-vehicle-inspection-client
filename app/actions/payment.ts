@@ -127,12 +127,10 @@ export async function confirmInspectionPayment(
     },
   );
 
-  // Granular cache invalidation with dynamic tags
+  // Cache invalidation after payment confirmation
+  // Owner's list and detail page will update
   revalidatePath("/dashboard/customer");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
-  revalidateTag("inspection-list", "max");
-  revalidateTag("request-admin", "max");
-  revalidateTag("archive-admin", "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 

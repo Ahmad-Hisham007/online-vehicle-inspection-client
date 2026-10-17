@@ -108,7 +108,6 @@ describe("rejectInspection", () => {
 
     expect(mockRevalidateTag).toHaveBeenCalledWith("request-admin", "max");
     expect(mockRevalidateTag).toHaveBeenCalledWith("archive-admin", "max");
-    expect(mockRevalidateTag).toHaveBeenCalledWith("inspection-list", "max");
     expect(mockRevalidateTag).toHaveBeenCalledWith("inspection:234", "max");
   });
 
