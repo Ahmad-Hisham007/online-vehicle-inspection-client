@@ -22,6 +22,7 @@ interface PaymentFormProps {
   clientSecret: string;
   returnUrl: string;
   inspectionId: string;
+  licensePlate?: string;
   paymentId: string;
   onSuccess: () => void;
   onRetry: () => void;
@@ -36,6 +37,7 @@ function PaymentFormInner({
   onSuccess,
   onRetry,
   onCancel,
+  licensePlate,
 }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -60,13 +62,12 @@ function PaymentFormInner({
       return;
     }
 
-    const { error: confirmError, paymentIntent } =
-      await stripe.confirmPayment({
-        elements,
-        clientSecret,
-        confirmParams: { return_url: returnUrl },
-        redirect: "if_required",
-      });
+    const { error: confirmError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      clientSecret,
+      confirmParams: { return_url: returnUrl },
+      redirect: "if_required",
+    });
 
     if (confirmError) {
       setError(confirmError.message ?? "Payment failed");
@@ -90,6 +91,7 @@ function PaymentFormInner({
           inspectionId,
           paymentId,
           paymentIntent.id,
+          licensePlate,
         );
       } catch (err) {
         console.error("Payment verification failed:", err);
@@ -126,11 +128,7 @@ function PaymentFormInner({
       )}
 
       <div className="flex gap-3">
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={loading}
-        >
+        <Button type="submit" variant="primary" disabled={loading}>
           {loading ? "Processing..." : "Pay Now"}
         </Button>
         <Button
@@ -148,7 +146,10 @@ function PaymentFormInner({
 
 export function PaymentForm(props: PaymentFormProps) {
   return (
-    <Elements stripe={stripePromise} options={{ clientSecret: props.clientSecret }}>
+    <Elements
+      stripe={stripePromise}
+      options={{ clientSecret: props.clientSecret }}
+    >
       <PaymentFormInner {...props} />
     </Elements>
   );

@@ -60,7 +60,9 @@ function asString(value: string | string[] | undefined): string {
   return value ?? "";
 }
 
-function mapSummary(node: InspectionNode): AdminRequestSummary {
+function mapSummary(
+  node: InspectionNode,
+): Omit<AdminRequestSummary, "dateModified"> {
   return {
     id: node.databaseId.toString(),
     title: node.title,
@@ -71,7 +73,7 @@ function mapSummary(node: InspectionNode): AdminRequestSummary {
     location:
       node.inspectionDetails.inspectionStateUsa ??
       node.inspectionDetails.inspectionStateCanada,
-      country: node.inspectionDetails.inspectionCountry,
+    country: node.inspectionDetails.inspectionCountry,
     author: node.author.node.displayName,
     assignedInspector: node.assignedInspector
       ? {
@@ -143,11 +145,12 @@ interface RequestsPageParams {
 function createGetRequestsPageCached(
   page: number,
   status?: InspectionStatus | null,
-  search?: string
+  search?: string,
 ) {
   return unstable_cache(
     async (params: RequestsPageParams) => {
-      const { token, page, perPage, status, search, assignedInspector } = params;
+      const { token, page, perPage, status, search, assignedInspector } =
+        params;
 
       const data = await wpFetch<ListRequestsResponse>(
         REQUESTS_LIST_QUERY,
@@ -170,16 +173,16 @@ function createGetRequestsPageCached(
     [
       `requests-page`,
       `requests-page-${page}`,
-      `requests-status-${status || 'all'}`,
-      `requests-search-${search || 'none'}`,
+      `requests-status-${status || "all"}`,
+      `requests-search-${search || "none"}`,
     ],
     {
       revalidate: LIST_CACHE_REVALIDATE,
       tags: [
         `request-admin`,
         `request-admin:page:${page}`,
-        `request-admin:status:${status || 'all'}`,
-        `request-admin:search:${search || ''}`,
+        `request-admin:status:${status || "all"}`,
+        `request-admin:search:${search || ""}`,
       ],
     },
   );
@@ -202,14 +205,12 @@ export async function listRequests(
   const perPage = Math.max(1, params.perPage ?? DEFAULT_PER_PAGE);
 
   // Inspectors only ever see inspections assigned to them.
-  const assignedInspector = isInspector(userRole)
-    ? session.user.wpId
-    : null;
+  const assignedInspector = isInspector(userRole) ? session.user.wpId : null;
 
   const cachedFn = createGetRequestsPageCached(
     page,
     params.status ?? null,
-    params.search
+    params.search,
   );
 
   const { items, total } = await cachedFn({

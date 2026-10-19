@@ -39,8 +39,15 @@ describe("Admin panel pages", () => {
             inspectionStatus: "approved",
             location: "MI",
             country: "USA",
-            author: "John Doe",
-            companies: ["uber", "lyft"],
+            author: {
+              databaseId: "123",
+              displayName: "John Doe",
+            },
+            companies: [
+              { label: "Uber", url: "https://example.com/uber.pdf" },
+              { label: "Lyft", url: "https://example.com/lyft.pdf" },
+            ],
+            assignedInspector: null,
           },
         ]}
         search=""
@@ -55,7 +62,7 @@ describe("Admin panel pages", () => {
     expect(screen.getByText("Lyft")).toBeInTheDocument();
     expect(screen.getByText("John Doe")).toBeInTheDocument();
     expect(screen.getByText("USA, Michigan")).toBeInTheDocument();
-    expect(screen.getByText("Details")).toBeInTheDocument();
+    expect(screen.getByText("Not Assigned")).toBeInTheDocument();
   });
 
   it("renders the Proposals page", () => {

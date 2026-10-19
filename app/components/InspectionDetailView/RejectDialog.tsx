@@ -18,12 +18,14 @@ interface RejectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inspectionId: string;
+  inspectionAuthorId: string;
 }
 
 export default function RejectDialog({
   open,
   onOpenChange,
   inspectionId,
+  inspectionAuthorId,
 }: RejectDialogProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,7 +33,7 @@ export default function RejectDialog({
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      await rejectInspection(inspectionId);
+      await rejectInspection(inspectionId, inspectionAuthorId);
       toast.success("Inspection rejected");
       onOpenChange(false);
       router.refresh();

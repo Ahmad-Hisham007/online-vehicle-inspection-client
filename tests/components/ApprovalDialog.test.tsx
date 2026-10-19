@@ -22,8 +22,8 @@ import type { InspectionDetail } from "@/app/lib/types";
 function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
   return {
     id: "234",
-    licensePlate: "ABC123",
     dateCreated: "2026-08-15T17:14:00",
+    dateModified: "2026-08-15T17:14:00",
     inspectionStatus: "paid",
     paymentStatus: "succeeded",
     vin: "1HGCM82633A004352",
@@ -42,6 +42,7 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     hostPhoneNumber: "555-0100",
     driverName: "Test User",
     driverEmail: "test@example.com",
+    driverPhoneNumber: "+15550100",
     media: { general: [], interior: [], exterior: [], tires: [] },
     certificates: {},
     orderSubtotal: "63",
@@ -52,6 +53,15 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
       inspectionStateUsa: "AL",
       inspectionStateCanada: "",
     },
+    author: {
+      node: {
+        databaseId: 1,
+        displayName: "John Doe",
+      },
+    },
+    handlerName: "John Doe",
+    handlerSignature: "Signature here",
+    licensePlate: "",
     ...overrides,
   };
 }

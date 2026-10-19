@@ -9,7 +9,7 @@ vi.mock("@/auth", () => ({ auth: mockAuth }));
 vi.mock("@/app/lib/wp-auth", () => ({ wpFetch: mockWpFetch }));
 vi.mock("next/cache", () => ({ revalidateTag: mockRevalidateTag, revalidatePath: mockRevalidatePath }));
 
-import { rejectInspection } from "@/app/actions/admin";
+import { rejectInspection, returnInspection, approveInspection } from "@/app/actions/admin";
 import { SessionExpiredError } from "@/app/lib/refresh-token";
 
 const ADMIN_SESSION = {
@@ -42,14 +42,14 @@ describe("rejectInspection", () => {
   it("throws when unauthenticated", async () => {
     mockAuth.mockResolvedValue(null);
 
-    await expect(rejectInspection("234")).rejects.toThrow("Unauthorized");
+    await expect(rejectInspection("234", "1")).rejects.toThrow("Unauthorized");
     expect(mockWpFetch).not.toHaveBeenCalled();
   });
 
   it("throws when the user is not staff", async () => {
     mockAuth.mockResolvedValue(CUSTOMER_SESSION);
 
-    await expect(rejectInspection("234")).rejects.toThrow("Unauthorized");
+    await expect(rejectInspection("234", "1")).rejects.toThrow("Unauthorized");
     expect(mockWpFetch).not.toHaveBeenCalled();
   });
 
@@ -59,7 +59,7 @@ describe("rejectInspection", () => {
       error: "RefreshAccessTokenError",
     });
 
-    await expect(rejectInspection("234")).rejects.toBeInstanceOf(
+    await expect(rejectInspection("234", "1")).rejects.toBeInstanceOf(
       SessionExpiredError,
     );
     expect(mockWpFetch).not.toHaveBeenCalled();
@@ -69,21 +69,21 @@ describe("rejectInspection", () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await expect(rejectInspection("234")).resolves.toBeUndefined();
+    await expect(rejectInspection("234", "1")).resolves.toBeUndefined();
   });
 
   it("allows an inspector to reject", async () => {
     mockAuth.mockResolvedValue(INSPECTOR_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await expect(rejectInspection("234")).resolves.toBeUndefined();
+    await expect(rejectInspection("234", "1")).resolves.toBeUndefined();
   });
 
-  it("sends the rejected status and no explicit token", async () => {
+  it("sends the rejected status and revalidates caches", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await rejectInspection("234");
+    await rejectInspection("234", "1");
 
     expect(mockWpFetch).toHaveBeenCalledTimes(1);
     const [query, variables, options] = mockWpFetch.mock.calls[0] as [
@@ -101,24 +101,172 @@ describe("rejectInspection", () => {
     expect(options).toBeUndefined();
   });
 
-  it("revalidates the affected list tags", async () => {
+  it("revalidates the affected list tags including owner's list", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await rejectInspection("234");
+    await rejectInspection("234", "1");
 
     expect(mockRevalidateTag).toHaveBeenCalledWith("request-admin", "max");
     expect(mockRevalidateTag).toHaveBeenCalledWith("archive-admin", "max");
     expect(mockRevalidateTag).toHaveBeenCalledWith("inspection:234", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith(
+      "inspection-list:author:1",
+      "max"
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/dashboard/admin/inspection/234"
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith(
+      "/dashboard/customerinspection/234"
+    );
   });
 
   it("throws when the mutation returns no inspection", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue({ updateInspection: null });
 
-    await expect(rejectInspection("234")).rejects.toThrow(
+    await expect(rejectInspection("234", "1")).rejects.toThrow(
       "Failed to reject inspection",
     );
     expect(mockRevalidateTag).not.toHaveBeenCalled();
+  });
+});
+
+describe("returnInspection", () => {
+  it("throws when unauthenticated", async () => {
+    mockAuth.mockResolvedValue(null);
+
+    await expect(returnInspection("234", "1")).rejects.toThrow("Unauthorized");
+    expect(mockWpFetch).not.toHaveBeenCalled();
+  });
+
+  it("throws when the user is not staff", async () => {
+    mockAuth.mockResolvedValue(CUSTOMER_SESSION);
+
+    await expect(returnInspection("234", "1")).rejects.toThrow("Unauthorized");
+    expect(mockWpFetch).not.toHaveBeenCalled();
+  });
+
+  it("allows an administrator to return inspection to in_progress", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue(OK_RESPONSE);
+
+    await expect(returnInspection("234", "1")).resolves.toBeUndefined();
+  });
+
+  it("sends in_progress status and revalidates all caches", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue(OK_RESPONSE);
+
+    await returnInspection("234", "1");
+
+    expect(mockWpFetch).toHaveBeenCalledTimes(1);
+    const [query, variables] = mockWpFetch.mock.calls[0];
+    expect(query).toContain("updateInspection");
+    expect(variables.input.inspectionDetails.inspectionStatus).toBe("in_progress");
+    
+    expect(mockRevalidateTag).toHaveBeenCalledWith("request-admin", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("archive-admin", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("inspection:234", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith(
+      "inspection-list:author:1",
+      "max"
+    );
+  });
+
+  it("throws when the mutation fails", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue({ updateInspection: null });
+
+    await expect(returnInspection("234", "1")).rejects.toThrow(
+      "Failed to reject inspection"
+    );
+  });
+});
+
+describe("approveInspection", () => {
+  it("throws when unauthenticated", async () => {
+    mockAuth.mockResolvedValue(null);
+
+    await expect(approveInspection("234", "1", {
+      mergedOverrides: {},
+      certificates: {},
+    })).rejects.toThrow("Unauthorized");
+    expect(mockWpFetch).not.toHaveBeenCalled();
+  });
+
+  it("throws when the user is not staff", async () => {
+    mockAuth.mockResolvedValue(CUSTOMER_SESSION);
+
+    await expect(approveInspection("234", "1", {
+      mergedOverrides: {},
+      certificates: {},
+    })).rejects.toThrow("Unauthorized");
+    expect(mockWpFetch).not.toHaveBeenCalled();
+  });
+
+  it("allows an administrator to approve with certificates", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue(OK_RESPONSE);
+
+    await expect(approveInspection("234", "1", {
+      mergedOverrides: { inspectionStatus: "approved" },
+      certificates: { lyft: "https://example.com/cert.pdf" },
+    })).resolves.toBeUndefined();
+  });
+
+  it("sends approved status, certificates, and assignedInspector", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue(OK_RESPONSE);
+
+    await approveInspection("234", "1", {
+      mergedOverrides: { inspectionStatus: "approved" },
+      certificates: { lyft: "https://example.com/lyft.pdf" },
+    });
+
+    expect(mockWpFetch).toHaveBeenCalledTimes(1);
+    const [query, variables] = mockWpFetch.mock.calls[0];
+    expect(query).toContain("updateInspection");
+    expect(variables.input.inspectionDetails.inspectionStatus).toBe("approved");
+    expect(variables.input.inspectionDetails.lyftCertificate).toBe("https://example.com/lyft.pdf");
+    expect(variables.input.assignedInspector).toBe(1);
+  });
+
+  it("updates expiry date for certificates", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue(OK_RESPONSE);
+
+    await approveInspection("234", "1", {
+      mergedOverrides: {},
+      certificates: { 
+        lyft: "https://example.com/lyft.pdf",
+        uber: "https://example.com/uber.pdf",
+      },
+    });
+
+    // Verify expiry date is set
+    const variables = mockWpFetch.mock.calls[0][1] as any;
+    expect(variables.input.inspectionDetails.expiryDate).toMatch(
+      /^\d{4}-\d{2}-\d{2}$/
+    );
+  });
+
+  it("revalidates all relevant caches after approval", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue(OK_RESPONSE);
+
+    await approveInspection("234", "1", {
+      mergedOverrides: { inspectionStatus: "approved" },
+      certificates: {},
+    });
+
+    expect(mockRevalidateTag).toHaveBeenCalledWith("request-admin", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("archive-admin", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith("inspection:234", "max");
+    expect(mockRevalidateTag).toHaveBeenCalledWith(
+      "inspection-list:author:1",
+      "max"
+    );
   });
 });

@@ -19,7 +19,9 @@ export default function InspectionCard({ inspection }: InspectionCardProps) {
     inspection.paymentStatus === "succeeded" ||
     inspection.inspectionStatus === "paid";
 
-  const hasPendingPayment = inspection.paymentStatus === "pending";
+  const hasPendingPayment =
+    inspection.paymentStatus === "pending" &&
+    !isPaid;
   const hasFailedPayment = inspection.paymentStatus === "failed";
 
   return (

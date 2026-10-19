@@ -45,6 +45,7 @@ export interface InspectionSummary {
   id: string;
   licensePlate: string;
   dateCreated: string;
+  dateModified: string;
   inspectionStatus: InspectionStatus;
   paymentStatus: PaymentStatus;
 }
@@ -72,6 +73,8 @@ export interface InspectionDetail extends InspectionSummary {
   hostName: string;
   hostEmail: string;
   hostPhoneNumber: string;
+  handlerName?: string;
+  handlerSignature?: string;
   /** Account owner (WP post author) — the driver being certified. */
   driverName: string;
   driverEmail: string;
@@ -79,6 +82,14 @@ export interface InspectionDetail extends InspectionSummary {
   media: Record<MediaTab, MediaItem[]>;
   certificates: { lyft?: string; uber?: string; turo?: string };
   orderSubtotal: string;
+  author: {
+    node: {
+      databaseId: number;
+      displayName?: string;
+      name?: string;
+      email?: string;
+    };
+  } | null;
   assignedInspector?: AssignedInspectorRef | null;
   /** Flat ACF field values (GraphQL field name → value) used to pre-fill the approve forms. */
   approvalFields: Record<string, string>;
@@ -90,6 +101,7 @@ export interface AdminRequestSummary {
   id: string;
   title: string;
   dateCreated: string;
+  dateModified?: string;
   inspectionStatus: InspectionStatus;
   location: string | null;
   country: string | null;
@@ -115,7 +127,10 @@ export interface AdminUserDetail {
   role: string;
   registeredDate: string;
 }
-
+export interface ArchiveCompany {
+  label: string;
+  url?: string;
+}
 export interface AdminArchiveRow {
   id: string;
   title: string;
@@ -123,7 +138,10 @@ export interface AdminArchiveRow {
   inspectionStatus: InspectionStatus;
   location: string | null;
   country: string | null;
-  author: string;
-  companies: string[];
+  author: {
+    displayName?: string;
+    databaseId: string;
+  };
+  companies: ArchiveCompany[];
   assignedInspector?: AssignedInspectorRef | null;
 }

@@ -7,12 +7,14 @@ import RejectDialog from "@/app/components/InspectionDetailView/RejectDialog";
 import ApprovalDialog from "@/app/components/InspectionDetailView/ApprovalDialog";
 import { canApproveInspection, canRejectInspection } from "@/app/lib/status";
 import type { InspectionDetail } from "@/app/lib/types";
+import { IoMdDownload } from "react-icons/io";
+import ReturnDialog from "./ReturnDialog";
 
 /**
  * Download a PDF URL as a proper file.
  * Handles both regular URLs and data URLs.
  */
-function downloadPdf(url: string, filename: string): void {
+export function downloadPdf(url: string, filename: string): void {
   // If it's a data URL, we need to convert it to a Blob for download
   if (url.startsWith("data:application/pdf")) {
     const byteString = atob(url.split(",")[1]);
@@ -62,6 +64,7 @@ export default function CertificatesPanel({
   const router = useRouter();
   const [rejectOpen, setRejectOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
+  const [returnOpen, setReturnOpen] = useState(false);
   const isApproved = inspection.inspectionStatus === "approved";
   const isPaid =
     inspection.paymentStatus === "succeeded" ||
@@ -72,7 +75,6 @@ export default function CertificatesPanel({
   const availableCertificates = CERTIFICATE_LABELS.filter(
     ({ key }) => inspection.certificates[key],
   );
-
   let message: string;
   if (isApproved && availableCertificates.length === 0) {
     message = "No certificates available.";
@@ -85,75 +87,100 @@ export default function CertificatesPanel({
   }
 
   return (
-    <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-6 bg-gray-50">
-      <div className="min-w-0 flex-1">
-        <p className="text-lg font-bold text-foreground">Certificates</p>
-        {isApproved && availableCertificates.length > 0 ? (
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-            {availableCertificates.map(({ key, label }) => {
-              const url = inspection.certificates[key];
-              if (!url) return null;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() =>
-                    downloadPdf(url, `certificate-${inspection.id}-${key}.pdf`)
-                  }
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  Download {label} certificate (PDF)
-                </button>
-              );
-            })}
+    <div className="p-6 bg-gray-50 space-y-3">
+      <div className="grid md:grid-cols-2 grid-cols-1 gap-2 space-x-2 items-start">
+        <div className="min-w-0 flex-1">
+          <p className="text-lg font-bold text-foreground">Certificates</p>
+          {isApproved && availableCertificates.length > 0 ? (
+            <div className="mt-1 w-full order-3 grid md:grid-cols-3 grid-cols-1 gap-x-3 gap-y-1">
+              {availableCertificates.map(({ key, label }) => {
+                const url = inspection.certificates[key];
+                if (!url) return null;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      downloadPdf(
+                        url,
+                        `certificate-${inspection.id}-${key}.pdf`,
+                      )
+                    }
+                    className="font-medium text-center text-primary border-2 rounded-xl border-slate-300 py-2.5 px-4 hover:border-primary flex  justify-center items-center gap-2"
+                  >
+                    {key} <IoMdDownload />
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            message && <p className="mt-1 text-muted-foreground">{message}</p>
+          )}
+        </div>
+        {role === "customer" ? (
+          !isPaid && (
+            <Button
+              variant="primary"
+              size="sm"
+              className="px-6! shrink-0 w-auto min-w-22"
+              onClick={() =>
+                router.push(`/dashboard/customer/pay/${inspection.id}`)
+              }
+            >
+              Pay
+            </Button>
+          )
+        ) : inspection.inspectionStatus === "approved" ||
+          inspection.inspectionStatus === "rejected" ? (
+          <div className="flex flex-1 order-2 shrink-0 grow gap-2 [&_button]:w-full">
+            <Button
+              variant="primary"
+              size="sm"
+              className="px-5!"
+              type="button"
+              disabled={canApprove}
+              onClick={() => setReturnOpen(true)}
+            >
+              Return Inspection
+            </Button>
           </div>
         ) : (
-          message && <p className="mt-1 text-muted-foreground">{message}</p>
+          <div className="flex shrink-0 grow gap-2 [&_button]:w-full">
+            <Button
+              variant="primary"
+              size="sm"
+              className="px-5!"
+              type="button"
+              disabled={!canApprove}
+              onClick={() => setApproveOpen(true)}
+            >
+              Approve
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className=" px-5!"
+              type="button"
+              disabled={!canReject}
+              onClick={() => setRejectOpen(true)}
+            >
+              Reject
+            </Button>
+          </div>
         )}
       </div>
 
-      {role === "customer" ? (
-        !isPaid && (
-          <Button
-            variant="primary"
-            size="sm"
-            className="px-6! shrink-0 w-auto min-w-22"
-            onClick={() =>
-              router.push(`/dashboard/customer/pay/${inspection.id}`)
-            }
-          >
-            Pay
-          </Button>
-        )
-      ) : (
-        <div className="flex shrink-0 grow gap-2 [&_button]:w-full">
-          <Button
-            variant="primary"
-            size="sm"
-            className="px-5!"
-            type="button"
-            disabled={!canApprove}
-            onClick={() => setApproveOpen(true)}
-          >
-            Approve
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className=" px-5!"
-            type="button"
-            disabled={!canReject}
-            onClick={() => setRejectOpen(true)}
-          >
-            Reject
-          </Button>
-        </div>
-      )}
-
+      <ReturnDialog
+        open={returnOpen}
+        onOpenChange={setReturnOpen}
+        inspectionId={inspection.id}
+        inspectionAuthorId={String(inspection.author?.node.databaseId)}
+      />
       <RejectDialog
         open={rejectOpen}
         onOpenChange={setRejectOpen}
         inspectionId={inspection.id}
+        inspectionAuthorId={String(inspection.author?.node.databaseId)}
       />
       <ApprovalDialog
         open={approveOpen}

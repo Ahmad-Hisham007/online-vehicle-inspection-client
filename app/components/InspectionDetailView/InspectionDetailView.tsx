@@ -22,7 +22,7 @@ export default function InspectionDetailView({
         </h1>
         <div className="space-y-4">
           <InspectionHeader inspection={inspection} />
-          <SpecificationsBlock inspection={inspection} />
+          <SpecificationsBlock inspection={inspection} role={role} />
           <SelectedCompanies companies={inspection.companies} />
           <MediaGallery media={inspection.media} />
         </div>

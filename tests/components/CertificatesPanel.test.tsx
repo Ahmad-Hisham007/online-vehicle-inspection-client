@@ -27,9 +27,9 @@ function detail(
 ): InspectionDetail {
   return {
     id: "234",
-    databaseId: 234,
     licensePlate: "ABC123",
     dateCreated: "2026-08-15T17:14:00",
+    dateModified: "2026-08-15T17:14:00",
     inspectionStatus: status,
     paymentStatus: "succeeded",
     vin: "1HGCM82633A004352",
@@ -54,6 +54,14 @@ function detail(
     orderSubtotal: "24",
     assignedInspector: null,
     approvalFields: {},
+    author: {
+      node: {
+        databaseId: 1,
+        displayName: "John Doe",
+      },
+    },
+    handlerName: "John Doe",
+    handlerSignature: "Signature here",
     ...overrides,
   };
 }
@@ -63,30 +71,53 @@ beforeEach(() => {
 });
 
 describe("CertificatesPanel admin actions", () => {
-  it("enables Approve for paid and in_progress", () => {
+  it("enables Approve for paid and in_progress when certificates are ready", () => {
     for (const status of ["paid", "in_progress"] as InspectionStatus[]) {
+      // Need to have approval fields filled and certificates ready for Approve button to show
       const { unmount } = render(
-        <CertificatesPanel inspection={detail(status)} role="admin" />,
+        <CertificatesPanel
+          inspection={detail(status, {
+            approvalFields: { vehicleMake: "Honda" },
+            certificates: { lyft: "data:application/pdf;base64,test" },
+          })}
+          role="admin"
+        />,
       );
       expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled();
       unmount();
     }
   });
 
-  it("disables Approve outside paid/in_progress", () => {
+  it("shows Return Inspection for approved/rejected status", () => {
     for (const status of [
-      "pending",
-      "payment_failed",
       "approved",
       "rejected",
-      "cancelled",
     ] as InspectionStatus[]) {
       const { unmount } = render(
         <CertificatesPanel inspection={detail(status)} role="admin" />,
       );
-      expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Return Inspection" }),
+      ).toBeEnabled();
+      expect(
+        screen.queryByRole("button", { name: "Approve" }),
+      ).not.toBeInTheDocument();
       unmount();
     }
+  });
+
+  it("shows Approve/Reject buttons for other statuses without certificates", async () => {
+    const { unmount } = render(
+      <CertificatesPanel
+        inspection={detail("pending", {
+          approvalFields: { vehicleMake: "Honda" },
+        })}
+        role="admin"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Approve" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeEnabled();
+    unmount();
   });
 
   it("enables Reject for every status except in_progress/approved", () => {
@@ -94,11 +125,15 @@ describe("CertificatesPanel admin actions", () => {
       "pending",
       "paid",
       "payment_failed",
-      "rejected",
       "cancelled",
     ] as InspectionStatus[]) {
       const { unmount } = render(
-        <CertificatesPanel inspection={detail(status)} role="admin" />,
+        <CertificatesPanel
+          inspection={detail(status, {
+            approvalFields: { vehicleMake: "Honda" },
+          })}
+          role="admin"
+        />,
       );
       expect(screen.getByRole("button", { name: "Reject" })).toBeEnabled();
       unmount();
@@ -109,16 +144,45 @@ describe("CertificatesPanel admin actions", () => {
       "approved",
     ] as InspectionStatus[]) {
       const { unmount } = render(
-        <CertificatesPanel inspection={detail(status)} role="admin" />,
+        <CertificatesPanel
+          inspection={detail(status, {
+            approvalFields: { vehicleMake: "Honda" },
+          })}
+          role="admin"
+        />,
       );
       expect(screen.getByRole("button", { name: "Reject" })).toBeDisabled();
       unmount();
     }
+
+    // "rejected" status shows "Return Inspection" instead of Approve/Reject
+    const { unmount: unmountRejected } = render(
+      <CertificatesPanel
+        inspection={detail("rejected", {
+          approvalFields: { vehicleMake: "Honda" },
+        })}
+        role="admin"
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Return Inspection" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "Reject" }),
+    ).not.toBeInTheDocument();
+    unmountRejected();
   });
 
   it("opens the reject dialog and confirms the mutation", async () => {
     mockReject.mockResolvedValue(undefined);
-    render(<CertificatesPanel inspection={detail("pending")} role="admin" />);
+    render(
+      <CertificatesPanel
+        inspection={detail("pending", {
+          approvalFields: { vehicleMake: "Honda" },
+        })}
+        role="admin"
+      />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
     expect(screen.getByText("Reject inspection")).toBeInTheDocument();
@@ -135,7 +199,14 @@ describe("CertificatesPanel admin actions", () => {
   });
 
   it("cancel closes the dialog without rejecting", async () => {
-    render(<CertificatesPanel inspection={detail("pending")} role="admin" />);
+    render(
+      <CertificatesPanel
+        inspection={detail("pending", {
+          approvalFields: { vehicleMake: "Honda" },
+        })}
+        role="admin"
+      />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -148,7 +219,14 @@ describe("CertificatesPanel admin actions", () => {
 
   it("shows an error toast when the mutation fails", async () => {
     mockReject.mockRejectedValue(new Error("nope"));
-    render(<CertificatesPanel inspection={detail("pending")} role="admin" />);
+    render(
+      <CertificatesPanel
+        inspection={detail("pending", {
+          approvalFields: { vehicleMake: "Honda" },
+        })}
+        role="admin"
+      />,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm" }));

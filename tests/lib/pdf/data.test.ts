@@ -7,6 +7,7 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     id: "234",
     licensePlate: "ABC123",
     dateCreated: "2026-08-15T17:14:00",
+    dateModified: "2026-08-15T17:14:00",
     inspectionStatus: "paid",
     paymentStatus: "succeeded",
     vin: "1HGCM82633A004352",
@@ -29,6 +30,14 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     certificates: {},
     orderSubtotal: "63",
     approvalFields: {},
+    author: {
+      node: {
+        databaseId: 1,
+        displayName: "John Doe",
+      },
+    },
+    handlerName: "John Doe",
+    handlerSignature: "Signature here",
     ...overrides,
   };
 }

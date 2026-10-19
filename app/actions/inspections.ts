@@ -98,6 +98,7 @@ interface InspectionNode {
   databaseId: number;
   title: string;
   date: string;
+  modified: string;
   author: {
     node: {
       databaseId: number;
@@ -234,6 +235,7 @@ function mapSummary(node: InspectionNode): InspectionSummary {
     id: node.databaseId.toString(),
     licensePlate: node.inspectionDetails.licensePlateNumber,
     dateCreated: node.date,
+    dateModified: node.modified,
     inspectionStatus: asString(
       node.inspectionDetails.inspectionStatus,
     ) as InspectionStatus,
@@ -288,6 +290,9 @@ function mapDetail(node: InspectionNode): InspectionDetail {
         }
       : null,
     approvalFields: mapApprovalFields(details),
+    author: node.author,
+    handlerName: node.inspectionDetails.handlerName,
+    handlerSignature: node.inspectionDetails.handlerSignature,
   };
 }
 
@@ -333,6 +338,7 @@ const DETAIL_QUERY = `
       databaseId
       title
       date
+      modified
       author {
         node {
           databaseId
@@ -432,7 +438,7 @@ function createGetInspectionsPageCached(
   author: number,
   page: number,
   status?: InspectionStatus | null,
-  sortDir?: SortDir
+  sortDir?: SortDir,
 ) {
   return unstable_cache(
     async (params: InspectionsPageParams) => {
@@ -459,15 +465,15 @@ function createGetInspectionsPageCached(
       `inspections-page`,
       `inspections-author-${author}`,
       `inspections-author-${author}-page-${page}`,
-      `inspections-author-${author}-status-${status || 'all'}`,
+      `inspections-author-${author}-status-${status || "all"}`,
     ],
     {
       revalidate: LIST_CACHE_REVALIDATE,
       tags: [
         `inspection-list:author:${author}`,
         `inspection-list:author:${author}:page:${page}`,
-        `inspection-list:author:${author}:status:${status || 'all'}`,
-        `inspection-list:author:${author}:sort:${sortDir || 'newest'}`,
+        `inspection-list:author:${author}:status:${status || "all"}`,
+        `inspection-list:author:${author}:sort:${sortDir || "newest"}`,
       ],
     },
   );
@@ -492,16 +498,10 @@ function createGetInspectionDetailCached(id: string, author: number) {
 
       return data.inspection;
     },
-    [
-      `inspection-detail`,
-      `inspection-${id}`,
-    ],
+    [`inspection-detail`, `inspection-${id}`],
     {
       revalidate: DETAIL_CACHE_REVALIDATE,
-      tags: [
-        `inspection:${id}`,
-        `inspection-list:author:${author}`,
-      ],
+      tags: [`inspection:${id}`, `inspection-list:author:${author}`],
     },
   );
 }
@@ -523,7 +523,7 @@ export async function listInspections(
     author,
     page,
     params.status ?? null,
-    params.sortDir ?? "newest"
+    params.sortDir ?? "newest",
   );
 
   const { items, total } = await cachedFn({
@@ -575,7 +575,7 @@ export async function fetchInspection(id: string): Promise<InspectionDetail> {
 /**
  * Update inspection certificate data in WordPress after PDF generation.
  * Saves facility info, overrides, and certificate metadata.
- * 
+ *
  * NOTE: This function has been deprecated and replaced with Zustand store pattern.
  * Temporary form state is now persisted to sessionStorage via useInspectionStore
  * instead of making WordPress mutations. This is more robust and doesn't require

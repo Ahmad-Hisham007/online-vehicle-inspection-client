@@ -8,6 +8,8 @@ import Link from "next/link";
 import { useTransition } from "react";
 import { formatLocation } from "@/app/lib/formatLocation";
 import { COMPANY_LABELS } from "@/app/lib/companyLabels";
+import { IoMdDownload } from "react-icons/io";
+import { downloadPdf } from "../InspectionDetailView/CertificatesPanel";
 
 interface ArchiveContentProps {
   rows: AdminArchiveRow[];
@@ -32,7 +34,15 @@ const columns: DataTableColumn<AdminArchiveRow>[] = [
   {
     key: "id",
     header: "ID",
-    cell: (r) => <span className="font-medium">{r.id}</span>,
+    cell: (r) => (
+      <Link
+        prefetch
+        href={`/dashboard/admin/inspection/${r.id}`}
+        className="font-semibold text-primary underline"
+      >
+        {r.id}
+      </Link>
+    ),
   },
   {
     key: "status",
@@ -50,7 +60,19 @@ const columns: DataTableColumn<AdminArchiveRow>[] = [
     header: "Date",
     cell: (r) => formatInspectionDate(r.dateCreated),
   },
-  { key: "user", header: "User", cell: (r) => r.author },
+  {
+    key: "user",
+    header: "User",
+    cell: (r) => (
+      <Link
+        prefetch
+        className="font-semibold text-primary underline"
+        href={`/dashboard/admin/users/${r.author.databaseId}`}
+      >
+        {(r.author.displayName && r.author.displayName) ?? ""}
+      </Link>
+    ),
+  },
   {
     key: "location",
     header: "Location",
@@ -60,33 +82,42 @@ const columns: DataTableColumn<AdminArchiveRow>[] = [
     key: "certificates",
     header: "Certificates",
     cell: (r) => (
-      <div className="flex flex-col gap-1">
+      <div className="flex gap-1 flex-wrap">
         {r.companies.length === 0 ? (
           <span className="text-[12px] text-muted-foreground">—</span>
         ) : (
-          r.companies.map((c) => (
-            <span
-              key={c}
-              className="inline-flex items-center gap-1 text-[12px] text-slate-600"
-            >
-              <span className="text-primary">✓</span> {COMPANY_LABELS[c] ?? c}
-            </span>
-          ))
+          r.companies.map(
+            (c, idx) =>
+              c.url && (
+                <Link
+                  key={idx}
+                  href={c.url}
+                  className="font-medium text-center text-primary hover:scale-105 flex  justify-center items-center gap-1"
+                  target="blank"
+                >
+                  {c.label} <IoMdDownload />
+                </Link>
+              ),
+          )
         )}
       </div>
     ),
   },
   {
-    key: "actions",
-    header: "Actions",
+    key: "inspector",
+    header: "Inspector",
     className: "w-27 whitespace-nowrap",
     cell: (r) => (
       <Link
         prefetch
-        href={`/dashboard/admin/inspection/${r.id}`}
+        href={
+          (r.assignedInspector &&
+            `/dashboard/admin/users/${r.assignedInspector?.databaseId}`) ??
+          `/dashboard/admin/users/`
+        }
         className={ACTION_CLASS}
       >
-        Details
+        {(r.assignedInspector && r.assignedInspector.name) ?? "Not Assigned"}
       </Link>
     ),
   },

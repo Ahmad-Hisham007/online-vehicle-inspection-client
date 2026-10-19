@@ -23,6 +23,7 @@ import {
 } from "@/app/lib/approval-fields";
 import { useInspectionStore } from "@/app/store/inspectionStore";
 import type { InspectionDetail } from "@/app/lib/types";
+import { useState } from "react";
 
 interface ApprovalDialogProps {
   open: boolean;
@@ -65,7 +66,7 @@ export default function ApprovalDialog({
   const companies = inspection.companies.filter((company) =>
     APPROVAL_CERTIFICATE_COMPANIES.includes(company),
   );
-
+  const [isApproving, setIsApproving] = useState(false);
   /**
    * Compute the template key for a company.
    * Format: company_country_state (e.g., "lyft_usa_il")
@@ -80,9 +81,6 @@ export default function ApprovalDialog({
 
   const companyValues = (): Record<string, string> => {
     const values: Record<string, string> = { ...inspection.approvalFields };
-    values.inspectionCompanies = inspection.companies
-      .map((c) => APPROVAL_COMPANY_LABELS[c] ?? c)
-      .join(", ");
     return values;
   };
 
@@ -94,10 +92,11 @@ export default function ApprovalDialog({
   const isAllSaved = companies.every(
     (c) => approvalState?.savedBy?.[c as "lyft" | "uber" | "turo"],
   );
-  const hasAnyCertificate = companies.some((c) => 
-    c === "lyft" && !!certificateUrls.lyft ||
-    c === "uber" && !!certificateUrls.uber ||
-    c === "turo" && !!certificateUrls.turo
+  const hasAnyCertificate = companies.some(
+    (c) =>
+      (c === "lyft" && !!certificateUrls.lyft) ||
+      (c === "uber" && !!certificateUrls.uber) ||
+      (c === "turo" && !!certificateUrls.turo),
   );
 
   const handleApprove = async () => {
@@ -107,11 +106,13 @@ export default function ApprovalDialog({
 
     // Check if all required companies have certificates
     const missingCertificates = companies.filter(
-      (c) => !certificates[c as "lyft" | "uber" | "turo"]
+      (c) => !certificates[c as "lyft" | "uber" | "turo"],
     );
 
     if (missingCertificates.length > 0) {
-      const names = missingCertificates.map(c => APPROVAL_COMPANY_LABELS[c]).join(", ");
+      const names = missingCertificates
+        .map((c) => APPROVAL_COMPANY_LABELS[c])
+        .join(", ");
       toast.error(`Missing certificates for: ${names}`);
       return;
     }
@@ -122,13 +123,19 @@ export default function ApprovalDialog({
     }
 
     try {
+      setIsApproving(true);
       const { approveInspection } = await import("@/app/actions/admin");
-      await approveInspection(inspection.id, {
-        mergedOverrides,
-        certificates,
-      });
+      await approveInspection(
+        inspection.id,
+        String(inspection.author?.node.databaseId),
+        {
+          mergedOverrides,
+          certificates,
+        },
+      );
       toast.success("Inspection approved successfully!");
       onOpenChange(false);
+      setIsApproving(false);
     } catch (err) {
       console.error("Failed to approve inspection:", err);
       toast.error(
@@ -190,7 +197,8 @@ export default function ApprovalDialog({
             <div className="mt-4 flex flex-col items-center gap-3 pt-2 border-t border-stone-200">
               {!isAllSaved && !hasAnyCertificate ? (
                 <p className="text-sm text-muted-foreground">
-                  Generate and save certificates for all companies before approving
+                  Generate and save certificates for all companies before
+                  approving
                 </p>
               ) : !isAllSaved ? (
                 <p className="text-sm text-amber-600">
@@ -218,9 +226,16 @@ export default function ApprovalDialog({
               variant="primary"
               size="sm"
               className="!w-auto !px-6"
+              disabled={isApproving}
               onClick={handleApprove}
             >
-              Approve
+              {(isApproving && (
+                <span className="flex gap-1.5 items-center">
+                  <span className="w-5 h-5 shrink-0 border-2 border-white/65 border-l-0 rounded-full animate-spin"></span>{" "}
+                  <span>Approving ...</span>
+                </span>
+              )) ||
+                "Approve"}
             </Button>
           )}
         </div>

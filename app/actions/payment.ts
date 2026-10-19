@@ -44,6 +44,7 @@ export async function confirmInspectionPayment(
   inspectionId: string,
   paymentId: string,
   paymentIntentId: string,
+  licensePlate?: string,
 ) {
   const session = await auth();
   if (!session?.user?.accessToken) {
@@ -70,8 +71,8 @@ export async function confirmInspectionPayment(
   const status: "succeeded" | "failed" = verified ? "succeeded" : "failed";
   const errorLog = verified
     ? undefined
-    : paymentIntent.last_payment_error?.message ??
-      "PaymentIntent did not reach a successful state";
+    : (paymentIntent.last_payment_error?.message ??
+      "PaymentIntent did not reach a successful state");
 
   const now = new Date();
   const timestamp = formatTimestamp(now);
@@ -84,20 +85,17 @@ export async function confirmInspectionPayment(
     }
   `;
 
-  await wpFetch<UpdateInspectionPaymentResponse>(
-    updatePaymentMutation,
-    {
-      input: {
-        id: paymentId,
-        paymentFields: {
-          status,
-          webhookReceived: true,
-          webhookTimestamp: timestamp,
-          ...(errorLog ? { errorLog } : {}),
-        },
+  await wpFetch<UpdateInspectionPaymentResponse>(updatePaymentMutation, {
+    input: {
+      id: paymentId,
+      paymentFields: {
+        status,
+        webhookReceived: true,
+        webhookTimestamp: timestamp,
+        ...(errorLog ? { errorLog } : {}),
       },
     },
-  );
+  });
 
   const updateInspectionMutation = `
     mutation UpdateInspection($input: UpdateInspectionInput!) {
@@ -116,16 +114,13 @@ export async function confirmInspectionPayment(
     inspectionStatus,
   };
 
-  await wpFetch<UpdateInspectionResponse>(
-    updateInspectionMutation,
-    {
-      input: {
-        id: inspectionId,
-        title: `Inspection #${inspectionId}`,
-        inspectionDetails,
-      },
+  await wpFetch<UpdateInspectionResponse>(updateInspectionMutation, {
+    input: {
+      id: inspectionId,
+      title: `Inspection #${inspectionId} – ${licensePlate}`,
+      inspectionDetails,
     },
-  );
+  });
 
   // Cache invalidation after payment confirmation
   // Owner's list needs updating since payment status may affect display
@@ -133,6 +128,7 @@ export async function confirmInspectionPayment(
   revalidatePath("/dashboard/customer");
   revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
   revalidatePath(`/dashboard/admin/inspection/${inspectionId}`); // Admin may check payment status
+  revalidateTag("request-admin", "max");
   revalidateTag(`inspection-list:author:${authorId}`, "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
@@ -216,7 +212,9 @@ export async function createPaymentIntent(
   const origin =
     headersList.get("origin") ||
     `https://${headersList.get("host")}` ||
-    (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.AUTH_URL ?? "http://localhost:3000");
+    (process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.AUTH_URL ??
+      "http://localhost:3000");
 
   const mutation = `
     mutation CreateInspectionPayment($input: CreateInspectionPaymentInput!) {
@@ -246,8 +244,17 @@ export async function createPaymentIntent(
         webhookTimestamp: null,
         errorLog: null,
         metadata: [
-          { key: "user_ip", value: headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown" },
-          { key: "user_agent", value: (headersList.get("user-agent") || "unknown").slice(0, 255) },
+          {
+            key: "user_ip",
+            value:
+              headersList.get("x-forwarded-for") ||
+              headersList.get("x-real-ip") ||
+              "unknown",
+          },
+          {
+            key: "user_agent",
+            value: (headersList.get("user-agent") || "unknown").slice(0, 255),
+          },
           { key: "referrer", value: headersList.get("referer") || "unknown" },
           { key: "payment_method", value: "card" },
           { key: "amount_cents", value: String(amountCents) },
@@ -256,7 +263,10 @@ export async function createPaymentIntent(
     },
   };
 
-  const data = await wpFetch<CreateInspectionPaymentResponse>(mutation, variables);
+  const data = await wpFetch<CreateInspectionPaymentResponse>(
+    mutation,
+    variables,
+  );
 
   const paymentId =
     data.createInspectionPayment.inspectionPayment.databaseId.toString();
@@ -308,7 +318,7 @@ export async function createInspectionAndPaymentIntent(
 }> {
   // Check if existing inspection can be reused
   let inspectionId = existingInspectionId;
-  
+
   if (inspectionId) {
     try {
       const existing = await fetchInspection(inspectionId);
@@ -322,11 +332,11 @@ export async function createInspectionAndPaymentIntent(
       inspectionId = undefined;
     }
   }
-  
+
   // Create new inspection if none exists or existing one isn't pending
   const { inspectionId: newId } = await createInspectionDraft(formData);
   inspectionId = newId;
-  
+
   const setup = await createPaymentIntent(inspectionId);
   return { inspectionId, ...setup };
 }

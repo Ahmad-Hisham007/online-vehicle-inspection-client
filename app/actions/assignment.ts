@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
 import { assertSessionActive } from "@/app/lib/refresh-token";
@@ -66,7 +66,10 @@ export async function listInspectors(): Promise<InspectorOption[]> {
 
 interface UpdateInspectionResponse {
   updateInspection?: {
-    inspection?: { databaseId?: number } | null;
+    inspection?: {
+      databaseId?: number;
+      authorDatabaseId: number;
+    } | null;
   } | null;
 }
 
@@ -75,6 +78,7 @@ const ASSIGN_MUTATION = `
     updateInspection(input: $input) {
       inspection {
         databaseId
+        authorDatabaseId
       }
     }
   }
@@ -90,23 +94,29 @@ export async function assignInspector(
   }
   assertSessionActive(session.error);
 
-  const data = await wpFetch<UpdateInspectionResponse>(
-    ASSIGN_MUTATION,
-    {
-      input: {
-        id: inspectionId,
-        assignedInspector: inspectorDatabaseId,
-      },
+  const data = await wpFetch<UpdateInspectionResponse>(ASSIGN_MUTATION, {
+    input: {
+      id: inspectionId,
+      assignedInspector: inspectorDatabaseId,
+      inspectionDetails: { inspectionStatus: "in_progress" },
     },
-  );
+  });
 
   if (!data.updateInspection) {
     throw new Error("Failed to update assignment");
   }
 
-  revalidateTag("requests", "max");
-  revalidateTag("archive", "max");
+  revalidateTag("request-admin", "max");
   revalidateTag("inspections", "max");
+  revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
+  revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
+  revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
+  revalidateTag(
+    `inspection-list:author:${data.updateInspection.inspection?.authorDatabaseId}`,
+    "max",
+  );
+  revalidateTag(`inspection-list:author:${inspectorDatabaseId}`, "max");
+  revalidateTag(`inspection:${inspectionId}`, "max");
 
   return { ok: true };
 }

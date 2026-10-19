@@ -21,6 +21,7 @@ function summary(overrides: Partial<InspectionSummary> = {}): InspectionSummary 
     dateCreated: "2026-08-15T17:14:00",
     inspectionStatus: "pending",
     paymentStatus: "pending",
+    dateModified: "2026-08-15T17:14:00",
     ...overrides,
   };
 }

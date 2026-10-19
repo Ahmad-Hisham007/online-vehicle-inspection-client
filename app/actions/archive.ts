@@ -1,11 +1,16 @@
 "use server";
 
 import { unstable_cache } from "next/cache";
-import { AdminArchiveRow, InspectionStatus } from "../lib/types";
+import {
+  AdminArchiveRow,
+  ArchiveCompany,
+  InspectionStatus,
+} from "../lib/types";
 import { wpFetch } from "../lib/wp-auth";
 import { auth } from "@/auth";
 import { assertSessionActive } from "../lib/refresh-token";
 import { isAdministrator, isInspector } from "../lib/access";
+import { APPROVAL_COMPANY_LABELS } from "../lib/approval-fields";
 
 interface AdminArchiveParams {
   page?: number;
@@ -28,6 +33,9 @@ interface InspectionDetailsNode {
   inspectionStateCanada: string | null;
   inspectionCountry: string | null;
   inspectionCompanies: string | null;
+  lyftCertificate?: string | null;
+  uberCertificate?: string | null;
+  turoCertificate?: string | null;
 }
 
 interface InspectionNode {
@@ -37,6 +45,7 @@ interface InspectionNode {
   author: {
     node: {
       displayName: string;
+      databaseId: string;
     };
   };
   assignedInspector: {
@@ -64,6 +73,39 @@ function asString(value: string | string[] | undefined): string {
 }
 
 function mapArchiveRow(node: InspectionNode): AdminArchiveRow {
+  // Build companies array with certificate URLs
+  const companies: ArchiveCompany[] = [];
+
+  if (node.inspectionDetails.inspectionCompanies) {
+    const companyList = node.inspectionDetails.inspectionCompanies
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+
+    companyList.forEach((company) => {
+      const label = APPROVAL_COMPANY_LABELS[company] ?? company;
+      let url: string | undefined;
+
+      switch (company.toLowerCase()) {
+        case "lyft":
+          url = node.inspectionDetails.lyftCertificate || undefined;
+          break;
+        case "uber":
+          url = node.inspectionDetails.uberCertificate || undefined;
+          break;
+        case "turo":
+          url = node.inspectionDetails.turoCertificate || undefined;
+          break;
+      }
+
+      if (url) {
+        companies.push({ label, url });
+      } else {
+        companies.push({ label });
+      }
+    });
+  }
+
   return {
     id: node.databaseId.toString(),
     title: node.title,
@@ -75,11 +117,11 @@ function mapArchiveRow(node: InspectionNode): AdminArchiveRow {
       node.inspectionDetails.inspectionStateUsa ??
       node.inspectionDetails.inspectionStateCanada,
     country: node.inspectionDetails.inspectionCountry,
-    author: node.author?.node?.displayName ?? "",
-    companies: (node.inspectionDetails.inspectionCompanies ?? "")
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean),
+    author: {
+      displayName: node.author?.node?.displayName ?? "",
+      databaseId:  node.author?.node?.databaseId
+    },
+    companies,
     assignedInspector: node.assignedInspector
       ? {
           databaseId: node.assignedInspector.databaseId,
@@ -118,10 +160,14 @@ const ARCHIVE_LIST_QUERY = `
           inspectionStateCanada
           inspectionCountry
           inspectionCompanies
+          lyftCertificate
+          uberCertificate
+          turoCertificate
         }
         author {
           node {
             displayName
+            databaseId
           }
         }
         assignedInspector {
@@ -151,11 +197,12 @@ interface ArchivePageParams {
 function createGetArchivePageCached(
   page: number,
   status?: InspectionStatus | null,
-  search?: string
+  search?: string,
 ) {
   return unstable_cache(
     async (params: ArchivePageParams) => {
-      const { token, page, perPage, status, search, assignedInspector } = params;
+      const { token, page, perPage, status, search, assignedInspector } =
+        params;
 
       const data = await wpFetch<ListArchiveResponse>(
         ARCHIVE_LIST_QUERY,
@@ -178,16 +225,16 @@ function createGetArchivePageCached(
     [
       `archive-page`,
       `archive-page-${page}`,
-      `archive-status-${status || 'all'}`,
-      `archive-search-${search || 'none'}`,
+      `archive-status-${status || "all"}`,
+      `archive-search-${search || "none"}`,
     ],
     {
       revalidate: LIST_CACHE_REVALIDATE,
       tags: [
         `archive-admin`,
         `archive-admin:page:${page}`,
-        `archive-admin:status:${status || 'all'}`,
-        `archive-admin:search:${search || ''}`,
+        `archive-admin:status:${status || "all"}`,
+        `archive-admin:search:${search || ""}`,
       ],
     },
   );
@@ -210,14 +257,12 @@ export async function listArchivedInspections(
   const perPage = Math.max(1, params.perPage ?? DEFAULT_PER_PAGE);
 
   // Inspectors only ever see inspections assigned to them.
-  const assignedInspector = isInspector(userRole)
-    ? session.user.wpId
-    : null;
+  const assignedInspector = isInspector(userRole) ? session.user.wpId : null;
 
   const cachedFn = createGetArchivePageCached(
     page,
     params.status ?? null,
-    params.search
+    params.search,
   );
 
   const { items, total } = await cachedFn({

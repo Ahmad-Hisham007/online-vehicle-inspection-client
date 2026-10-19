@@ -1,4 +1,4 @@
-export function formatInspectionDate(iso: string): string {
+export function formatInspectionDate(iso: string, date = 1): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
 
@@ -8,6 +8,8 @@ export function formatInspectionDate(iso: string): string {
   const minutes = String(d.getMinutes()).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
-
+  if (date === 0) {
+    return `${month}/${day}/${String(d.getFullYear()).slice(2)}`;
+  }
   return `${month}/${day}/${String(d.getFullYear()).slice(2)}, ${h12}:${minutes} ${ampm}`;
 }

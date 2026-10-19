@@ -33,6 +33,7 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     id: "1",
     licensePlate: "ABC123",
     dateCreated: "2026-08-15T17:14:00",
+    dateModified: "2026-08-15T17:14:00",
     inspectionStatus: "pending",
     paymentStatus: "pending",
     vin: "1HGCM82633A004352",
@@ -69,6 +70,14 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
     certificates: {},
     orderSubtotal: "63",
     approvalFields: {},
+    author: {
+      node: {
+        databaseId: 1,
+        displayName: "John Doe",
+      },
+    },
+    handlerName: "John Doe",
+    handlerSignature: "Signature here",
     ...overrides,
   };
 }
@@ -78,11 +87,13 @@ beforeEach(() => {
 });
 
 describe("InspectionDetailView", () => {
-  it("renders header, title and creation date", () => {
+  it("renders header, handler name and dates", () => {
     render(<InspectionDetailView inspection={detail()} role="customer" />);
 
     expect(screen.getByText("Car details")).toBeInTheDocument();
-    expect(screen.getByText("Inspection #1")).toBeInTheDocument();
+    // Handler name appears in the "Prosessed By" header
+    expect(screen.getByText(/Prosessed By/)).toBeInTheDocument();
+    expect(screen.getByText("John Doe")).toBeInTheDocument();
     expect(screen.getByText(/08\/15\/26/)).toBeInTheDocument();
     expect(screen.getByText("Pending")).toBeInTheDocument();
   });
@@ -108,7 +119,8 @@ describe("InspectionDetailView", () => {
       />,
     );
 
-    expect(screen.getByText("2027-08-15")).toBeInTheDocument();
+    // expiryDate is formatted as MM/YY by formatInspectionDate
+    expect(screen.getByText("08/15/27")).toBeInTheDocument();
   });
 
   it("renders selected companies", () => {
@@ -160,10 +172,11 @@ describe("InspectionDetailView", () => {
       />,
     );
 
-    const link = screen.getByRole("link", {
-      name: /Download Lyft certificate/i,
-    });
-    expect(link).toHaveAttribute("href", "https://rideshareinspection.b-cdn.net/cert-lyft");
+    // Certificate buttons now show company key + download icon, not links
+    const buttons = screen.getAllByRole("button", { name: /lyft/i });
+    expect(buttons.length).toBeGreaterThan(0);
+    
+    // The certificate URL is used for download, not displayed as a link
   });
 
   it("shows Pay action for unpaid customer", async () => {

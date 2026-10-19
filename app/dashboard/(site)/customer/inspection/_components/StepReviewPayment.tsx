@@ -89,7 +89,10 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
         clientSecret: nextSecret,
         paymentId: nextPaymentId,
         returnUrl: nextReturnUrl,
-      } = await createInspectionAndPaymentIntent(formData, inspectionId || undefined);
+      } = await createInspectionAndPaymentIntent(
+        formData,
+        inspectionId || undefined,
+      );
       setInspectionId(createdInspectionId);
 
       setClientSecret(nextSecret);
@@ -138,16 +141,16 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
     setPaymentId(null);
     setReturnUrl(null);
     setPhase("review");
-    
+
     // Clear inspection ID from store to prevent duplicate creation
     setInspectionId("");
-    
+
     // Reset all form data
     reset();
-    
+
     // Navigate to dashboard
     router.push("/dashboard/customer");
-    
+
     toast.success("Inspection cancelled. You can start a new one when ready.");
   }, [reset, router, setInspectionId, setPhase, toast]);
 
@@ -179,6 +182,7 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
           onSuccess={handlePaymentSuccess}
           onRetry={handleRetry}
           onCancel={handleCancel}
+          licensePlate={vehicleInfo?.licensePlate}
         />
       </div>
     );
@@ -271,7 +275,9 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
                 <Checkbox
                   id="userAgreement"
                   checked={!!field.value}
-                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                  onCheckedChange={(checked) =>
+                    field.onChange(checked === true)
+                  }
                 />
                 <label
                   htmlFor="userAgreement"
@@ -301,7 +307,9 @@ export function StepReviewPayment({ onNext: _onNext }: Props) {
                 <Checkbox
                   id="inspectionAgreement"
                   checked={!!field.value}
-                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                  onCheckedChange={(checked) =>
+                    field.onChange(checked === true)
+                  }
                 />
                 <label
                   htmlFor="inspectionAgreement"

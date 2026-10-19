@@ -22,7 +22,10 @@ const UPDATE_STATUS_MUTATION = `
   }
 `;
 
-export async function rejectInspection(inspectionId: string): Promise<void> {
+export async function rejectInspection(
+  inspectionId: string,
+  inspectionAuthorId: string,
+): Promise<void> {
   const session = await auth();
   const role = session?.user?.role;
   if (
@@ -51,8 +54,49 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
   revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
+  revalidatePath(`/dashboard/customerinspection/${inspectionId}`);
   // Owner's list shows updated status on card
   revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
+  revalidateTag(`inspection-list:author:${inspectionAuthorId}`, "max");
+  revalidateTag(`inspection:${inspectionId}`, "max");
+}
+
+export async function returnInspection(
+  inspectionId: string,
+  inspectionAuthorId: string,
+): Promise<void> {
+  const session = await auth();
+  const role = session?.user?.role;
+  if (
+    !session?.user?.accessToken ||
+    (!isAdministrator(role) && !isInspector(role))
+  ) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+
+  const data = await wpFetch<UpdateInspectionResponse>(UPDATE_STATUS_MUTATION, {
+    input: {
+      id: inspectionId,
+      inspectionDetails: {
+        inspectionStatus: "in_progress",
+      },
+    },
+  });
+
+  if (!data.updateInspection?.inspection) {
+    throw new Error("Failed to reject inspection");
+  }
+
+  // Revalidate relevant caches after rejection
+  // Item moves from requests to archive, status changes in owner's list
+  revalidateTag("request-admin", "max");
+  revalidateTag("archive-admin", "max");
+  revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
+  revalidatePath(`/dashboard/customerinspection/${inspectionId}`);
+  // Owner's list shows updated status on card
+  revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
+  revalidateTag(`inspection-list:author:${inspectionAuthorId}`, "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 
@@ -74,6 +118,7 @@ export async function rejectInspection(inspectionId: string): Promise<void> {
  */
 export async function approveInspection(
   inspectionId: string,
+  inspectionAuthorId: string,
   data: {
     mergedOverrides: Record<string, string>;
     certificates: Record<string, string>;
@@ -124,6 +169,7 @@ export async function approveInspection(
       input: {
         id: inspectionId,
         inspectionDetails,
+        assignedInspector: session.user.wpId,
       },
     },
   );
@@ -137,8 +183,10 @@ export async function approveInspection(
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
   revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
+  revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
   // Owner's list shows updated status on card
   revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
+  revalidateTag(`inspection-list:author:${inspectionAuthorId}`, "max");
   revalidateTag(`inspection:${inspectionId}`, "max");
 }
 

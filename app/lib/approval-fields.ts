@@ -24,7 +24,9 @@ export interface ApprovalFieldDef {
   options?: readonly { value: string; label: string }[];
   placeholder?: string;
   /** Default value for the field - can be a string or a function receiving context (including optional session). */
-  defaultValue?: string | ((ctx: ApprovalFieldContext & { session?: { name?: string } }) => string);
+  defaultValue?:
+    | string
+    | ((ctx: ApprovalFieldContext & { session?: { name?: string } }) => string);
   /** Per-company / per-location visibility. Default: visible everywhere. */
   visibleFor?: (ctx: ApprovalFieldContext) => boolean;
 }
@@ -258,11 +260,6 @@ export const APPROVAL_GROUPS: readonly ApprovalGroup[] = [
         type: "select",
         options: CA_PROVINCES,
         visibleFor: (ctx) => ctx.country === "Canada",
-      },
-      {
-        name: "inspectionCompanies",
-        label: "Companies",
-        type: "readonly",
       },
     ],
   },
