@@ -63,7 +63,7 @@ export async function rejectInspection(
 
 export async function returnInspection(
   inspectionId: string,
-  inspectionAuthorId: string,
+  inspectionAuthorId?: string,
 ): Promise<void> {
   const session = await auth();
   const role = session?.user?.role;
