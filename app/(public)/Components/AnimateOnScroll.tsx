@@ -3,7 +3,7 @@
 import { motion, type Variants } from "framer-motion";
 import React, { ReactNode } from "react";
 
-const VIEWPORT = { once: true, amount: 0.7, margin: "-100px" } as const;
+const VIEWPORT = { once: true, amount: 0.7, margin: "-40px" } as const;
 
 const defaultVariants: Variants = {
   hidden: {
