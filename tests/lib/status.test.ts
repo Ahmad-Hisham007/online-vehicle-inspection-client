@@ -86,7 +86,7 @@ describe("canApproveInspection / canRejectInspection", () => {
     pending: true,
     paid: true,
     payment_failed: true,
-    in_progress: false,
+    in_progress: true,
     approved: false,
     rejected: true,
     cancelled: true,
@@ -106,13 +106,13 @@ describe("canApproveInspection / canRejectInspection", () => {
     expect(canApproveInspection("pending")).toBe(false);
   });
 
-  it("allows reject for everything except in_progress/approved", () => {
+  it("allows reject for everything except approved", () => {
     expect(canRejectInspection("pending")).toBe(true);
     expect(canRejectInspection("payment_failed")).toBe(true);
     expect(canRejectInspection("rejected")).toBe(true);
     expect(canRejectInspection("cancelled")).toBe(true);
     expect(canRejectInspection("paid")).toBe(true);
-    expect(canRejectInspection("in_progress")).toBe(false);
+    expect(canRejectInspection("in_progress")).toBe(true);
     expect(canRejectInspection("approved")).toBe(false);
   });
 });

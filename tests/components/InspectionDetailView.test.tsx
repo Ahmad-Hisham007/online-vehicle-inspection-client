@@ -93,8 +93,10 @@ describe("InspectionDetailView", () => {
     expect(screen.getByText("Car details")).toBeInTheDocument();
     // Handler name appears in the "Prosessed By" header
     expect(screen.getByText(/Prosessed By/)).toBeInTheDocument();
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
-    expect(screen.getByText(/08\/15\/26/)).toBeInTheDocument();
+    // handlerName renders in the banner AND author displayName in the User spec row
+    expect(screen.getAllByText("John Doe").length).toBe(2);
+    // dateModified + dateCreated rows (same date in fixture)
+    expect(screen.getAllByText(/08\/15\/26/).length).toBe(2);
     expect(screen.getByText("Pending")).toBeInTheDocument();
   });
 

@@ -246,7 +246,9 @@ describe("approveInspection", () => {
     });
 
     // Verify expiry date is set
-    const variables = mockWpFetch.mock.calls[0][1] as any;
+    const variables = mockWpFetch.mock.calls[0][1] as {
+      input: { inspectionDetails: { expiryDate: string } };
+    };
     expect(variables.input.inspectionDetails.expiryDate).toMatch(
       /^\d{4}-\d{2}-\d{2}$/
     );

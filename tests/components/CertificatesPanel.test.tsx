@@ -120,11 +120,12 @@ describe("CertificatesPanel admin actions", () => {
     unmount();
   });
 
-  it("enables Reject for every status except in_progress/approved", () => {
+  it("enables Reject for every status except approved/rejected", () => {
     for (const status of [
       "pending",
       "paid",
       "payment_failed",
+      "in_progress",
       "cancelled",
     ] as InspectionStatus[]) {
       const { unmount } = render(
@@ -139,10 +140,8 @@ describe("CertificatesPanel admin actions", () => {
       unmount();
     }
 
-    for (const status of [
-      "in_progress",
-      "approved",
-    ] as InspectionStatus[]) {
+    // "approved"/"rejected" statuses show "Return Inspection" instead of Approve/Reject
+    for (const status of ["approved", "rejected"] as InspectionStatus[]) {
       const { unmount } = render(
         <CertificatesPanel
           inspection={detail(status, {
@@ -151,26 +150,14 @@ describe("CertificatesPanel admin actions", () => {
           role="admin"
         />,
       );
-      expect(screen.getByRole("button", { name: "Reject" })).toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: "Return Inspection" }),
+      ).toBeEnabled();
+      expect(
+        screen.queryByRole("button", { name: "Reject" }),
+      ).not.toBeInTheDocument();
       unmount();
     }
-
-    // "rejected" status shows "Return Inspection" instead of Approve/Reject
-    const { unmount: unmountRejected } = render(
-      <CertificatesPanel
-        inspection={detail("rejected", {
-          approvalFields: { vehicleMake: "Honda" },
-        })}
-        role="admin"
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: "Return Inspection" }),
-    ).toBeEnabled();
-    expect(
-      screen.queryByRole("button", { name: "Reject" }),
-    ).not.toBeInTheDocument();
-    unmountRejected();
   });
 
   it("opens the reject dialog and confirms the mutation", async () => {
@@ -190,7 +177,7 @@ describe("CertificatesPanel admin actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     await waitFor(() => {
-      expect(mockReject).toHaveBeenCalledWith("234");
+      expect(mockReject).toHaveBeenCalledWith("234", "1");
     });
     await waitFor(() => {
       expect(mockToastSuccess).toHaveBeenCalled();

@@ -8,15 +8,28 @@ const mockGenerateCertificate = vi.fn().mockResolvedValue({
   contentDisposition: 'attachment; filename="certificate-123.pdf"',
 });
 
+const mockSaveCertificateToCDN = vi.fn().mockResolvedValue({
+  publicUrl: "https://cdn.example.com/certificates/cert-123.pdf",
+});
+
 vi.mock("@/app/actions/certificate", () => ({
   generateCertificate: mockGenerateCertificate,
+  saveCertificateToCDN: mockSaveCertificateToCDN,
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
 
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({
+    data: { user: { name: "Admin User" } },
+    status: "authenticated",
+  }),
+}));
+
 import ApprovalDialog from "@/app/components/InspectionDetailView/ApprovalDialog";
+import { useInspectionStore } from "@/app/store/inspectionStore";
 import type { InspectionDetail } from "@/app/lib/types";
 
 function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
@@ -72,10 +85,21 @@ function renderDialog(inspection = detail()) {
   );
 }
 
+/** Expand every company's "Advanced Settings" section (collapsed by default). */
+function openAdvancedSettings() {
+  for (const toggle of screen.getAllByRole("button", {
+    name: /Advanced Settings/,
+  })) {
+    fireEvent.click(toggle);
+  }
+}
+
 let openSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
+  useInspectionStore.setState({ approvalCardState: {} });
   openSpy = vi.spyOn(window, "open").mockReturnValue({
     document: { write: vi.fn(), close: vi.fn() },
   } as unknown as Window);
@@ -83,6 +107,9 @@ beforeEach(() => {
     previewUrl: "data:application/pdf;base64,test",
     mimeType: "application/pdf",
     contentDisposition: 'attachment; filename="certificate-123.pdf"',
+  });
+  mockSaveCertificateToCDN.mockResolvedValue({
+    publicUrl: "https://cdn.example.com/certificates/cert-123.pdf",
   });
 });
 
@@ -104,6 +131,7 @@ describe("ApprovalDialog", () => {
 
   it("pre-fills the forms from the inspection approvalFields", () => {
     renderDialog();
+    openAdvancedSettings();
 
     expect(screen.getAllByDisplayValue("Honda").length).toBeGreaterThan(0);
     expect(screen.getAllByDisplayValue("Accord").length).toBeGreaterThan(0);
@@ -112,6 +140,7 @@ describe("ApprovalDialog", () => {
 
   it("hides the Canada province field for a USA inspection", () => {
     renderDialog();
+    openAdvancedSettings();
     const uberPanel = screen.getByRole("button", { name: /Uber/ })
       .parentElement?.parentElement;
     expect(within(uberPanel as HTMLElement).queryByText("Province (Canada)")).toBeNull();
@@ -124,6 +153,7 @@ describe("ApprovalDialog", () => {
         approvalFields: { ...detail().approvalFields, inspectionStateCanada: "ON" },
       }),
     );
+    openAdvancedSettings();
     expect(screen.getAllByText("Province (Canada)").length).toBeGreaterThan(0);
     expect(screen.queryByText("State (USA)")).not.toBeInTheDocument();
   });
@@ -158,11 +188,15 @@ describe("ApprovalDialog", () => {
     expect(save).toBeEnabled();
 
     fireEvent.click(save);
-    expect(screen.getByRole("button", { name: "Saved" })).toBeDisabled();
+
+    // Save is async (CDN upload) — wait for the "Saved" state
+    const savedBtn = await screen.findByRole("button", { name: "Saved" });
+    expect(savedBtn).toBeDisabled();
   });
 
   it("renders pass/fail fields as radios and yes/no as radios", () => {
     renderDialog();
+    openAdvancedSettings();
     // 3 companies × (registration sticker + 4 brakes) = 15 pass/fail groups
     expect(screen.getAllByLabelText("Pass").length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText("Fail").length).toBeGreaterThan(0);

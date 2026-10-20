@@ -10,6 +10,12 @@ import {
   type ApprovalFieldType,
 } from "@/app/lib/approval-fields";
 
+/** Function form of `ApprovalFieldDef.defaultValue`. */
+type DefaultValueFn = Exclude<
+  NonNullable<ApprovalFieldDef["defaultValue"]>,
+  string
+>;
+
 const ALL_FIELDS = APPROVAL_GROUPS.flatMap((g) => g.fields);
 const fieldByName = (name: string) =>
   ALL_FIELDS.find((f) => f.name === name);
@@ -102,7 +108,6 @@ describe("APPROVAL_GROUPS", () => {
     expect(fieldByName("inspectionDate")?.type).toBe("date");
     expect(fieldByName("hostEmail")?.type).toBe("email");
     expect(fieldByName("hostPhoneNumber")?.type).toBe("tel");
-    expect(fieldByName("inspectionCompanies")?.type).toBe("readonly");
   });
 
   it("gives every select field options", () => {
@@ -205,18 +210,18 @@ describe("field default values", () => {
       company: "uber",
       session: { name: "John Doe" },
     };
-    expect((handlerNameField?.defaultValue as Function)(ctxWithSession)).toBe(
-      "John Doe",
-    );
+    expect(
+      (handlerNameField?.defaultValue as DefaultValueFn)(ctxWithSession),
+    ).toBe("John Doe");
 
     // Test without session
     const ctxWithoutSession = {
       country: "USA" as const,
       company: "uber",
     };
-    expect((handlerNameField?.defaultValue as Function)(ctxWithoutSession)).toBe(
-      "",
-    );
+    expect(
+      (handlerNameField?.defaultValue as DefaultValueFn)(ctxWithoutSession),
+    ).toBe("");
   });
 
   it("handler fields use session when available", () => {
@@ -230,10 +235,10 @@ describe("field default values", () => {
     };
 
     expect(
-      (handlerNameField?.defaultValue as Function)(ctx),
+      (handlerNameField?.defaultValue as DefaultValueFn)(ctx),
     ).toBe("Jane Smith");
     expect(
-      (handlerSignatureField?.defaultValue as Function)(ctx),
+      (handlerSignatureField?.defaultValue as DefaultValueFn)(ctx),
     ).toBe("Jane Smith");
   });
 
@@ -260,7 +265,7 @@ describe("defaultValue precedence", () => {
     // Second, use field's defaultValue if defined
     if (field.defaultValue !== undefined) {
       return typeof field.defaultValue === "function"
-        ? (field.defaultValue as Function)(ctx)
+        ? (field.defaultValue as DefaultValueFn)(ctx)
         : field.defaultValue;
     }
 
