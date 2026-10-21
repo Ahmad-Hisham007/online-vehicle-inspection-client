@@ -12,7 +12,8 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
-    headless: false,
+    // Headed by default for local debugging; set PW_HEADLESS=1 for CI/scripted runs.
+    headless: process.env.PW_HEADLESS === "1",
   },
   projects: [
     {
