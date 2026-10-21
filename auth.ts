@@ -23,16 +23,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // [DEBUG-LAYER-1 START] Remove these logs once SiteGround captcha issue is resolved
-        console.log("[DEBUG] authorize() called for email:", credentials.email);
-        console.log("[DEBUG] WP URL:", process.env.WORDPRESS_GRAPHQL_URL);
-        console.log(
-          "[DEBUG] WP_SITE_TOKEN_HEADER:",
-          WP_SITE_TOKEN_HEADER,
-          "| secret set:",
-          Boolean(process.env.WP_SITE_TOKEN_SECRET),
-        );
-        console.log("[DEBUG] SITE_ORIGIN:", SITE_ORIGIN);
+        // [DEBUG-LAYER-1 START] Commented out; uncomment when tracing auth/WP issues.
+        // console.log("[DEBUG] authorize() called for email:", credentials.email);
+        // console.log("[DEBUG] WP URL:", process.env.WORDPRESS_GRAPHQL_URL);
+        // console.log(
+        //   "[DEBUG] WP_SITE_TOKEN_HEADER:",
+        //   WP_SITE_TOKEN_HEADER,
+        //   "| secret set:",
+        //   Boolean(process.env.WP_SITE_TOKEN_SECRET),
+        // );
+        // console.log("[DEBUG] SITE_ORIGIN:", SITE_ORIGIN);
         // [DEBUG-LAYER-1 END]
 
         try {
@@ -77,24 +77,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }),
           });
 
-          // [DEBUG-LAYER-1 START] Remove these logs once SiteGround captcha issue is resolved
-          console.log("[DEBUG] Response status:", res.status);
-          console.log("[DEBUG] Response statusText:", res.statusText);
-          console.log(
-            "[DEBUG] Response content-type:",
-            res.headers.get("content-type"),
-          );
-          console.log(
-            "[DEBUG] Response sg-captcha header:",
-            res.headers.get("sg-captcha"),
-          );
-          console.log("[DEBUG] Response ok:", res.ok);
+          // [DEBUG-LAYER-1 START] Commented out; uncomment when tracing auth/WP issues.
+          // console.log("[DEBUG] Response status:", res.status);
+          // console.log("[DEBUG] Response statusText:", res.statusText);
+          // console.log(
+          //   "[DEBUG] Response content-type:",
+          //   res.headers.get("content-type"),
+          // );
+          // console.log(
+          //   "[DEBUG] Response sg-captcha header:",
+          //   res.headers.get("sg-captcha"),
+          // );
+          // console.log("[DEBUG] Response ok:", res.ok);
 
           const rawText = await res.text();
-          console.log(
-            "[DEBUG] Response body (first 200 chars):",
-            rawText.slice(0, 200),
-          );
+          // console.log(
+          //   "[DEBUG] Response body (first 200 chars):",
+          //   rawText.slice(0, 200),
+          // );
           // [DEBUG-LAYER-1 END]
 
           const isJson = res.headers
@@ -103,10 +103,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .includes("application/json");
 
           if (!isJson) {
-            // [DEBUG-LAYER-1 START] Remove once issue resolved
-            console.log(
-              "[DEBUG] NON-JSON RESPONSE (likely SiteGround captcha / 202 HTML). Aborting login.",
-            );
+            // [DEBUG-LAYER-1 START] Commented out.
+            // console.log(
+            //   "[DEBUG] NON-JSON RESPONSE (likely SiteGround captcha / 202 HTML). Aborting login.",
+            // );
             // [DEBUG-LAYER-1 END]
             return null;
           }
@@ -123,39 +123,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             const roles =
               data.user.roles?.nodes?.map((r: { name: string }) => r.name) ||
               [];
-            console.log(`[DEBUG] Current user role is ${roles}`);
-            
-            // Fetch phone number from WP
-            let phone: string | undefined;
-            try {
-              const wpRes = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET || "",
-                  Origin: SITE_ORIGIN,
-                },
-                body: JSON.stringify({
-                  query: `
-                    query GetUserPhone($id: ID!) {
-                      user(id: $id, idType: DATABASE_ID) {
-                        userFields {
-                          phoneNumber
-                        }
-                      }
-                    }
-                  `,
-                  variables: { id: data.user.databaseId },
-                }),
-              });
-              const wpJson = await wpRes.json();
-              if (wpJson.data?.user?.userFields?.phoneNumber) {
-                phone = String(wpJson.data.user.userFields.phoneNumber);
-              }
-            } catch (e) {
-              console.error("[DEBUG] Failed to fetch phone:", e);
-            }
-            
+            // console.log(`[DEBUG] Current user role is ${roles}`);
+
             return {
               id: data.user.id,
               wpId: data.user.databaseId,
@@ -167,18 +136,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               refreshTokenExpiration: data.refreshTokenExpiration,
               emailVerified: null,
               role: roles[0],
-              phone,
             };
           }
 
           return null;
         } catch (error) {
           console.error("WPGraphQL login fetch failed:", error);
-          // [DEBUG-LAYER-1 START] Remove once issue resolved
-          console.error(
-            "[DEBUG] Fetch error message:",
-            error instanceof Error ? error.message : String(error),
-          );
+          // [DEBUG-LAYER-1 START] Commented out.
+          // console.error(
+          //   "[DEBUG] Fetch error message:",
+          //   error instanceof Error ? error.message : String(error),
+          // );
           // [DEBUG-LAYER-1 END]
           return null;
         }
@@ -282,11 +250,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               }
             }
           `;
-          console.log("🔍 Google User Email:", user.email);
-          console.log(
-            "🔑 Site Token Secret Length:",
-            process.env.WP_SITE_TOKEN_SECRET?.length || "MISSING!",
-          );
+          // console.log("🔍 Google User Email:", user.email);
+          // console.log(
+          //   "🔑 Site Token Secret Length:",
+          //   process.env.WP_SITE_TOKEN_SECRET?.length || "MISSING!",
+          // );
           const res = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
             method: "POST",
             headers: {
@@ -301,14 +269,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           const json = await res.json();
-          console.log("=== WP SITE TOKEN RESPONSE ===");
-          console.log(JSON.stringify(json, null, 2));
+          // [DEBUG] Enable when tracing the Google → WP site-token exchange.
+          // console.log("=== WP SITE TOKEN RESPONSE ===");
+          // console.log(JSON.stringify(json, null, 2));
           const wpData = json.data?.login;
-          console.log(wpData);
+          // console.log(wpData);
           const roles =
             wpData?.user?.roles?.nodes?.map((r: { name: string }) => r.name) ||
             [];
-          console.log(roles);
+          // console.log(roles);
           if (wpData?.authToken) {
             user.accessToken = wpData.authToken;
             user.accessTokenExpiration = wpData.authTokenExpiration;
@@ -317,38 +286,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.wpId = wpData.user.databaseId;
             user.role = roles[0];
             user.name = wpData.user.name;
-            
-            // Fetch phone number from WP
-            try {
-              const wpRes = await fetch(process.env.WORDPRESS_GRAPHQL_URL!, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  [WP_SITE_TOKEN_HEADER]: process.env.WP_SITE_TOKEN_SECRET!,
-                  Origin: SITE_ORIGIN,
-                },
-                body: JSON.stringify({
-                  query: `
-                    query GetUserPhone($id: ID!) {
-                      user(id: $id, idType: DATABASE_ID) {
-                        userFields {
-                          phoneNumber
-                        }
-                      }
-                    }
-                  `,
-                  variables: { id: wpData.user.databaseId },
-                }),
-              });
-              const wpJson = await wpRes.json();
-              if (wpJson.data?.user?.userFields?.phoneNumber) {
-                (user as any).phone = String(wpJson.data.user.userFields.phoneNumber);
-              }
-            } catch (e) {
-              console.error("[DEBUG] Failed to fetch phone in Google OAuth:", e);
-            }
-            
-            console.log(user.role);
+
+            // console.log(user.role);
             return true; // লগিন ১০০% সাকসেসফুল!
           }
 
