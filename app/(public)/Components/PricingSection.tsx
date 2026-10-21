@@ -201,7 +201,8 @@ const PricingSection = () => {
 
                   {/* Action Button */}
                   <Link
-                    href="/dashboard/customer/inspection"
+                    prefetch={false}
+                    href="/login"
                     className={`w-full py-4 block text-center rounded-full text-sm font-semibold tracking-wide transition-colors duration-200 shadow-sm ${plan.btnBg}`}
                   >
                     Get Started

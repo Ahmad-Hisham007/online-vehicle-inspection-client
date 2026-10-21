@@ -36,7 +36,8 @@ const Slider = () => {
 
           <AnimateOnScroll variants={slideFromLeft} delay={0.2}>
             <Link
-              href="/dashboard/customer/inspection"
+              prefetch={false}
+              href="/login"
               className="lg:mt-16 mt-5 uppercase rounded-full bg-primary hover:bg-primary/70 text-white shadow-sm text-sm font-light transition-all min-h-[unset] w-max py-4 px-8 h-auto flex items-center gap-2"
             >
               Start Now

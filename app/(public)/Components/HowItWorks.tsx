@@ -94,7 +94,7 @@ const HowItWorks = () => {
 
               {/* CTA Button */}
               <div className="pt-2 w-full">
-                <Link href="/dashboard/customer/inspection">
+                <Link prefetch={false} href="/login">
                   <Button className="gap-3 px-8 py-3.5 text-base uppercase rounded-full tracking-wider">
                     Start Now
                     <RiArrowRightLongLine className="w-5 h-5 text-xl" />
