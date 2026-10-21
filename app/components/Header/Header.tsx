@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, useEffect, useRef } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { FiMenu, FiX } from "react-icons/fi";
 import Image from "next/image";
@@ -33,6 +33,7 @@ const Header = ({ menus }: HeaderProps) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const headerRef = useRef<HTMLElement>(null);
 
   const { data: clientSession, status } = useSession();
   const effectiveSession = clientSession;
@@ -47,12 +48,37 @@ const Header = ({ menus }: HeaderProps) => {
 
   const closeMenu = () => setIsMenuOpen(false);
 
+  // Close menu on outside click
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (isMenuOpen && headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        closeMenu();
+      }
+    };
+
+    document.addEventListener("pointerdown", handleOutsideClick);
+    return () => document.removeEventListener("pointerdown", handleOutsideClick);
+  }, [isMenuOpen]);
+
+  // Close menu on Escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isMenuOpen) {
+        closeMenu();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isMenuOpen]);
+
   const handleLogout = async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     try {
       await signOut({ redirect: false });
       toast.success("Logged out successfully");
+      closeMenu(); // Close menu before redirect
       router.push("/login");
     } finally {
       setIsLoggingOut(false);
@@ -160,7 +186,7 @@ const Header = ({ menus }: HeaderProps) => {
     const pageTitle = currentItem?.label ?? "Admin";
 
     return (
-      <header className="w-full bg-white shadow-sm relative z-50">
+      <header ref={headerRef} className="w-full bg-white shadow-sm relative z-50">
         <div className="max-w-290 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex-1 flex justify-start">
@@ -204,7 +230,7 @@ const Header = ({ menus }: HeaderProps) => {
   };
 
   const renderStandardHeader = () => (
-    <header className="w-full bg-white shadow-sm relative z-50">
+    <header ref={headerRef} className="w-full bg-white shadow-sm relative z-50">
       <div className="max-w-290 mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex-1 flex justify-start">
