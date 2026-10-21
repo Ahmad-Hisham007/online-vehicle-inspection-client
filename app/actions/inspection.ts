@@ -118,6 +118,9 @@ export async function createInspectionDraft(
     hostPhoneNumber: session.user.phone ?? "",
   };
 
+  // [PHONE-DEBUG] Commented out; uncomment when tracing phone propagation.
+  // console.log("[PHONE-DEBUG] hostPhoneNumber sent:", inspectionDetails.hostPhoneNumber);
+
   const mutation = `
     mutation CreateInspection($input: CreateInspectionInput!) {
       createInspection(input: $input) {

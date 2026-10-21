@@ -122,6 +122,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           const data = json.data?.login;
+          // [PHONE-DEBUG] Commented out; uncomment when tracing phone propagation.
+          // console.log(
+          //   "[PHONE-DEBUG] credentials userFields:",
+          //   JSON.stringify(data?.user?.userFields ?? null),
+          // );
           if (data?.authToken) {
             const roles =
               data.user.roles?.nodes?.map((r: { name: string }) => r.name) ||
@@ -164,6 +169,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // [PHONE-DEBUG] Commented out; uncomment when tracing phone propagation.
+        // console.log("[PHONE-DEBUG] jwt user.phone:", user.phone);
         token.user = user;
         token.error = undefined;
         return token;
@@ -229,6 +236,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       session.user = token.user as typeof session.user;
+      // [PHONE-DEBUG] Commented out; uncomment when tracing phone propagation.
+      // console.log(
+      //   "[PHONE-DEBUG] session.user.phone:",
+      //   session.user?.phone,
+      //   "| token.user.phone:",
+      //   token.user?.phone,
+      // );
       session.error = token.error;
       return session;
     },
@@ -284,6 +298,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // console.log("=== WP SITE TOKEN RESPONSE ===");
           // console.log(JSON.stringify(json, null, 2));
           const wpData = json.data?.login;
+          // [PHONE-DEBUG] Commented out; uncomment when tracing phone propagation.
+          // console.log(
+          //   "[PHONE-DEBUG] google userFields:",
+          //   JSON.stringify(wpData?.user?.userFields ?? null),
+          // );
           // console.log(wpData);
           const roles =
             wpData?.user?.roles?.nodes?.map((r: { name: string }) => r.name) ||
@@ -302,6 +321,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 ? String(wpData.user.userFields.phoneNumber)
                 : "";
 
+            // [PHONE-DEBUG] Commented out; uncomment when tracing phone propagation.
+            // console.log("[PHONE-DEBUG] google user.phone:", user.phone);
             // console.log(user.role);
             return true; // লগিন ১০০% সাকসেসফুল!
           }
