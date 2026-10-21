@@ -115,6 +115,7 @@ export async function createInspectionDraft(
     inspectionStatus: "pending",
     hostName: session.user.name ?? "",
     hostEmail: session.user.email,
+    hostPhoneNumber: session.user.phone ?? "",
   };
 
   const mutation = `

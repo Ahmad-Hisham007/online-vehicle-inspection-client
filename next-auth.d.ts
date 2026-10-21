@@ -16,6 +16,8 @@ declare module "next-auth" {
     email: string;
     emailVerified: Date | null;
     role: string;
+    /** ACF "User fields" → `phone_number`, returned by the WP login mutation. */
+    phone?: string;
   }
 
   /**
@@ -42,6 +44,8 @@ declare module "next-auth/jwt" {
       email: string;
       emailVerified: Date | null;
       role: string;
+      /** ACF "User fields" → `phone_number`. */
+      phone?: string;
     };
     /** Set to "RefreshAccessTokenError" when WordPress definitively rejects the refresh token. */
     error?: string;

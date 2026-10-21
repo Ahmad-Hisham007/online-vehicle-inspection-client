@@ -61,6 +61,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                       name
                       email
                       databaseId
+                      userFields {
+                        phoneNumber
+                      }
                       roles {
                         nodes {
                           name
@@ -136,6 +139,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               refreshTokenExpiration: data.refreshTokenExpiration,
               emailVerified: null,
               role: roles[0],
+              // ACF "User fields" group; WPGraphQL exposes it as a number.
+              phone:
+                data.user.userFields?.phoneNumber != null
+                  ? String(data.user.userFields.phoneNumber)
+                  : "",
             };
           }
 
@@ -241,6 +249,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   databaseId
                   email
                   name
+                  userFields {
+                    phoneNumber
+                  }
                   roles {
                         nodes {
                           name
@@ -286,6 +297,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.wpId = wpData.user.databaseId;
             user.role = roles[0];
             user.name = wpData.user.name;
+            user.phone =
+              wpData.user.userFields?.phoneNumber != null
+                ? String(wpData.user.userFields.phoneNumber)
+                : "";
 
             // console.log(user.role);
             return true; // লগিন ১০০% সাকসেসফুল!
