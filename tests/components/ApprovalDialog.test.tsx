@@ -17,6 +17,14 @@ vi.mock("@/app/actions/certificate", () => ({
   saveCertificateToCDN: mockSaveCertificateToCDN,
 }));
 
+const { mockApproveInspection } = vi.hoisted(() => ({
+  mockApproveInspection: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/app/actions/admin", () => ({
+  approveInspection: mockApproveInspection,
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));
@@ -291,5 +299,33 @@ describe("ApprovalDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: /Skip this form/ }));
 
     expect(await screen.findByRole("button", { name: "Approve" })).toBeEnabled();
+  });
+
+  it("approves without sending a certificate for a skipped company", async () => {
+    mockHasTemplateMapper.mockImplementation((input) => input.company === "lyft");
+    renderDialog();
+
+    // Skip uber (no template) and pre-save lyft
+    useInspectionStore.setState({
+      approvalCardState: {
+        "234": {
+          inspectionId: "234",
+          mergedOverrides: { vehicleMake: "Honda" },
+          certificates: { lyft: "https://cdn.example.com/lyft.pdf" },
+          generatedBy: { lyft: true, uber: false, turo: false },
+          savedBy: { lyft: true, uber: false, turo: false },
+          skippedBy: { lyft: false, uber: true, turo: false },
+        },
+      },
+    });
+
+    const approveButton = await screen.findByRole("button", { name: "Approve" });
+    fireEvent.click(approveButton);
+
+    await waitFor(() => expect(mockApproveInspection).toHaveBeenCalledTimes(1));
+    expect(mockApproveInspection).toHaveBeenCalledWith("234", "1", {
+      mergedOverrides: { vehicleMake: "Honda" },
+      certificates: { lyft: "https://cdn.example.com/lyft.pdf" },
+    });
   });
 });

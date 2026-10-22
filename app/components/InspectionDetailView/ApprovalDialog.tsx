@@ -79,7 +79,8 @@ export default function ApprovalDialog({
   );
   const skippedCompanies = companies.filter(
     (c) => approvalState?.skippedBy?.[c as "lyft" | "uber" | "turo"],
-  );  const hasAnyCertificate = companies.some(
+  );
+  const hasAnyCertificate = companies.some(
     (c) =>
       (c === "lyft" && !!certificateUrls.lyft) ||
       (c === "uber" && !!certificateUrls.uber) ||
@@ -89,11 +90,25 @@ export default function ApprovalDialog({
   const handleApprove = async () => {
     // Get merged overrides from Zustand state
     const mergedOverrides = approvalState?.mergedOverrides || {};
-    const certificates = certificateUrls;
 
-    // Check if all required companies have certificates
+    // Only send certificates for companies that were generated/saved.
+    // Skipped companies (no template yet) intentionally have no URL.
+    const certificates: Record<string, string> = {};
+    for (const company of companies) {
+      if (approvalState?.skippedBy?.[company as "lyft" | "uber" | "turo"]) {
+        continue;
+      }
+      const url = certificateUrls[company as "lyft" | "uber" | "turo"];
+      if (url) {
+        certificates[company] = url;
+      }
+    }
+
+    // Check only non-skipped companies have certificates
     const missingCertificates = companies.filter(
-      (c) => !certificates[c as "lyft" | "uber" | "turo"],
+      (c) =>
+        !approvalState?.skippedBy?.[c as "lyft" | "uber" | "turo"] &&
+        !certificateUrls[c as "lyft" | "uber" | "turo"],
     );
 
     if (missingCertificates.length > 0) {
