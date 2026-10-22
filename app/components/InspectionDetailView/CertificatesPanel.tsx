@@ -66,6 +66,7 @@ export default function CertificatesPanel({
   const [approveOpen, setApproveOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
   const isApproved = inspection.inspectionStatus === "approved";
+  const isRejected = inspection.inspectionStatus === "rejected";
   const isPaid =
     inspection.paymentStatus === "succeeded" ||
     inspection.inspectionStatus === "paid";
@@ -80,6 +81,9 @@ export default function CertificatesPanel({
     message = "No certificates available.";
   } else if (isApproved) {
     message = "";
+  } else if (isRejected) {
+    message =
+      "Your Inspection is rejected, please check the reason and invalid fields and re-inspect";
   } else if (isPaid) {
     message = "Payment received. Certificates will be available once approved.";
   } else {
