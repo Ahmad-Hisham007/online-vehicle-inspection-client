@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
 import { IoChevronDown } from "react-icons/io5";
+import type { TransitionStartFunction } from "react";
 
 import {
   Dialog,
@@ -33,6 +34,7 @@ interface RejectDialogProps {
   onOpenChange: (open: boolean) => void;
   inspectionId: string;
   inspectionAuthorId: string;
+  onRefresh: () => void;
 }
 
 export default function RejectDialog({
@@ -40,6 +42,7 @@ export default function RejectDialog({
   onOpenChange,
   inspectionId,
   inspectionAuthorId,
+  onRefresh,
 }: RejectDialogProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,7 +68,7 @@ export default function RejectDialog({
       await rejectInspection(inspectionId, inspectionAuthorId, values);
       toast.success("Inspection rejected");
       onOpenChange(false);
-      router.refresh();
+      onRefresh();
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to reject inspection",

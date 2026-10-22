@@ -36,6 +36,13 @@ vi.mock("next-auth/react", () => ({
   }),
 }));
 
+vi.mock("react-hot-toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 vi.mock("@/app/lib/pdf/resolver", () => ({
   hasTemplateMapper: vi.fn(),
 }));
@@ -96,7 +103,7 @@ function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
 
 function renderDialog(inspection = detail()) {
   return render(
-    <ApprovalDialog open onOpenChange={vi.fn()} inspection={inspection} />,
+    <ApprovalDialog open onOpenChange={vi.fn()} inspection={inspection} onRefresh={vi.fn()} />,
   );
 }
 
@@ -115,6 +122,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   sessionStorage.clear();
   useInspectionStore.setState({ approvalCardState: {} });
+  mockHasTemplateMapper.mockReset();
   mockHasTemplateMapper.mockReturnValue(true);
   openSpy = vi.spyOn(window, "open").mockReturnValue({
     document: { write: vi.fn(), close: vi.fn() },

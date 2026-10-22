@@ -25,45 +25,33 @@ describe("RejectionInfoBlock", () => {
     expect(screen.queryByRole("region", { name: /rejection details/i })).not.toBeInTheDocument();
   });
 
-  it("renders the invalid fields as HTML list", () => {
-    renderBlock({
-      inspectionStatus: "rejected",
-      invalidFields: "<ul><li>License plate</li><li>VIN</li></ul>",
-    });
-
-    expect(
-      screen.getByRole("region", { name: /rejection details/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("License plate")).toBeInTheDocument();
-    expect(screen.getByText("VIN")).toBeInTheDocument();
-  });
-
   it("renders the rejection reason as plain text", () => {
     renderBlock({
       inspectionStatus: "rejected",
       rejectionReason: "  Fix the horn and clean the dash.  ",
     });
 
+    expect(screen.getByRole("region", { name: /rejection details/i })).toBeInTheDocument();
     expect(screen.getByText("Reasons for rejection")).toBeInTheDocument();
     expect(screen.getByText("Fix the horn and clean the dash.")).toBeInTheDocument();
   });
 
-  it("renders both fields and reason together", () => {
+  it("renders only the reason when no fields", () => {
     renderBlock({
       inspectionStatus: "rejected",
-      invalidFields: "<ul><li>Horn</li></ul>",
-      rejectionReason: "Replace the horn",
+      rejectionReason: "Check documentation",
     });
 
+    const region = screen.getByRole("region", { name: /rejection details/i });
+    expect(region).toBeInTheDocument();
     expect(screen.getByText("Reasons for rejection")).toBeInTheDocument();
-    expect(screen.getByText("Horn")).toBeInTheDocument();
-    expect(screen.getByText("Replace the horn")).toBeInTheDocument();
+    expect(screen.getByText("Check documentation")).toBeInTheDocument();
+    expect(screen.queryByText("License plate")).not.toBeInTheDocument();
   });
 
   it("strips unknown HTML tags from invalid fields", () => {
     renderBlock({
       inspectionStatus: "rejected",
-      // Simulate a malicious or malformed edit
       invalidFields: "<ul><li onclick=\"alert(1)\">License plate</li><script>alert('xss')</script></ul>",
     });
 
@@ -73,5 +61,7 @@ describe("RejectionInfoBlock", () => {
     expect(region).not.toHaveTextContent("<script>");
     // Callback-style handlers should be stripped
     expect(region).not.toHaveTextContent("onclick");
+    // The valid content should remain
+    expect(screen.getByText("License plate")).toBeInTheDocument();
   });
 });

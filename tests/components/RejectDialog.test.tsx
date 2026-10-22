@@ -2,12 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 const mockRejectInspection = vi.hoisted(() => vi.fn());
+const mockToastSuccess = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
+const mockRefresh = vi.hoisted(() => vi.fn());
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), refresh: mockRefresh }),
 }));
 vi.mock("react-hot-toast", () => ({
-  default: { success: vi.fn(), error: vi.fn() },
+  default: { success: mockToastSuccess, error: mockToastError },
 }));
 vi.mock("@/app/actions/admin", () => ({
   rejectInspection: mockRejectInspection,
@@ -22,6 +25,7 @@ function renderDialog(overrides: Record<string, unknown> = {}) {
       onOpenChange={vi.fn()}
       inspectionId="234"
       inspectionAuthorId="1"
+      onRefresh={mockRefresh}
       {...overrides}
     />,
   );
@@ -112,6 +116,20 @@ describe("RejectDialog", () => {
     });
   });
 
+  it("calls onRefresh after successful rejection", async () => {
+    renderDialog();
+
+    selectOptions(["License plate"]);
+    fireEvent.change(
+      screen.getByPlaceholderText("Describe what needs to be fixed…"),
+      { target: { value: "Fix plate" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Confirm rejection/ }));
+
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalled());
+    expect(mockRefresh).toHaveBeenCalled();
+  });
+
   it("keeps the dialog open and shows an error when the action throws", async () => {
     mockRejectInspection.mockRejectedValueOnce(new Error("WP down"));
     renderDialog();
@@ -141,6 +159,7 @@ describe("RejectDialog", () => {
         onOpenChange={onOpenChange}
         inspectionId="234"
         inspectionAuthorId="1"
+        onRefresh={mockRefresh}
       />,
     );
 
@@ -150,6 +169,7 @@ describe("RejectDialog", () => {
         onOpenChange={onOpenChange}
         inspectionId="234"
         inspectionAuthorId="1"
+        onRefresh={mockRefresh}
       />,
     );
 
@@ -159,5 +179,20 @@ describe("RejectDialog", () => {
     ).toBeInTheDocument();
     // no "field selected" summary text
     expect(screen.queryByText(/field selected/)).not.toBeInTheDocument();
+  });
+
+  it("shows error toast when rejection fails", async () => {
+    mockRejectInspection.mockRejectedValueOnce(new Error("WP down"));
+    renderDialog();
+
+    selectOptions(["License plate"]);
+    fireEvent.change(
+      screen.getByPlaceholderText("Describe what needs to be fixed…"),
+      { target: { value: "Fix plate" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Confirm rejection/ }));
+
+    await waitFor(() => expect(mockToastError).toHaveBeenCalled());
+    expect(mockToastError).toHaveBeenCalledWith("WP down");
   });
 });

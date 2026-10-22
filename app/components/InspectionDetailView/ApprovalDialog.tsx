@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 
 import {
@@ -29,6 +30,7 @@ interface ApprovalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inspection: InspectionDetail;
+  onRefresh: () => void;
 }
 
 /**
@@ -46,7 +48,9 @@ export default function ApprovalDialog({
   open,
   onOpenChange,
   inspection,
+  onRefresh,
 }: ApprovalDialogProps) {
+  const router = useRouter();
   const country = inspection.location.country === "Canada" ? "Canada" : "USA";
   const companies = inspection.companies.filter((company) =>
     APPROVAL_CERTIFICATE_COMPANIES.includes(company),
@@ -113,7 +117,7 @@ export default function ApprovalDialog({
 
     if (missingCertificates.length > 0) {
       const names = missingCertificates
-        .map((c) => APPROVAL_COMPANY_LABELS[c])
+        .map((c) => APPROVAL_COMPANY_LABELS[c] ?? c)
         .join(", ");
       toast.error(`Missing certificates for: ${names}`);
       return;
@@ -137,7 +141,7 @@ export default function ApprovalDialog({
       );
       toast.success("Inspection approved successfully!");
       onOpenChange(false);
-      setIsApproving(false);
+      onRefresh();
     } catch (err) {
       console.error("Failed to approve inspection:", err);
       toast.error(
@@ -145,6 +149,8 @@ export default function ApprovalDialog({
           ? `Failed to approve inspection: ${err.message}`
           : "Failed to approve inspection. Please try again.",
       );
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -238,13 +244,14 @@ export default function ApprovalDialog({
               disabled={isApproving}
               onClick={handleApprove}
             >
-              {(isApproving && (
+              {isApproving ? (
                 <span className="flex gap-1.5 items-center">
                   <span className="w-5 h-5 shrink-0 border-2 border-white/65 border-l-0 rounded-full animate-spin"></span>{" "}
                   <span>Approving ...</span>
                 </span>
-              )) ||
-                "Approve"}
+              ) : (
+                "Approve"
+              )}
             </Button>
           )}
         </div>

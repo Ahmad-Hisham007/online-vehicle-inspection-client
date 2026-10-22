@@ -26,10 +26,7 @@ export default function RejectionInfoBlock({
   const showReason = Boolean(inspection.rejectionReason?.trim());
 
   return (
-    <section
-      aria-label="Rejection details"
-      className="space-y-3 rounded-xl bg-card p-4 shadow-[0_1px_4rem_#09a9a719,0_.25rem_2rem_#00000007]"
-    >
+    <section aria-label="Rejection details" className="space-y-3 rounded-xl bg-card p-4 shadow-[0_1px_4rem_#09a9a719,0_.25rem_2rem_#00000007]">
       <h2 className="font-heading text-sm font-bold text-foreground">
         Reasons for rejection
       </h2>
