@@ -87,6 +87,14 @@ export default function InspectionCard({ inspection }: InspectionCardProps) {
               </NavLink>
             </div>
           )}
+          {inspection.inspectionStatus === "rejected" && (
+            <NavLink
+              href={`/dashboard/customer/inspection/${inspection.id}/edit`}
+              className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Re-inspect Car
+            </NavLink>
+          )}
           <NavLink
             href={`/dashboard/customer/inspection/${inspection.id}`}
             className="text-sm font-medium text-primary underline-offset-4 hover:underline"

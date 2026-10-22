@@ -157,3 +157,74 @@ export async function createInspectionDraft(
 
   return { inspectionId: databaseId };
 }
+
+interface UpdateInspectionResponse {
+  updateInspection: {
+    inspection: {
+      id: string;
+      databaseId: number;
+    };
+  };
+}
+
+/**
+ * Submit a re-inspection for a previously rejected inspection.
+ * Updates inspection status to 'in_progress', saves signature, and resets payment status.
+ */
+export async function submitReInspection(
+  inspectionId: string,
+  signatureDataUrl: string,
+): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.accessToken) {
+    throw new Error("Unauthorized");
+  }
+  if (!session?.user?.wpId) {
+    throw new Error("User not authenticated properly");
+  }
+
+  const now = new Date();
+
+  // Build minimal updates for re-inspection
+  const inspectionDetails: Record<string, unknown> = {
+    inspectionStatus: "in_progress",
+    inspectionDate: now.toISOString().split("T")[0],
+    inspectionMonth: String(now.getMonth() + 1),
+    inspectionDay: String(now.getDate()),
+    inspectionYear: String(now.getFullYear()),
+    hostSignature: signatureDataUrl,
+    paymentStatus: "pending",
+  };
+
+  const mutation = `
+    mutation UpdateInspection($input: UpdateInspectionInput!) {
+      updateInspection(input: $input) {
+        inspection {
+          id
+          databaseId
+        }
+      }
+    }
+  `;
+
+  const variables = {
+    input: {
+      id: parseInt(inspectionId, 10),
+      inspectionDetails,
+    },
+  };
+
+  const data = await wpFetch<UpdateInspectionResponse>(mutation, variables);
+
+  const databaseId = data.updateInspection.inspection.databaseId.toString();
+  const authorId = session.user.wpId;
+
+  // Cache invalidation
+  revalidatePath("/dashboard/customer");
+  revalidatePath(`/dashboard/customer/inspection/${databaseId}`);
+  revalidatePath(`/dashboard/admin/inspection/${databaseId}`);
+  revalidateTag(`inspection-list:author:${authorId}`, "max");
+  revalidateTag("request-admin", "max");
+  revalidateTag("archive-admin", "max");
+  revalidateTag(`inspection:${databaseId}`, "max");
+}

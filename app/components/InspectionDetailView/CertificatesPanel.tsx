@@ -22,7 +22,7 @@ export function downloadPdf(url: string, filename: string): void {
     const byteString = atob(url.split(",")[1]);
     const bytes = new Uint8Array(byteString.length);
     for (let i = 0; i < byteString.length; i++) {
-      bytes[i] = byteString.charCodeAt(byteString).charCodeAt(0);
+      bytes[i] = byteString.charCodeAt(i);
     }
     const blob = new Blob([bytes], { type: "application/pdf" });
     const blobUrl = URL.createObjectURL(blob);
@@ -144,17 +144,30 @@ export default function CertificatesPanel({
             )}
           </div>
           {role === "customer" ? (
-            !isPaid && (
+            isRejected ? (
               <Button
                 variant="primary"
                 size="sm"
                 className="px-6! shrink-0 w-auto min-w-22"
                 onClick={() =>
-                  router.push(`/dashboard/customer/pay/${inspection.id}`)
+                  router.push(`/dashboard/customer/inspection/${inspection.id}/edit`)
                 }
               >
-                Pay
+                Re-inspect Car
               </Button>
+            ) : (
+              !isPaid && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="px-6! shrink-0 w-auto min-w-22"
+                  onClick={() =>
+                    router.push(`/dashboard/customer/pay/${inspection.id}`)
+                  }
+                >
+                  Pay
+                </Button>
+              )
             )
           ) : inspection.inspectionStatus === "approved" ||
             inspection.inspectionStatus === "rejected" ? (

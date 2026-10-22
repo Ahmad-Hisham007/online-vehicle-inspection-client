@@ -68,6 +68,11 @@ interface InspectionState {
   reviewAgreement: ReviewAgreement | null;
   inspectionId: string | null;
 
+  // Re-inspection mode tracking
+  mode: "create" | "re-inspection";
+  existingInspectionId: string | null;
+  reInspectionSignature: string | null;
+
   // SINGLE SOURCE OF TRUTH for all certificate forms in this inspection
   // Keyed by inspection ID only, contains merged data from all companies
   approvalCardState: Record<string, ApprovalCardState>;
@@ -79,6 +84,15 @@ interface InspectionState {
   updateUploadField: (field: string, meta: FileMeta) => void;
   updateReviewAgreement: (data: ReviewAgreement) => void;
   setInspectionId: (id: string) => void;
+
+  // Re-inspection mode actions
+  setReInspectionMode: (inspectionId: string) => void;
+  setReInspectionSignature: (signature: string | null) => void;
+  prefillFromInspection: (data: {
+    vehicleInfo: VehicleInfo;
+    vinInfo: VinInfo;
+    inspectionScope: InspectionScope;
+  }) => void;
 
   /**
    * Set approval card state for an inspection.
@@ -110,6 +124,12 @@ export const useInspectionStore = create<InspectionState>()(
       uploadFields: null,
       reviewAgreement: null,
       inspectionId: null,
+
+      // Re-inspection mode tracking
+      mode: "create",
+      existingInspectionId: null,
+      reInspectionSignature: null,
+
       approvalCardState: {},
 
       setStep: (step) => set({ currentStep: step }),
@@ -227,6 +247,23 @@ export const useInspectionStore = create<InspectionState>()(
           reviewAgreement: null,
           inspectionId: null,
           approvalCardState: {},
+          mode: "create",
+          existingInspectionId: null,
+          reInspectionSignature: null,
+        }),
+
+      // Re-inspection mode actions
+      setReInspectionMode: (inspectionId) =>
+        set({ mode: "re-inspection", existingInspectionId: inspectionId }),
+
+      setReInspectionSignature: (signature) =>
+        set({ reInspectionSignature: signature }),
+
+      prefillFromInspection: (data) =>
+        set({
+          vehicleInfo: data.vehicleInfo,
+          vinInfo: data.vinInfo,
+          inspectionScope: data.inspectionScope,
         }),
     }),
     {
