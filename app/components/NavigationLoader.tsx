@@ -9,12 +9,13 @@ export default function NavigationLoader() {
   if (!navPending) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="flex items-center gap-3 rounded-full bg-background/90 px-4 py-2 shadow-lg ring-1 ring-border backdrop-blur-sm">
-        <LoadingIndicator variant="dots" size="sm" />
-        <span className="text-sm font-medium text-muted-foreground">
-          Loading
-        </span>
+    <div
+      aria-label="Loading"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    >
+      <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-card p-8 shadow-lg">
+        <LoadingIndicator variant="dots" size="xl" />
+        <p className="text-sm text-muted-foreground">Loading</p>
       </div>
     </div>
   );

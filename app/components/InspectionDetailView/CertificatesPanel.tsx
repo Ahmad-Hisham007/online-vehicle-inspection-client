@@ -109,7 +109,7 @@ export default function CertificatesPanel({
         >
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl bg-card p-8 shadow-lg">
             <LoadingIndicator variant="spinner" size="xl" />
-            <p className="text-sm text-muted-foreground">Updating inspection...</p>
+            <p className="text-sm text-muted-foreground">Updating UI...</p>
           </div>
         </div>
       )}
@@ -150,7 +150,9 @@ export default function CertificatesPanel({
                 size="sm"
                 className="px-6! shrink-0 w-auto min-w-22"
                 onClick={() =>
-                  router.push(`/dashboard/customer/inspection/${inspection.id}/edit`)
+                  router.push(
+                    `/dashboard/customer/inspection/${inspection.id}/edit`,
+                  )
                 }
               >
                 Re-inspect Car
