@@ -11,17 +11,21 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { Button } from "../Button";
+
 interface ReturnDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   inspectionId: string;
   inspectionAuthorId?: string;
+  onRefresh: () => void;
 }
+
 const ReturnDialog = ({
   open,
   onOpenChange,
   inspectionId,
   inspectionAuthorId,
+  onRefresh,
 }: ReturnDialogProps) => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,7 +35,7 @@ const ReturnDialog = ({
       await returnInspection(inspectionId, inspectionAuthorId);
       toast.success("Inspection returned");
       onOpenChange(false);
-      router.refresh();
+      onRefresh();
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to return inspection",
