@@ -138,7 +138,7 @@ export interface Placement {
 
 /** Calibrated mapping for one blank template (spec §5.2). */
 export interface TemplateMapper {
-  /** e.g. "uber_usa_ca". */
+  /** e.g. "uber_us_ca". */
   key: string;
   /** Path relative to `app/lib/pdf-assets/`. */
   blankPdfPath: string;

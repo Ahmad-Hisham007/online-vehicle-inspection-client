@@ -123,4 +123,55 @@ describe("inspectionStore", () => {
     expect(state.uploadFields).toBeNull()
     expect(state.reviewAgreement).toBeNull()
   })
+
+  describe("setApprovalCardState", () => {
+    beforeEach(() => {
+      sessionStorage.clear()
+      useInspectionStore.setState({ approvalCardState: {} })
+    })
+
+    it("initializes state with skippedBy defaults for a new inspection", () => {
+      useInspectionStore
+        .getState()
+        .setApprovalCardState("555", "lyft", { saved: true })
+
+      const state = useInspectionStore.getState().approvalCardState["555"]
+      expect(state.savedBy).toEqual({ lyft: true, uber: false, turo: false })
+      expect(state.skippedBy).toEqual({ lyft: false, uber: false, turo: false })
+    })
+
+    it("marks a company as skipped", () => {
+      useInspectionStore
+        .getState()
+        .setApprovalCardState("555", "uber", { skipped: true })
+
+      const state = useInspectionStore.getState().approvalCardState["555"]
+      expect(state.skippedBy).toEqual({ lyft: false, uber: true, turo: false })
+    })
+
+    it("un-skips a company when skipped: false is passed", () => {
+      const store = useInspectionStore.getState()
+      store.setApprovalCardState("555", "uber", { skipped: true })
+      store.setApprovalCardState("555", "uber", { skipped: false })
+
+      const state = useInspectionStore.getState().approvalCardState["555"]
+      expect(state.skippedBy.uber).toBe(false)
+    })
+
+    it("keeps skippedBy intact when updating other fields", () => {
+      const store = useInspectionStore.getState()
+      store.setApprovalCardState("555", "turo", { skipped: true })
+      store.setApprovalCardState("555", "turo", {
+        overrides: { vehicleMake: "Honda" },
+        certificateUrl: "data:application/pdf;base64,abc",
+        saved: true,
+      })
+
+      const state = useInspectionStore.getState().approvalCardState["555"]
+      expect(state.skippedBy.turo).toBe(true)
+      expect(state.savedBy.turo).toBe(true)
+      expect(state.mergedOverrides.vehicleMake).toBe("Honda")
+      expect(state.certificates.turo).toBe("data:application/pdf;base64,abc")
+    })
+  })
 })

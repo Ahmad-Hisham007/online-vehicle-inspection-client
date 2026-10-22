@@ -49,6 +49,14 @@ export interface ApprovalCardState {
     uber: boolean;
     turo: boolean;
   };
+
+  // Track which forms were skipped (missing certificate template) — a skipped
+  // company counts as processed for the approve gate.
+  skippedBy: {
+    lyft: boolean;
+    uber: boolean;
+    turo: boolean;
+  };
 }
 
 interface InspectionState {
@@ -85,6 +93,7 @@ interface InspectionState {
       certificates?: Record<string, string>;
       generated?: boolean;
       saved?: boolean;
+      skipped?: boolean;
     },
   ) => void;
 
@@ -134,6 +143,7 @@ export const useInspectionStore = create<InspectionState>()(
             certificates: {},
             generatedBy: { lyft: false, uber: false, turo: false },
             savedBy: { lyft: false, uber: false, turo: false },
+            skippedBy: { lyft: false, uber: false, turo: false },
           };
 
           // Field name migration: convert old facility field names to new WP-compatible names
@@ -146,7 +156,7 @@ export const useInspectionStore = create<InspectionState>()(
           // Merge overrides (from form) and migrate field names
           let mergedOverrides = newState.mergedOverrides;
           if (updates.overrides) {
-            let newOverrides = { ...mergedOverrides, ...updates.overrides };
+            const newOverrides = { ...mergedOverrides, ...updates.overrides };
             
             // Apply field name migrations - remove old names, add new names
             for (const [oldName, newName] of Object.entries(FIELD_MIGRATIONS)) {
@@ -187,6 +197,11 @@ export const useInspectionStore = create<InspectionState>()(
             savedBy[company] = updates.saved;
           }
 
+          const skippedBy = { ...newState.skippedBy };
+          if (updates.skipped !== undefined) {
+            skippedBy[company] = updates.skipped;
+          }
+
           return {
             approvalCardState: {
               ...state.approvalCardState,
@@ -196,6 +211,7 @@ export const useInspectionStore = create<InspectionState>()(
                 certificates,
                 generatedBy,
                 savedBy,
+                skippedBy,
               },
             },
           };

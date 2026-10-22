@@ -14,6 +14,7 @@ import {
   type ApprovalFieldContext,
   type ApprovalFieldDef,
 } from "@/app/lib/approval-fields";
+import { hasTemplateMapper } from "@/app/lib/pdf/resolver";
 import type { InspectionDetail } from "@/app/lib/types";
 import { useInspectionStore } from "@/app/store/inspectionStore";
 
@@ -179,11 +180,19 @@ export default function ApprovalCompanyForm({
     certificates: {},
     generatedBy: { lyft: false, uber: false, turo: false },
     savedBy: { lyft: false, uber: false, turo: false },
+    skippedBy: { lyft: false, uber: false, turo: false },
   };
 
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const fieldContext: ApprovalFieldContext = { country, company };
+
+  // Missing template (coordinates not yet mapped) → skip flow instead of the form
+  const templateAvailable = hasTemplateMapper({
+    company,
+    country,
+    state: inspection.location.state,
+  });
 
   const defaultValueContext: ApprovalFieldContext & {
     session?: { name?: string };
@@ -248,6 +257,20 @@ export default function ApprovalCompanyForm({
     return state?.certificates?.[company as "lyft" | "uber" | "turo"] || null;
   });
   const [saving, setSaving] = useState(false);
+
+  const [skipped, setSkipped] = useState(
+    existingCardState.skippedBy?.[company as "lyft" | "uber" | "turo"] || false,
+  );
+
+  const handleSkip = () => {
+    setApprovalCardState(inspectionKey, company as "lyft" | "uber" | "turo", {
+      skipped: true,
+    });
+    setSkipped(true);
+    toast.success(
+      `${companyLabel} certificate skipped — approval can proceed without it`,
+    );
+  };
 
   const updateField = (fieldName: string, value: string) => {
     setValues((prev) => ({ ...prev, [fieldName]: value }));
@@ -386,6 +409,30 @@ export default function ApprovalCompanyForm({
   const visibleAdvancedFields = advancedFields.filter(
     (field) => !field.visibleFor || field.visibleFor(fieldContext),
   );
+
+  // Missing template (coordinates not yet mapped): show skip panel instead of the form
+  if (!templateAvailable || skipped) {
+    return (
+      <div className="space-y-4 rounded-md border border-amber-200 bg-amber-50 p-4">
+        <p className="text-sm text-amber-800">
+          {skipped
+            ? `${companyLabel} certificate was skipped — approval can proceed without it.`
+            : `Certificate template not yet available for ${inspection.location.state} (${companyLabel}). Skip this form to approve the inspection without it.`}
+        </p>
+        {!skipped && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="!w-auto !px-6"
+            onClick={handleSkip}
+          >
+            Skip this form
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

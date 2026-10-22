@@ -3,11 +3,11 @@ import type { TemplateMapper } from "../../types";
 /**
  * Lyft certificate template for California.
  *
- * Coordinates source: `app/lib/pdf-coordinates/lyft_usa_ca.json`
+ * Coordinates source: `app/lib/pdf-coordinates/lyft_us_ca.json`
  */
 export const lyft_ca: TemplateMapper = {
-  key: "lyft_usa_ca",
-  blankPdfPath: "lyft_usa_ca.pdf",
+  key: "lyft_us_ca",
+  blankPdfPath: "lyft_us_ca.pdf",
   page: 0,
   placements: [
     // Driver info

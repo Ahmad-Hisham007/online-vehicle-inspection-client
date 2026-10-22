@@ -32,29 +32,14 @@ interface ApprovalDialogProps {
 }
 
 /**
- * Normalize state for template key generation.
- * - For IL (Chicago): returns "il" (non-chicago key won't exist until we create a proper IL template)
- * - For other states: returns uppercase state code
- * - For Turo: returns "all" (all-states template)
- *
- * TODO: Create proper il template for non-chicago IL inspections
+ * Compute the template key for a company.
+ * Format: company_country_state (e.g., "lyft_us_il")
  */
-function normalizeStateForTemplate(
-  company: string,
-  state: string,
-  country: string,
-): string {
-  const stateUpper = state.toUpperCase();
-  const companyLower = company.toLowerCase();
+function getTemplateKeyFor(company: string, country: string, state: string): string {
+  const countryLower = country.toLowerCase() === "usa" ? "us" : country.toLowerCase();
+  const stateKey = state.toUpperCase();
 
-  // Turo uses all-states template
-  if (companyLower === "turo") {
-    return "all";
-  }
-
-  // For other companies, return the state code uppercase
-  // Note: IL specifically needs 'il' for the template key
-  return stateUpper;
+  return `${company.toLowerCase()}_${countryLower}_${stateKey}`;
 }
 
 export default function ApprovalDialog({
@@ -73,10 +58,7 @@ export default function ApprovalDialog({
    */
   const getTemplateKey = (company: string): string => {
     // For non-Canada countries, treat as USA
-    const countryLower = country.toLowerCase();
-    const stateKey = inspection.location.state.toUpperCase();
-
-    return `${company.toLowerCase()}_${countryLower}_${stateKey}`;
+    return getTemplateKeyFor(company, country, inspection.location.state);
   };
 
   const companyValues = (): Record<string, string> => {
@@ -89,10 +71,15 @@ export default function ApprovalDialog({
   const inspectionKey = inspection.id;
   const approvalState = approvalCardState[inspectionKey];
   const certificateUrls = approvalState?.certificates || {};
+  // Every company must be saved OR skipped (missing template) before approval
   const isAllSaved = companies.every(
-    (c) => approvalState?.savedBy?.[c as "lyft" | "uber" | "turo"],
+    (c) =>
+      approvalState?.savedBy?.[c as "lyft" | "uber" | "turo"] ||
+      approvalState?.skippedBy?.[c as "lyft" | "uber" | "turo"],
   );
-  const hasAnyCertificate = companies.some(
+  const skippedCompanies = companies.filter(
+    (c) => approvalState?.skippedBy?.[c as "lyft" | "uber" | "turo"],
+  );  const hasAnyCertificate = companies.some(
     (c) =>
       (c === "lyft" && !!certificateUrls.lyft) ||
       (c === "uber" && !!certificateUrls.uber) ||
@@ -197,12 +184,19 @@ export default function ApprovalDialog({
             <div className="mt-4 flex flex-col items-center gap-3 pt-2 border-t border-stone-200">
               {!isAllSaved && !hasAnyCertificate ? (
                 <p className="text-sm text-muted-foreground">
-                  Generate and save certificates for all companies before
-                  approving
+                  Generate and save certificates for all companies (or skip the
+                  unavailable ones) before approving
                 </p>
               ) : !isAllSaved ? (
                 <p className="text-sm text-amber-600">
                   All certificates generated. Save them before approving.
+                </p>
+              ) : skippedCompanies.length > 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Approving without certificates for:{" "}
+                  {skippedCompanies
+                    .map((c) => APPROVAL_COMPANY_LABELS[c] ?? c)
+                    .join(", ")}
                 </p>
               ) : null}
             </div>

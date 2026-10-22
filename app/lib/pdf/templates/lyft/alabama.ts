@@ -3,11 +3,11 @@ import type { TemplateMapper } from "../../types";
 /**
  * Lyft certificate template for Alabama.
  *
- * Coordinates source: `app/lib/pdf-coordinates/lyft_usa_al.json`
+ * Coordinates source: `app/lib/pdf-coordinates/lyft_us_al.json`
  */
 export const lyft_al: TemplateMapper = {
-  key: "lyft_usa_al",
-  blankPdfPath: "lyft_usa_al.pdf",
+  key: "lyft_us_al",
+  blankPdfPath: "lyft_us_al.pdf",
   page: 0,
   placements: [
     // Driver info

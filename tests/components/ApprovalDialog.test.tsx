@@ -28,9 +28,16 @@ vi.mock("next-auth/react", () => ({
   }),
 }));
 
+vi.mock("@/app/lib/pdf/resolver", () => ({
+  hasTemplateMapper: vi.fn(),
+}));
+
 import ApprovalDialog from "@/app/components/InspectionDetailView/ApprovalDialog";
+import { hasTemplateMapper } from "@/app/lib/pdf/resolver";
 import { useInspectionStore } from "@/app/store/inspectionStore";
 import type { InspectionDetail } from "@/app/lib/types";
+
+const mockHasTemplateMapper = vi.mocked(hasTemplateMapper);
 
 function detail(overrides: Partial<InspectionDetail> = {}): InspectionDetail {
   return {
@@ -100,6 +107,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   sessionStorage.clear();
   useInspectionStore.setState({ approvalCardState: {} });
+  mockHasTemplateMapper.mockReturnValue(true);
   openSpy = vi.spyOn(window, "open").mockReturnValue({
     document: { write: vi.fn(), close: vi.fn() },
   } as unknown as Window);
@@ -209,5 +217,79 @@ describe("ApprovalDialog", () => {
     expect(
       screen.getByText("No certificate companies on this inspection."),
     ).toBeInTheDocument();
+  });
+
+  it("shows the skip panel instead of the form when no template exists", () => {
+    mockHasTemplateMapper.mockReturnValue(false);
+    renderDialog();
+
+    expect(
+      screen.getAllByText(/Certificate template not yet available/i).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("button", { name: /Skip this form/ }).length,
+    ).toBeGreaterThan(0);
+    // No Generate button inside the skipped company's panel
+    expect(
+      screen.queryByRole("button", { name: /Generate/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("marks a company as skipped and enables Approve when all are saved-or-skipped", async () => {
+    mockHasTemplateMapper.mockReturnValue(false);
+    renderDialog();
+
+    // Skip every company — re-query between clicks (DOM nodes are replaced)
+    while (screen.queryAllByRole("button", { name: /Skip this form/ }).length > 0) {
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /Skip this form/ })[0],
+      );
+    }
+
+    const state = useInspectionStore.getState().approvalCardState["234"];
+    expect(state?.skippedBy).toEqual({ lyft: true, uber: true, turo: false });
+
+    // Approve button appears once every company is saved-or-skipped
+    expect(await screen.findByRole("button", { name: "Approve" })).toBeEnabled();
+    expect(
+      screen.getByText(/Approving without certificates for: Uber, Lyft/),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps Approve hidden while a company is neither saved nor skipped", () => {
+    mockHasTemplateMapper.mockReturnValue(false);
+    renderDialog();
+
+    // Only skip the first company
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /Skip this form/ })[0],
+    );
+
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+  });
+
+  it("allows approving a mixed saved + skipped set", async () => {
+    // lyft has a template (pre-saved), uber does not (must be skipped)
+    mockHasTemplateMapper.mockImplementation((input) => input.company === "lyft");
+    renderDialog();
+
+    // Pre-seed: lyft already saved, uber not processed
+    useInspectionStore.setState({
+      approvalCardState: {
+        "234": {
+          inspectionId: "234",
+          mergedOverrides: { vehicleMake: "Honda" },
+          certificates: { lyft: "https://cdn.example.com/lyft.pdf" },
+          generatedBy: { lyft: true, uber: false, turo: false },
+          savedBy: { lyft: true, uber: false, turo: false },
+          skippedBy: { lyft: false, uber: false, turo: false },
+        },
+      },
+    });
+
+    // Skip uber (the only unsaved company)
+    fireEvent.click(screen.getByRole("button", { name: /Skip this form/ }));
+
+    expect(await screen.findByRole("button", { name: "Approve" })).toBeEnabled();
   });
 });
