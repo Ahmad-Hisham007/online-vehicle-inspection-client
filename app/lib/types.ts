@@ -93,6 +93,9 @@ export interface InspectionDetail extends InspectionSummary {
   assignedInspector?: AssignedInspectorRef | null;
   /** Flat ACF field values (GraphQL field name → value) used to pre-fill the approve forms. */
   approvalFields: Record<string, string>;
+  /** Rejection data (populated when inspectionStatus === "rejected"). */
+  invalidFields?: string;
+  rejectionReason?: string;
 }
 
 // Admin Requests Types

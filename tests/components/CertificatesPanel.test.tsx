@@ -174,10 +174,22 @@ describe("CertificatesPanel admin actions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
     expect(screen.getByText("Reject inspection")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    // Select a field and fill reason (required by RejectDialog validation)
+    const select = screen.getByLabelText("Invalid fields") as HTMLSelectElement;
+    const hornOption = Array.from(select.options).find((o) => o.text === "Horn");
+    if (hornOption) hornOption.selected = true;
+    fireEvent.change(select);
+
+    const reasonInput = screen.getByPlaceholderText("Describe what needs to be fixed…");
+    fireEvent.change(reasonInput, { target: { value: "Bad horn" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm rejection" }));
 
     await waitFor(() => {
-      expect(mockReject).toHaveBeenCalledWith("234", "1");
+      expect(mockReject).toHaveBeenCalledWith("234", "1", {
+        invalidFields: ["horn"],
+        rejectionReason: "Bad horn",
+      });
     });
     await waitFor(() => {
       expect(mockToastSuccess).toHaveBeenCalled();
@@ -215,8 +227,20 @@ describe("CertificatesPanel admin actions", () => {
       />,
     );
 
+    // Open reject dialog
     fireEvent.click(screen.getByRole("button", { name: "Reject" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    // Select a field and fill reason (required by new RejectDialog validation)
+    const select = screen.getByLabelText("Invalid fields") as HTMLSelectElement;
+    const hornOption = Array.from(select.options).find((o) => o.text === "Horn");
+    if (hornOption) hornOption.selected = true;
+    fireEvent.change(select);
+
+    const reasonInput = screen.getByPlaceholderText("Describe what needs to be fixed…");
+    fireEvent.change(reasonInput, { target: { value: "Bad horn" } });
+
+    // Submit the rejection
+    fireEvent.click(screen.getByRole("button", { name: "Confirm rejection" }));
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalled();

@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { wpFetch } from "@/app/lib/wp-auth";
 import { assertSessionActive } from "@/app/lib/refresh-token";
 import { isAdministrator, isInspector } from "@/app/lib/access";
+import { rejectionFieldsToHtml } from "@/app/lib/rejection-fields";
 
 interface UpdateInspectionResponse {
   updateInspection?: {
@@ -25,6 +26,7 @@ const UPDATE_STATUS_MUTATION = `
 export async function rejectInspection(
   inspectionId: string,
   inspectionAuthorId: string,
+  data: { invalidFields: string[]; rejectionReason: string },
 ): Promise<void> {
   const session = await auth();
   const role = session?.user?.role;
@@ -36,16 +38,31 @@ export async function rejectInspection(
   }
   assertSessionActive(session.error);
 
-  const data = await wpFetch<UpdateInspectionResponse>(UPDATE_STATUS_MUTATION, {
-    input: {
-      id: inspectionId,
-      inspectionDetails: {
-        inspectionStatus: "rejected",
+  const invalidFieldsHtml = rejectionFieldsToHtml(data.invalidFields);
+  const rejectionReason = data.rejectionReason?.trim();
+
+  if (!invalidFieldsHtml) {
+    throw new Error("At least one invalid field is required");
+  }
+  if (!rejectionReason) {
+    throw new Error("Rejection reason is required");
+  }
+
+  const response = await wpFetch<UpdateInspectionResponse>(
+    UPDATE_STATUS_MUTATION,
+    {
+      input: {
+        id: inspectionId,
+        inspectionDetails: {
+          inspectionStatus: "rejected",
+          invalidFields: invalidFieldsHtml,
+          rejectionReason,
+        },
       },
     },
-  });
+  );
 
-  if (!data.updateInspection?.inspection) {
+  if (!response.updateInspection?.inspection) {
     throw new Error("Failed to reject inspection");
   }
 
@@ -54,7 +71,7 @@ export async function rejectInspection(
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
   revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
-  revalidatePath(`/dashboard/customerinspection/${inspectionId}`);
+  revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
   // Owner's list shows updated status on card
   revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
   revalidateTag(`inspection-list:author:${inspectionAuthorId}`, "max");
@@ -93,7 +110,7 @@ export async function returnInspection(
   revalidateTag("request-admin", "max");
   revalidateTag("archive-admin", "max");
   revalidatePath(`/dashboard/admin/inspection/${inspectionId}`);
-  revalidatePath(`/dashboard/customerinspection/${inspectionId}`);
+  revalidatePath(`/dashboard/customer/inspection/${inspectionId}`);
   // Owner's list shows updated status on card
   revalidateTag(`inspection-list:author:${session.user.wpId}`, "max");
   revalidateTag(`inspection-list:author:${inspectionAuthorId}`, "max");

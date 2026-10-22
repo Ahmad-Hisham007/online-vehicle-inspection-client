@@ -3,6 +3,7 @@ import SpecificationsBlock from "@/app/components/InspectionDetailView/Specifica
 import SelectedCompanies from "@/app/components/InspectionDetailView/SelectedCompanies";
 import MediaGallery from "@/app/components/InspectionDetailView/MediaGallery";
 import CertificatesPanel from "@/app/components/InspectionDetailView/CertificatesPanel";
+import RejectionInfoBlock from "@/app/components/InspectionDetailView/RejectionInfoBlock";
 import type { InspectionDetail } from "@/app/lib/types";
 
 interface InspectionDetailViewProps {
@@ -22,6 +23,7 @@ export default function InspectionDetailView({
         </h1>
         <div className="space-y-4">
           <InspectionHeader inspection={inspection} />
+          <RejectionInfoBlock inspection={inspection} />
           <SpecificationsBlock inspection={inspection} role={role} />
           <SelectedCompanies companies={inspection.companies} />
           <MediaGallery media={inspection.media} />

@@ -43,6 +43,8 @@ interface InspectionDetailsNode {
   inspectionCountry: string;
   inspectionStateUsa: string;
   inspectionStateCanada: string;
+  invalidFields?: string;
+  rejectionReason?: string;
   inspectionCompanies: string;
   inspectionDate: string;
   expiryDate: string;
@@ -71,8 +73,8 @@ interface InspectionDetailsNode {
   tireLeftFrontDepth: string;
   tireRightRearDepth: string;
   tireLeftRearDepth: string;
-  handlerName: string;
-  handlerSignature: string;
+  handlerName?: string | null;
+  handlerSignature?: string | null;
   registrationCardPhoto: string;
   odometerPhoto: string;
   hornVideo: string;
@@ -211,8 +213,9 @@ function mapMedia(
   return media;
 }
 
-function asString(value: string | string[] | undefined): string {
+function asString(value: string | string[] | undefined | null): string {
   if (Array.isArray(value)) return value[0] ?? "";
+  if (value === null) return "";
   return value ?? "";
 }
 
@@ -291,8 +294,10 @@ function mapDetail(node: InspectionNode): InspectionDetail {
       : null,
     approvalFields: mapApprovalFields(details),
     author: node.author,
-    handlerName: node.inspectionDetails.handlerName,
-    handlerSignature: node.inspectionDetails.handlerSignature,
+    handlerName: node.inspectionDetails.handlerName ?? undefined,
+    handlerSignature: node.inspectionDetails.handlerSignature ?? undefined,
+    invalidFields: details.invalidFields ?? "",
+    rejectionReason: details.rejectionReason ?? "",
   };
 }
 
@@ -362,6 +367,8 @@ const DETAIL_QUERY = `
         inspectionCountry
         inspectionStateUsa
         inspectionStateCanada
+        invalidFields
+        rejectionReason
         inspectionCompanies
         inspectionDate
         expiryDate

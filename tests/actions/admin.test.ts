@@ -34,6 +34,11 @@ const OK_RESPONSE = {
   updateInspection: { inspection: { databaseId: 234 } },
 };
 
+const REJECTION_DATA = {
+  invalidFields: ["licensePlate", "vin"],
+  rejectionReason: "Vehicle does not match the VIN on the registration.",
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -42,14 +47,14 @@ describe("rejectInspection", () => {
   it("throws when unauthenticated", async () => {
     mockAuth.mockResolvedValue(null);
 
-    await expect(rejectInspection("234", "1")).rejects.toThrow("Unauthorized");
+    await expect(rejectInspection("234", "1", REJECTION_DATA)).rejects.toThrow("Unauthorized");
     expect(mockWpFetch).not.toHaveBeenCalled();
   });
 
   it("throws when the user is not staff", async () => {
     mockAuth.mockResolvedValue(CUSTOMER_SESSION);
 
-    await expect(rejectInspection("234", "1")).rejects.toThrow("Unauthorized");
+    await expect(rejectInspection("234", "1", REJECTION_DATA)).rejects.toThrow("Unauthorized");
     expect(mockWpFetch).not.toHaveBeenCalled();
   });
 
@@ -59,7 +64,7 @@ describe("rejectInspection", () => {
       error: "RefreshAccessTokenError",
     });
 
-    await expect(rejectInspection("234", "1")).rejects.toBeInstanceOf(
+    await expect(rejectInspection("234", "1", REJECTION_DATA)).rejects.toBeInstanceOf(
       SessionExpiredError,
     );
     expect(mockWpFetch).not.toHaveBeenCalled();
@@ -69,21 +74,21 @@ describe("rejectInspection", () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await expect(rejectInspection("234", "1")).resolves.toBeUndefined();
+    await expect(rejectInspection("234", "1", REJECTION_DATA)).resolves.toBeUndefined();
   });
 
   it("allows an inspector to reject", async () => {
     mockAuth.mockResolvedValue(INSPECTOR_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await expect(rejectInspection("234", "1")).resolves.toBeUndefined();
+    await expect(rejectInspection("234", "1", REJECTION_DATA)).resolves.toBeUndefined();
   });
 
   it("sends the rejected status and revalidates caches", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await rejectInspection("234", "1");
+    await rejectInspection("234", "1", REJECTION_DATA);
 
     expect(mockWpFetch).toHaveBeenCalledTimes(1);
     const [query, variables, options] = mockWpFetch.mock.calls[0] as [
@@ -95,17 +100,70 @@ describe("rejectInspection", () => {
     expect(variables).toEqual({
       input: {
         id: "234",
-        inspectionDetails: { inspectionStatus: "rejected" },
+        inspectionDetails: {
+          inspectionStatus: "rejected",
+          invalidFields: "<ul><li>License plate</li><li>VIN</li></ul>",
+          rejectionReason: "Vehicle does not match the VIN on the registration.",
+        },
       },
     });
     expect(options).toBeUndefined();
+  });
+
+  it("trims the rejection reason and ignores unknown field values", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+    mockWpFetch.mockResolvedValue(OK_RESPONSE);
+
+    await rejectInspection("234", "1", {
+      invalidFields: ["bogusField", "horn"],
+      rejectionReason: "   Fix the horn   ",
+    });
+
+    const [, variables] = mockWpFetch.mock.calls[0] as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(variables).toEqual({
+      input: {
+        id: "234",
+        inspectionDetails: {
+          inspectionStatus: "rejected",
+          invalidFields: "<ul><li>Horn</li></ul>",
+          rejectionReason: "Fix the horn",
+        },
+      },
+    });
+  });
+
+  it("throws when no valid invalid field is provided", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+
+    await expect(
+      rejectInspection("234", "1", {
+        invalidFields: [],
+        rejectionReason: "Reason",
+      }),
+    ).rejects.toThrow("At least one invalid field is required");
+    expect(mockWpFetch).not.toHaveBeenCalled();
+  });
+
+  it("throws when the rejection reason is blank", async () => {
+    mockAuth.mockResolvedValue(ADMIN_SESSION);
+
+    await expect(
+      rejectInspection("234", "1", {
+        invalidFields: ["horn"],
+        rejectionReason: "   ",
+      }),
+    ).rejects.toThrow("Rejection reason is required");
+    expect(mockWpFetch).not.toHaveBeenCalled();
   });
 
   it("revalidates the affected list tags including owner's list", async () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue(OK_RESPONSE);
 
-    await rejectInspection("234", "1");
+    await rejectInspection("234", "1", REJECTION_DATA);
 
     expect(mockRevalidateTag).toHaveBeenCalledWith("request-admin", "max");
     expect(mockRevalidateTag).toHaveBeenCalledWith("archive-admin", "max");
@@ -118,7 +176,7 @@ describe("rejectInspection", () => {
       "/dashboard/admin/inspection/234"
     );
     expect(mockRevalidatePath).toHaveBeenCalledWith(
-      "/dashboard/customerinspection/234"
+      "/dashboard/customer/inspection/234"
     );
   });
 
@@ -126,7 +184,7 @@ describe("rejectInspection", () => {
     mockAuth.mockResolvedValue(ADMIN_SESSION);
     mockWpFetch.mockResolvedValue({ updateInspection: null });
 
-    await expect(rejectInspection("234", "1")).rejects.toThrow(
+    await expect(rejectInspection("234", "1", REJECTION_DATA)).rejects.toThrow(
       "Failed to reject inspection",
     );
     expect(mockRevalidateTag).not.toHaveBeenCalled();
