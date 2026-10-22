@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import InspectionDetailView from "@/app/components/InspectionDetailView/InspectionDetailView";
 import InspectionDetailSkeleton from "@/app/components/InspectionDetailSkeleton";
 import { fetchInspection } from "@/app/actions/inspections";
+import CustomerPageShell from "@/app/components/customer/CustomerPageShell";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -30,16 +31,20 @@ async function InspectionDetailLoader({ id }: { id: string }) {
   );
 }
 
-export default async function AdminInspectionDetailPage({
-  params,
-}: PageProps) {
+export default async function AdminInspectionDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   // This page is a Server Component - data is fetched server-side
   // Mutations (approve/reject/return) call revalidateTag/revalidatePath
   // which triggers a re-render of this page when the cache is invalidated
   return (
-    <Suspense fallback={<InspectionDetailSkeleton />}>
+    <Suspense
+      fallback={
+        <CustomerPageShell>
+          <InspectionDetailSkeleton />
+        </CustomerPageShell>
+      }
+    >
       <InspectionDetailLoader id={id} />
     </Suspense>
   );
