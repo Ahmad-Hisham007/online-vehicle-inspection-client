@@ -47,11 +47,11 @@ beforeEach(() => {
   mockStore.inspectionScope = null
 })
 
-function setup() {
+function setup({ disabled = false }: { disabled?: boolean } = {}) {
   const user = userEvent.setup()
   const utils = render(
     <>
-      <StepVehicleSelection onNext={mockOnNext} />
+      <StepVehicleSelection onNext={mockOnNext} disabled={disabled} />
       <button type="submit" form="step-1" data-testid="submit-btn">
         Submit
       </button>
@@ -370,5 +370,84 @@ describe("StepVehicleSelection", () => {
     const mileageInput = screen.getByLabelText(/mileage/i) as HTMLInputElement
     expect(plateInput.value).toBe("XYZ789")
     expect(mileageInput.value).toBe("30000")
+  })
+
+  describe("disabled mode", () => {
+    it("renders inputs as disabled when disabled prop is true", () => {
+      mockStore.vehicleInfo = { licensePlate: "XYZ789", mileage: 30000 }
+      mockStore.inspectionScope = {
+        country: "usa",
+        state: "CA",
+        companies: ["uber"],
+        tiresOlderThan6Years: true,
+        batteryOlderThan5Years: true,
+        voltageGreaterThan12_1V: true,
+      }
+      setup({ disabled: true })
+
+      const plateInput = screen.getByLabelText(/license plate/i) as HTMLInputElement
+      const mileageInput = screen.getByLabelText(/mileage/i) as HTMLInputElement
+      expect(plateInput.disabled).toBe(true)
+      expect(mileageInput.disabled).toBe(true)
+    })
+
+    it("prefills form with store values in disabled mode", () => {
+      mockStore.vehicleInfo = { licensePlate: "XYZ789", mileage: 30000 }
+      mockStore.inspectionScope = {
+        country: "usa",
+        state: "CA",
+        companies: ["uber", "lyft"],
+        tiresOlderThan6Years: true,
+        batteryOlderThan5Years: true,
+        voltageGreaterThan12_1V: undefined,
+      }
+      setup({ disabled: true })
+
+      const plateInput = screen.getByLabelText(/license plate/i) as HTMLInputElement
+      expect(plateInput.value).toBe("XYZ789")
+      expect(screen.getByText(/USA/i)).toBeInTheDocument()
+    })
+
+    it("calls onNext without updating store in disabled mode", async () => {
+      mockStore.vehicleInfo = { licensePlate: "XYZ789", mileage: 30000 }
+      mockStore.inspectionScope = {
+        country: "usa",
+        state: "CA",
+        companies: ["uber"],
+        tiresOlderThan6Years: true,
+        batteryOlderThan5Years: true,
+        voltageGreaterThan12_1V: true,
+      }
+      setup({ disabled: true })
+
+      const user = userEvent.setup()
+      const submitBtn = screen.getByTestId("submit-btn")
+      await user.click(submitBtn)
+
+      expect(mockStore.updateVehicleInfo).not.toHaveBeenCalled()
+      expect(mockStore.updateInspectionScope).not.toHaveBeenCalled()
+      expect(mockOnNext).toHaveBeenCalledTimes(1)
+    })
+
+    it("does not show validation errors in disabled mode", async () => {
+      // In disabled mode, data comes pre-filled from store
+      mockStore.vehicleInfo = { licensePlate: "XYZ789", mileage: 30000 }
+      mockStore.inspectionScope = {
+        country: "usa",
+        state: "CA",
+        companies: ["uber"],
+        tiresOlderThan6Years: true,
+        batteryOlderThan5Years: true,
+        voltageGreaterThan12_1V: true,
+      }
+      setup({ disabled: true })
+
+      const user = userEvent.setup()
+      const submitBtn = screen.getByTestId("submit-btn")
+      await user.click(submitBtn)
+
+      // Should proceed to next without validation errors
+      expect(mockOnNext).toHaveBeenCalledTimes(1)
+    })
   })
 })

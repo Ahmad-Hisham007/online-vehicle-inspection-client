@@ -9,6 +9,7 @@ interface FormInputProps<T extends FieldValues> {
   label: string;
   placeholder?: string;
   type?: string;
+  disabled?: boolean;
   children?: string | React.ReactNode;
 }
 
@@ -18,6 +19,7 @@ export function FormInput<T extends FieldValues>({
   label,
   placeholder,
   type = "text",
+  disabled = false,
   children,
 }: FormInputProps<T>) {
   return (
@@ -43,9 +45,10 @@ export function FormInput<T extends FieldValues>({
             type={type}
             placeholder={placeholder}
             onChange={handleChange}
+            disabled={disabled}
             className={`h-12 px-4 rounded-md border-0 bg-gray-50 shadow-sm ring-1 ring-inset ring-gray-100 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:text-sm transition-all w-full ${
               fieldState.invalid ? "ring-red-500" : ""
-            }`}
+            } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
           />
           {children}
           {fieldState.error && (

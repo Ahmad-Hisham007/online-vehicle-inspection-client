@@ -272,6 +272,9 @@ function mapDetail(node: InspectionNode): InspectionDetail {
           .map((c) => c.trim())
           .filter(Boolean)
       : [],
+    tiresOlderThan6Years: details.tiresOlderThan6Years === "true",
+    batteryOlderThan5Years: details.batteryOlderThan5Years === "true",
+    voltageGreaterThan12_1V: details.voltageGreaterThan12_1V === "true",
     inspectionDate: details.inspectionDate,
     expiryDate: details.expiryDate,
     hostName: details.hostName,

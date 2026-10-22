@@ -43,7 +43,10 @@ const stepSchema = z
           path: ["batteryOlderThan5Years"],
         });
       }
-      if (data.batteryOlderThan5Years === false && data.voltageGreaterThan12_1V !== true) {
+      if (
+        data.batteryOlderThan5Years === false &&
+        data.voltageGreaterThan12_1V !== true
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Voltage must be greater than 12.1V to proceed",
@@ -59,13 +62,16 @@ export { stepSchema };
 
 interface Props {
   onNext: () => void;
+  disabled?: boolean;
 }
 
-export function StepVehicleSelection({ onNext }: Props) {
+export function StepVehicleSelection({ onNext, disabled = false }: Props) {
   const vehicleInfo = useInspectionStore((s) => s.vehicleInfo);
   const scope = useInspectionStore((s) => s.inspectionScope);
   const updateVehicleInfo = useInspectionStore((s) => s.updateVehicleInfo);
-  const updateInspectionScope = useInspectionStore((s) => s.updateInspectionScope);
+  const updateInspectionScope = useInspectionStore(
+    (s) => s.updateInspectionScope,
+  );
 
   const form = useForm<StepInputs>({
     resolver: zodResolver(stepSchema),
@@ -85,18 +91,22 @@ export function StepVehicleSelection({ onNext }: Props) {
   const watchedCompanies = form.watch("companies");
 
   const onSubmit = (data: StepInputs) => {
-    updateVehicleInfo({
-      licensePlate: data.licensePlate,
-      mileage: data.mileage,
-    });
-    updateInspectionScope({
-      country: data.country,
-      state: data.state,
-      companies: data.companies,
-      tiresOlderThan6Years: data.tiresOlderThan6Years,
-      batteryOlderThan5Years: data.batteryOlderThan5Years,
-      voltageGreaterThan12_1V: data.voltageGreaterThan12_1V,
-    });
+    // In disabled/re-inspection mode, data is pre-filled and read-only
+    // We don't need to update the store or validate — just proceed
+    if (!disabled) {
+      updateVehicleInfo({
+        licensePlate: data.licensePlate,
+        mileage: data.mileage,
+      });
+      updateInspectionScope({
+        country: data.country,
+        state: data.state,
+        companies: data.companies,
+        tiresOlderThan6Years: data.tiresOlderThan6Years,
+        batteryOlderThan5Years: data.batteryOlderThan5Years,
+        voltageGreaterThan12_1V: data.voltageGreaterThan12_1V,
+      });
+    }
     onNext();
   };
 
@@ -121,6 +131,7 @@ export function StepVehicleSelection({ onNext }: Props) {
             control={form.control}
             label="Enter license plate"
             placeholder="E.g. ABC123"
+            disabled={disabled}
           />
           <FormInput
             name="mileage"
@@ -128,6 +139,7 @@ export function StepVehicleSelection({ onNext }: Props) {
             label="Mileage"
             placeholder="E.g. 50000"
             type="number"
+            disabled={disabled}
           />
         </div>
 
@@ -137,6 +149,7 @@ export function StepVehicleSelection({ onNext }: Props) {
             control={form.control}
             label="Country"
             placeholder="Select country"
+            disabled={disabled}
             options={[
               { value: "usa", label: "USA" },
               { value: "canada", label: "Canada" },
@@ -150,6 +163,7 @@ export function StepVehicleSelection({ onNext }: Props) {
               placeholder={
                 watchedCountry === "usa" ? "Select state" : "Select province"
               }
+              disabled={disabled}
               options={getStates(watchedCountry)}
             />
           )}
@@ -161,6 +175,7 @@ export function StepVehicleSelection({ onNext }: Props) {
             control={form.control}
             options={companyOptions}
             columns={3}
+            disabled={disabled}
           />
         )}
 
@@ -178,10 +193,9 @@ export function StepVehicleSelection({ onNext }: Props) {
                   <input
                     type="radio"
                     checked={form.watch("tiresOlderThan6Years") === true}
-                    onChange={() =>
-                      form.setValue("tiresOlderThan6Years", true)
-                    }
+                    onChange={() => form.setValue("tiresOlderThan6Years", true)}
                     className="accent-primary size-4"
+                    disabled={disabled}
                   />
                   Yes
                 </label>
@@ -193,6 +207,7 @@ export function StepVehicleSelection({ onNext }: Props) {
                       form.setValue("tiresOlderThan6Years", false)
                     }
                     className="accent-primary size-4"
+                    disabled={disabled}
                   />
                   No
                 </label>
@@ -220,6 +235,7 @@ export function StepVehicleSelection({ onNext }: Props) {
                       form.clearErrors("voltageGreaterThan12_1V");
                     }}
                     className="accent-primary size-4"
+                    disabled={disabled}
                   />
                   Yes
                 </label>
@@ -232,6 +248,7 @@ export function StepVehicleSelection({ onNext }: Props) {
                       form.clearErrors("batteryOlderThan5Years");
                     }}
                     className="accent-primary size-4"
+                    disabled={disabled}
                   />
                   No
                 </label>
@@ -257,6 +274,7 @@ export function StepVehicleSelection({ onNext }: Props) {
                         form.setValue("voltageGreaterThan12_1V", true)
                       }
                       className="accent-primary size-4"
+                      disabled={disabled}
                     />
                     Yes
                   </label>
@@ -268,6 +286,7 @@ export function StepVehicleSelection({ onNext }: Props) {
                         form.setValue("voltageGreaterThan12_1V", false)
                       }
                       className="accent-primary size-4"
+                      disabled={disabled}
                     />
                     No
                   </label>

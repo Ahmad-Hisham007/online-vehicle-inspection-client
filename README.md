@@ -11,7 +11,8 @@ their dashboard. The WordPress backend is accessed exclusively through WPGraphQL
 - **Direct-to-cloud uploads** — Bunny Storage (S3-compatible presigned PUTs) served via a Bunny Pull Zone; files never pass through the Next.js server
 - **Stripe payments** — PaymentIntent, webhooks, status polling, pay route for existing inspections
 - **Customer dashboard** — owner-scoped inspection listing with server-side filter/pagination, detail view with sticky action bar, Payment Links
-- **Admin dashboard + PDF certificate generation** — planned (Phase 6)
+- **Admin dashboard + PDF certificate generation** — complete (Phase 6)
+- **Re-inspection flow** — rejected inspections can be re-submitted at $0.00 with pre-filled steps (Phase 8)
 
 ## Tech Stack
 
@@ -45,7 +46,7 @@ npm run dev                   # → http://localhost:3000
 | `npm run build`        | Production build + typecheck         |
 | `npm run start`        | Serve the production build           |
 | `npm run lint`         | ESLint (Next.js config)              |
-| `npm run test`         | Vitest unit tests (208 tests / 22 files) |
+| `npm run test`         | Vitest unit tests (423 tests / 45 files) |
 | `npm run test:coverage`| Vitest with v8 coverage              |
 | `npm run e2e`          | Playwright e2e (opens browser)       |
 | `npm run e2e:ui`       | Playwright UI mode                   |
@@ -79,6 +80,10 @@ WordPress GraphQL URL must be publicly reachable, `AUTH_URL` must be the site
 domain, `AUTH_SECRET` must be freshly generated, and the Google OAuth redirect
 (`/api/auth/callback/google`) and Stripe webhook endpoint
 (`/api/webhooks/stripe`) must include the Netlify domain.
+
+## Documentation
+
+- [Product Documentation (HTML/PDF)](docs/product-documentation.html) — User-friendly guide covering all features, steps, and workflows. Open in a browser to print as PDF.
 
 ## License
 

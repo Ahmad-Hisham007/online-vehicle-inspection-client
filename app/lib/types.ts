@@ -68,6 +68,9 @@ export interface InspectionDetail extends InspectionSummary {
   color: string;
   location: { country: string; state: string };
   companies: string[];
+  tiresOlderThan6Years?: boolean;
+  batteryOlderThan5Years?: boolean;
+  voltageGreaterThan12_1V?: boolean;
   inspectionDate: string;
   expiryDate: string;
   hostName: string;
