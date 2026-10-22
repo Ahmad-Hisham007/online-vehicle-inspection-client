@@ -16,6 +16,7 @@ interface ImageCheckboxGroupProps<T extends FieldValues> {
   control: Control<T>;
   options: ImageCheckboxOption[];
   columns?: number;
+  disabled?: boolean;
 }
 
 export function ImageCheckboxGroup<T extends FieldValues>({
@@ -23,6 +24,7 @@ export function ImageCheckboxGroup<T extends FieldValues>({
   control,
   options,
   columns = 3,
+  disabled = false,
 }: ImageCheckboxGroupProps<T>) {
   return (
     <Controller
@@ -31,6 +33,7 @@ export function ImageCheckboxGroup<T extends FieldValues>({
       render={({ field, fieldState }) => {
         const selected: string[] = field.value ?? [];
         const toggleValue = (val: string) => {
+          if (disabled) return;
           const next = selected.includes(val)
             ? selected.filter((v) => v !== val)
             : [...selected, val];
@@ -67,9 +70,11 @@ export function ImageCheckboxGroup<T extends FieldValues>({
                     key={opt.value}
                     type="button"
                     onClick={() => toggleValue(opt.value)}
+                    disabled={disabled}
                     className={cn(
                       "relative bg-white rounded-xl shadow-sm border-2 transition-all",
-                      "flex flex-col items-center justify-center gap-1.5 p-2 min-h-[80px] cursor-pointer",
+                      "flex flex-col items-center justify-center gap-1.5 p-2 min-h-[80px]",
+                      disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer",
                       isSelected
                         ? "border-primary ring-2 ring-primary/10"
                         : "border-gray-100 hover:border-gray-300",

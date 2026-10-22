@@ -40,9 +40,10 @@ type StepInputs = z.infer<typeof stepSchema>;
 
 interface Props {
   onNext: () => void;
+  disabled?: boolean;
 }
 
-export function StepVinLicense({ onNext }: Props) {
+export function StepVinLicense({ onNext, disabled = false }: Props) {
   const vinInfo = useInspectionStore((s) => s.vinInfo);
   const updateVinInfo = useInspectionStore((s) => s.updateVinInfo);
 
@@ -58,13 +59,15 @@ export function StepVinLicense({ onNext }: Props) {
   });
 
   const onSubmit = (data: StepInputs) => {
-    updateVinInfo({
-      vin: data.vin,
-      make: data.make,
-      model: data.model,
-      year: Number(data.year),
-      fuelType: data.fuelType,
-    });
+    if (!disabled) {
+      updateVinInfo({
+        vin: data.vin,
+        make: data.make,
+        model: data.model,
+        year: Number(data.year),
+        fuelType: data.fuelType,
+      });
+    }
     onNext();
   };
 
@@ -80,6 +83,7 @@ export function StepVinLicense({ onNext }: Props) {
           control={form.control}
           label="Enter VIN number"
           placeholder="17-character VIN"
+          disabled={disabled}
         />
         <div className="grid md:grid-cols-2 gap-4">
           <FormInput
@@ -87,12 +91,14 @@ export function StepVinLicense({ onNext }: Props) {
             control={form.control}
             label="Vehicle make"
             placeholder="E.g. Toyota"
+            disabled={disabled}
           />
           <FormInput
             name="model"
             control={form.control}
             label="Vehicle model"
             placeholder="E.g. Camry"
+            disabled={disabled}
           />
         </div>
         <div className="grid md:grid-cols-2 gap-4">
@@ -101,6 +107,7 @@ export function StepVinLicense({ onNext }: Props) {
             control={form.control}
             label="Vehicle year"
             placeholder="Select year"
+            disabled={disabled}
             options={YEAR_OPTIONS}
           />
           <FormSelect
@@ -108,6 +115,7 @@ export function StepVinLicense({ onNext }: Props) {
             control={form.control}
             label="Fuel type"
             placeholder="Select fuel type"
+            disabled={disabled}
             options={[
               { value: "gasoline", label: "Gasoline" },
               { value: "diesel", label: "Diesel" },

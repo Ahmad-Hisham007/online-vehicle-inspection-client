@@ -93,6 +93,7 @@ interface InspectionState {
     vinInfo: VinInfo;
     inspectionScope: InspectionScope;
   }) => void;
+  resetReInspection: () => void;
 
   /**
    * Set approval card state for an inspection.
@@ -264,6 +265,13 @@ export const useInspectionStore = create<InspectionState>()(
           vehicleInfo: data.vehicleInfo,
           vinInfo: data.vinInfo,
           inspectionScope: data.inspectionScope,
+        }),
+
+      resetReInspection: () =>
+        set({
+          mode: "create",
+          existingInspectionId: null,
+          reInspectionSignature: null,
         }),
     }),
     {
