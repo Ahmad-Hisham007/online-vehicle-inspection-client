@@ -5,11 +5,12 @@ import { AdminUserDetail, AdminUserRow } from "../lib/types";
 import { wpFetch } from "../lib/wp-auth";
 import { auth } from "@/auth";
 import { assertSessionActive } from "../lib/refresh-token";
-import { isAdministrator } from "../lib/access";
+import { isAdministrator, isStaff } from "../lib/access";
 
 const ADMIN_ROLES = ["administrator", "inspector"];
 interface userField {
   phoneNumber?: number | null;
+  signature?: string | null;
 }
 interface userRole {
   nodes: { name: string }[];
@@ -200,6 +201,7 @@ const USER_DETAIL_QUERY = `
       }
       userFields {
         phoneNumber
+        signature
       }
     }
   }
@@ -259,7 +261,11 @@ interface UpdateUserResponse {
 export interface CurrentUser {
   displayName?: string | null;
   email: string;
+  firstName: string;
+  lastName: string;
   phone: string;
+  signature: string;
+  registeredDate?: string | null;
 }
 //------------------//
 // Get Current USER //
@@ -284,10 +290,14 @@ export const getCurrentUser = async (id: string): Promise<CurrentUser> => {
   return {
     displayName: node.displayName,
     email: node.email,
+    firstName: node.firstName ?? "",
+    lastName: node.lastName ?? "",
     phone:
       node.userFields?.phoneNumber != null
         ? String(node.userFields.phoneNumber)
         : "",
+    signature: node.userFields?.signature ?? "",
+    registeredDate: node.registeredDate ?? null,
   };
 };
 
@@ -370,6 +380,120 @@ export async function updateUserPassword(
     {
       input: {
         id,
+        password,
+      },
+    },
+  );
+
+  if (!data.updateUser?.user) {
+    throw new Error("Failed to update password");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Current-user settings (admin + inspector)
+// ---------------------------------------------------------------------------
+
+export interface UpdateCurrentUserPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+/**
+ * Update the *current* user's own profile fields (firstName, lastName, email, phone).
+ * Role is intentionally not editable — you can't de-role yourself.
+ */
+export async function updateCurrentUser(
+  payload: UpdateCurrentUserPayload,
+): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.accessToken) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+  if (!isStaff(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+
+  const wpId = session.user.wpId;
+
+  const input: Record<string, unknown> = {
+    id: String(wpId),
+    email: payload.email,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+  };
+  if (payload.phone) {
+    input.phoneNumber = payload.phone;
+  }
+
+  const data = await wpFetch<UpdateUserResponse>(UPDATE_USER_MUTATION, {
+    input,
+  });
+
+  if (!data.updateUser?.user) {
+    throw new Error("Failed to update profile");
+  }
+
+  revalidateTag("users", "max");
+}
+
+/**
+ * Update the *current* user's signature (Bunny CDN URL saved to the ACF
+ * `signature` user-field). Empty string clears the signature.
+ */
+export async function updateUserSignature(
+  signatureUrl: string,
+): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.accessToken) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+  if (!isStaff(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+
+  const wpId = session.user.wpId;
+
+  const data = await wpFetch<UpdateUserResponse>(UPDATE_USER_MUTATION, {
+    input: {
+      id: String(wpId),
+      signature: signatureUrl,
+    },
+  });
+
+  if (!data.updateUser?.user) {
+    throw new Error("Failed to update signature");
+  }
+
+  revalidateTag("users", "max");
+}
+
+/**
+ * Update the *current* user's password. Available to staff (admin + inspector).
+ */
+export async function updateCurrentUserPassword(
+  password: string,
+): Promise<void> {
+  const session = await auth();
+  if (!session?.user?.accessToken) {
+    throw new Error("Unauthorized");
+  }
+  assertSessionActive(session.error);
+  if (!isStaff(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+
+  const wpId = session.user.wpId;
+
+  const data = await wpFetch<UpdateUserResponse>(
+    UPDATE_USER_PASSWORD_MUTATION,
+    {
+      input: {
+        id: String(wpId),
         password,
       },
     },
